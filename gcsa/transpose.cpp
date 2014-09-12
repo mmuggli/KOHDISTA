@@ -49,7 +49,6 @@ main(int argc, char** argv)
   std::cout << "Sequences: " << sequences << std::endl;
   std::cout << std::endl;
 
-//  usint counts[CHARS];
   usint *counts = (usint *)malloc(CHARS * sizeof(usint *));
   for(usint c = 0; c < CHARS; c++) { counts[c] = 0; }
 
@@ -105,6 +104,7 @@ main(int argc, char** argv)
     std::cout << "  " << ((char)c) << " (" << c << "): " << counts[c] << std::endl;
   }
   std::cout << std::endl;
+
   free(counts);
   return 0;
 }

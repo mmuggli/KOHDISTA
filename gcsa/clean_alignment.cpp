@@ -18,7 +18,6 @@ readAlignment(std::ifstream& input, usint& lines, usint sequences, bool quality_
   input.clear();
   input.seekg(0, std::ios_base::beg);
 
-  //usint chars[CHARS];
   usint *chars = (usint *)malloc(CHARS*sizeof(usint *));
   for(usint c = 0; c < CHARS; c++) { chars[c] = 0; }
   char* data = new char[fileSize(input)];

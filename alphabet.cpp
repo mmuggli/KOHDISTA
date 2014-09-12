@@ -41,12 +41,9 @@ Alphabet::initialize(const usint* counts)
   this->size = 0; this->chars = 0;
   for(usint c = 0; c < CHARS; c++)
   {
-      usint count = counts[c];
-      pair_type pt =   ((count > 0 || this->size > 0) ?
-                             pair_type(this->size, this->size + count - 1) :
+    this->index_ranges[c] = ((counts[c] > 0 || this->size > 0) ?
+                             pair_type(this->size, this->size + counts[c] - 1) :
                              EMPTY_PAIR);
-
-      this->index_ranges[c] = pt;
     if(counts[c] > 0)
     {
       this->text_chars[this->chars] = c;

@@ -14,14 +14,14 @@ using namespace CSA;
 int
 main(int argc, char** argv)
 {
-    std::cout << "GCSA builder" << std::endl;
-    std::cout << std::endl;
-    if(argc < 2)
-    {
-        std::cout << "Usage: build_index [-b] base_name" << std::endl;
-		std::cout << "  -b  create backbone information" << std::endl;
-        return 1;
-    }
+  std::cout << "GCSA builder" << std::endl;
+  std::cout << std::endl;
+  if(argc < 2)
+  {
+    std::cout << "Usage: build_index [-b] base_name" << std::endl;
+    	std::cout << "  -b  create backbone information" << std::endl;
+    return 1;
+  }
 
 	bool backbone = false;
 	usint name_arg = 1;

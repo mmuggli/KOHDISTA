@@ -2,10 +2,12 @@
 #include <fstream>
 #include <iostream>
 #include <stack>
+
 #include <map>
 #include <misc/utils.h>
 
 #include "gcsa.h"
+
 
 //TODO find every malloc(CHARS*CHARS) and add a corresponding free()
 namespace CSA
@@ -20,7 +22,7 @@ GCSA::GCSA(const std::string& base_name) :
   alphabet(0),
   backbone(0)
 {
-    this->array = (DeltaVector**)malloc(CHARS*sizeof(DeltaVector *));
+  this->array = (DeltaVector**)malloc(CHARS*sizeof(DeltaVector *));
   for(usint i = 0; i < CHARS; i++) { this->array[i] = 0; }
 
   std::string index_name = base_name + GCSA_EXTENSION;
