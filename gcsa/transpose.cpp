@@ -49,7 +49,8 @@ main(int argc, char** argv)
   std::cout << "Sequences: " << sequences << std::endl;
   std::cout << std::endl;
 
-  usint counts[CHARS];
+//  usint counts[CHARS];
+  usint *counts = (usint *)malloc(CHARS * sizeof(usint *));
   for(usint c = 0; c < CHARS; c++) { counts[c] = 0; }
 
   if(!multiple_files) { output_file = new std::ofstream(output_name.c_str(), std::ios_base::binary); }
@@ -104,6 +105,6 @@ main(int argc, char** argv)
     std::cout << "  " << ((char)c) << " (" << c << "): " << counts[c] << std::endl;
   }
   std::cout << std::endl;
-
+  free(counts);
   return 0;
 }

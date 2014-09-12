@@ -113,7 +113,7 @@ class GCSA
 
     usint node_count;
 
-    DeltaVector* array[CHARS];  // BWT
+    DeltaVector** array;  // BWT
     RLEVector* outgoing;        // M
 
     DeltaVector* sampled_positions;

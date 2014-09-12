@@ -190,7 +190,7 @@ DeltaVector::Iterator::isSet(usint value)
 //--------------------------------------------------------------------------
 
 DeltaEncoder::DeltaEncoder(usint block_bytes, usint superblock_size) :
-  VectorEncoder(block_bytes, superblock_size)
+    VectorEncoder(block_bytes, superblock_size, true)
 {
 }
 

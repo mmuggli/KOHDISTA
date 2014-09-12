@@ -2,12 +2,12 @@
 #include <fstream>
 #include <iostream>
 #include <stack>
-
+#include <map>
 #include <misc/utils.h>
 
 #include "gcsa.h"
 
-
+//TODO find every malloc(CHARS*CHARS) and add a corresponding free()
 namespace CSA
 {
 
@@ -20,6 +20,7 @@ GCSA::GCSA(const std::string& base_name) :
   alphabet(0),
   backbone(0)
 {
+    this->array = (DeltaVector**)malloc(CHARS*sizeof(DeltaVector *));
   for(usint i = 0; i < CHARS; i++) { this->array[i] = 0; }
 
   std::string index_name = base_name + GCSA_EXTENSION;
@@ -59,95 +60,116 @@ GCSA::GCSA(PathGraph& graph, Graph& parent, bool print) :
   alphabet(0),
   backbone(0)
 {
-  if(graph.status != PathGraph::sorted || !(parent.ok)) { return; }
+    if(graph.status != PathGraph::sorted || !(parent.ok)) { return; }
+    this->array = (DeltaVector**)malloc(CHARS*sizeof(DeltaVector *));
+//  DeltaEncoder* array_encoders[CHARS];
+    std::map<usint, DeltaEncoder*> array_encoders;
+    //DeltaEncoder** array_encoders = (DeltaEncoder**)malloc(CHARS);
+    RLEEncoder outedges(OUTGOING_BLOCK_SIZE);
+    usint *counts = (usint*)malloc(CHARS*sizeof(usint *));
+//  usint counts[CHARS*CHARS];
+    // std::cout << "initializing array encoders..." << std::endl;
+    // for(usint i = 0; i < CHARS; i++)
+    // {
+    //     if (i % 1000 == 0) std::cout << i/1000 << " thousand initialized" << std::endl;
+    //     this->array[i] = 0;
+    //     counts[i] = 0;
+    //     array_encoders[i] = new DeltaEncoder(ARRAY_BLOCK_SIZE); // FIXME this uses a lot of memory
+    // }
+    // std::cout << "done initializing array encoders" << std::endl;
+    if(print) { std::cout << "Generating edges... "; std::cout.flush(); }
+    if(!graph.generateEdges(parent)) { return; }
+    if(print) { std::cout << graph.edge_count << " edges." << std::endl; }
 
-  DeltaEncoder* array_encoders[CHARS];
-  RLEEncoder outedges(OUTGOING_BLOCK_SIZE);
-  usint counts[CHARS];
 
-  for(usint i = 0; i < CHARS; i++)
-  {
-    this->array[i] = 0;
-    counts[i] = 0;
-    array_encoders[i] = new DeltaEncoder(ARRAY_BLOCK_SIZE); // FIXME this uses a lot of memory
-  }
-  if(print) { std::cout << "Generating edges... "; std::cout.flush(); }
-  if(!graph.generateEdges(parent)) { return; }
-  if(print) { std::cout << graph.edge_count << " edges." << std::endl; }
-
-
-  usint offset = 0, edge_offset = 0;
-  for(std::vector<PathNode>::iterator node = graph.nodes.begin(); node != graph.nodes.end(); ++node)
-  {
-    // Write BWT.
-    pair_type edge_range = graph.getEdges(node - graph.nodes.begin(), false);
-    for(usint i = edge_range.first; i <= edge_range.second; i++)
+    usint offset = 0, edge_offset = 0;
+    std::cout << "Writing BWT and M..." << std::endl;
+    for(std::vector<PathNode>::iterator node = graph.nodes.begin(); node != graph.nodes.end(); ++node)
     {
-      uint label = graph.edges[i].label;
-      counts[label]++;
-      array_encoders[label]->setBit(offset);
+        // Write BWT.
+        pair_type edge_range = graph.getEdges(node - graph.nodes.begin(), false);
+        for(usint i = edge_range.first; i <= edge_range.second; i++)
+        {
+            uint label = graph.edges[i].label;
+            if (label == 257) std::cout << "found larger label "<<label <<  std::endl;
+            counts[label]++;
+            if (array_encoders.find(label) == array_encoders.end()) {
+                array_encoders[label] = new DeltaEncoder(ARRAY_BLOCK_SIZE); // FIXME this uses a lot of memory
+            }
+            array_encoders[label]->setBit(offset);
+        }
+        offset++;
+
+        // Write M
+        outedges.addBit(edge_offset);
+        edge_offset += std::max((usint)1, (*node).outdegree());
     }
-    offset++;
+    std::cout << "Done.   array_encoders has " << array_encoders.size() << " elements." << std::endl;
+    counts[0] = graph.automata;
+    Alphabet *thealphabet = new Alphabet(counts);
+    this->alphabet = thealphabet;
 
-    // Write M
-    outedges.addBit(edge_offset);
-    edge_offset += std::max((usint)1, (*node).outdegree());
-  }
-  counts[0] = graph.automata;
-  this->alphabet = new Alphabet(counts);
+    for(usint i = 1; i < CHARS; i++)
+    {
 
-  for(usint i = 1; i < CHARS; i++)
-  {
-    if(this->alphabet->hasChar(i)) { this->array[i] = new DeltaVector(*(array_encoders[i]), offset); }
-  }
-  outedges.flush();
-  this->outgoing = new RLEVector(outedges, edge_offset);
-  this->node_count = this->outgoing->getNumberOfItems();
-
-
-  // Create the backbone.
-  if(parent.backbone != 0)
-  {
-    this->backbone = new Backbone(*this, graph, parent, print);
-  }
+        if(this->alphabet->hasChar(i)) {
+            if (array_encoders.find(i) == array_encoders.end()) {
+                std::cout << "alphabet has " << i << " but array_encoders does not!" << std::endl;
+                array_encoders[i] = new DeltaEncoder(ARRAY_BLOCK_SIZE); // FIXME this uses a lot of memory
+            }
+            this->array[i] = new DeltaVector(*(array_encoders[i]), offset); 
+        }
+    }
+    outedges.flush();
+    this->outgoing = new RLEVector(outedges, edge_offset);
+    this->node_count = this->outgoing->getNumberOfItems();
 
 
-  // Sample the graph for locate().
-  if(print) { std::cout << "Sampling the graph... "; std::cout.flush();  }
-  usint max_sample = 0;
-  std::vector<pair_type>* sample_pairs = graph.getSamples(SAMPLE_RATE, max_sample, parent);
-  DeltaEncoder sample_encoder(SAMPLE_BLOCK_SIZE);
-  WriteBuffer sample_values(sample_pairs->size(), length(max_sample));
-  parallelSort(sample_pairs->begin(), sample_pairs->end());
-  for(usint i = 0; i < sample_pairs->size(); i++)
-  {
-    sample_encoder.addBit(sample_pairs->at(i).first);
-    sample_values.writeItem(sample_pairs->at(i).second);
-  }
-  sample_encoder.flush();
-  delete sample_pairs; sample_pairs = 0;
-
-  this->sampled_positions = new DeltaVector(sample_encoder, offset);
-  this->samples = sample_values.getReadBuffer();
-  this->support_locate = true;
-  if(print)
-  {
-    std::cout << this->sampled_positions->getNumberOfItems() << " samples." << std::endl;
-    std::cout << std::endl;
-  }
+    // Create the backbone.
+    if(parent.backbone != 0)
+    {
+        this->backbone = new Backbone(*this, graph, parent, print);
+    }
 
 
-  if(print)
-  {
-    std::cout << "Nodes:           " << graph.node_count << std::endl;
-    std::cout << "Edges:           " << graph.edge_count << std::endl;
-    std::cout << "Automata:        " << graph.automata << std::endl;
-    std::cout << "Samples:         " << this->sampled_positions->getNumberOfItems() << std::endl;
-    std::cout << std::endl;
+    // Sample the graph for locate().
+    if(print) { std::cout << "Sampling the graph... "; std::cout.flush();  }
+    usint max_sample = 0;
+    std::vector<pair_type>* sample_pairs = graph.getSamples(SAMPLE_RATE, max_sample, parent);
+    DeltaEncoder sample_encoder(SAMPLE_BLOCK_SIZE);
+    WriteBuffer sample_values(sample_pairs->size(), length(max_sample));
+    parallelSort(sample_pairs->begin(), sample_pairs->end());
+    for(usint i = 0; i < sample_pairs->size(); i++)
+    {
+        sample_encoder.addBit(sample_pairs->at(i).first);
+        sample_values.writeItem(sample_pairs->at(i).second);
+    }
+    sample_encoder.flush();
+    delete sample_pairs; sample_pairs = 0;
 
-    this->reportSize(true);
-  }
-  this->ok = true;
+    this->sampled_positions = new DeltaVector(sample_encoder, offset);
+    this->samples = sample_values.getReadBuffer();
+    this->support_locate = true;
+    if(print)
+    {
+        std::cout << this->sampled_positions->getNumberOfItems() << " samples." << std::endl;
+        std::cout << std::endl;
+    }
+
+
+    if(print)
+    {
+        std::cout << "Nodes:           " << graph.node_count << std::endl;
+        std::cout << "Edges:           " << graph.edge_count << std::endl;
+        std::cout << "Automata:        " << graph.automata << std::endl;
+        std::cout << "Samples:         " << this->sampled_positions->getNumberOfItems() << std::endl;
+        std::cout << std::endl;
+
+        this->reportSize(true);
+    }
+    this->ok = true;
+    //free(array_encoders); //FIXME: switch to hash version
+    free(counts);
 }
 
 GCSA::~GCSA()
@@ -161,6 +183,7 @@ GCSA::~GCSA()
   delete this->samples; this->samples = 0;
   delete this->alphabet; this->alphabet = 0;
   delete this->backbone; this->backbone = 0;
+  free(array);
 }
 
 void

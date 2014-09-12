@@ -6,7 +6,7 @@
 #include <map>
 #include <stack>
 #include <vector>
-
+#include <set>
 #include "graph.h"
 #include "gcsa.h"
 
@@ -479,12 +479,14 @@ Graph::isDeterministic()
   pair_type range = EMPTY_PAIR;
   for(range = this->getNextEdgeRange(range, false); !isEmpty(range); range = this->getNextEdgeRange(range, false))
   {
-    WriteBuffer buf(BITS_TO_WORDS(CHARS));
+//      WriteBuffer buf(BITS_TO_WORDS(CHARS));
+      std::set<uint> set_bits;
     for(usint i = range.first; i <= range.second; i++)
     {
       uint c = this->nodes[this->edges[i].from].label;
-      if(buf.isSet(c)) { return false; }
-      buf.setBit(c);
+      if(set_bits.find(c) != set_bits.end()) { return false; }
+      set_bits.insert(c);
+      //buf.setBit(c);
     }
   }
 
