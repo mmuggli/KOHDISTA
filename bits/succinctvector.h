@@ -12,7 +12,7 @@ namespace CSA
 
 /*
   This class is used to construct a SuccinctVector.
-  Unlike other bit vectors, we can set any bit in the current superblock, even if we have
+  Unlike other bitvectors, we can set any bit in the current superblock, even if we have
   already set bits after it.
 */
 
@@ -39,7 +39,7 @@ class SuccinctEncoder : public VectorEncoder
 
 
 /*
-  This is a succinct bit vector.
+  This is a succinct bitvector.
 */
 
 class SuccinctVector : public BitVector
@@ -52,8 +52,12 @@ class SuccinctVector : public BitVector
     explicit SuccinctVector(std::ifstream& file);
     explicit SuccinctVector(FILE* file);
     SuccinctVector(Encoder& encoder, usint universe_size);
-    explicit SuccinctVector(Encoder& encoder); // Use the array directly.
-//    explicit SuccinctVector(WriteBuffer& vector); // Not implemented.
+
+    // Claims the data from the buffer, which is assumed to contain at least one 1-bit.
+    // Buffer size must be a multiple of block_bytes.
+    // The last block should contain 0-bits past the end of the vector.
+    SuccinctVector(ReadBuffer& buffer, usint block_bytes, usint universe_size);
+    SuccinctVector(WriteBuffer& buffer, usint block_bytes, usint universe_size);
     ~SuccinctVector();
 
 //--------------------------------------------------------------------------
@@ -105,7 +109,13 @@ class SuccinctVector : public BitVector
 
   protected:
 
+    // Build a bitvector using the given buffer.
+    // The const version copies the buffer.
+    void initializeFrom(usint* buffer, usint block_bytes, usint universe_size);
+    void initializeUsing(const usint* buffer, usint block_bytes, usint universe_size);
+
     // How many 1-bits are in the previous blocks.
+    // This also sets the number of items.
     void indexForRank();
 
     // Which block contains the 1-bit of rank i * select_rate.

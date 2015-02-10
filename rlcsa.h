@@ -342,7 +342,7 @@ class RLCSA
     }
 
     // As above, but returns the next value of psi.
-    inline usint psiUnsafeNext(usint c, PsiVector::Iterator& iter) const
+    inline usint psiUnsafeNext(PsiVector::Iterator& iter) const
     {
       return iter.selectNext();
     }

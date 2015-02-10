@@ -170,7 +170,7 @@ indexParts(std::vector<std::string>& filenames, usint threads, Parameters& param
     std::ifstream input(filenames[i].c_str(), std::ios_base::binary);
     if(!input)
     {
-      std::cerr << "Error opening input file " << filenames[i] << "!" << std::endl;
+      std::cerr << "Error opening input file " << filenames[i] << std::endl;
     }
     else
     {
@@ -192,7 +192,7 @@ indexParts(std::vector<std::string>& filenames, usint threads, Parameters& param
     }
     else
     {
-      std::cerr << "Warning: Empty input file " << filenames[i] << "!" << std::endl;
+      std::cerr << "Warning: Empty input file " << filenames[i] << std::endl;
     }
   }
 

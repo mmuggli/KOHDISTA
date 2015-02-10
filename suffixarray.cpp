@@ -18,7 +18,7 @@ SuffixArray::SuffixArray(const std::string& base_name, bool print) :
   std::ifstream data_file(base_name.c_str(), std::ios_base::binary);
   if(!data_file)
   {
-    std::cerr << "Error: Cannot open data file " << base_name << "!" << std::endl;
+    std::cerr << "Error: Cannot open data file " << base_name << std::endl;
     return;
   }
   this->data_size = fileSize(data_file);
@@ -30,7 +30,7 @@ SuffixArray::SuffixArray(const std::string& base_name, bool print) :
   std::ifstream sa_file(sa_name.c_str(), std::ios_base::binary);
   if(!sa_file)
   {
-    std::cerr << "Error: Cannot open suffix array file " << sa_name << "!" << std::endl;
+    std::cerr << "Error: Cannot open suffix array file " << sa_name << std::endl;
     return;
   }
   sa_file.read((char*)&(this->sequences), sizeof(uint));
@@ -119,7 +119,7 @@ SuffixArray::writeTo(const std::string& base_name, bool write_data) const
     std::ofstream data_file(base_name.c_str(), std::ios_base::binary);
     if(!data_file)
     {
-      std::cerr << "Error: Cannot open data file " << base_name << "!" << std::endl;
+      std::cerr << "Error: Cannot open data file " << base_name << std::endl;
       return;
     }
     data_file.write((char*)(this->data), this->data_size);
@@ -130,7 +130,7 @@ SuffixArray::writeTo(const std::string& base_name, bool write_data) const
   std::ofstream sa_file(sa_name.c_str(), std::ios_base::binary);
   if(!sa_file)
   {
-    std::cerr << "Error: Cannot open suffix array file " << sa_name << "!" << std::endl;
+    std::cerr << "Error: Cannot open suffix array file " << sa_name << std::endl;
     return;
   }
   sa_file.write((char*)&(this->sequences), sizeof(uint));

@@ -47,7 +47,7 @@ class RLEEncoder : public VectorEncoder
 
 
 /*
-  This is a run-length encoded bit vector using delta coding.
+  This is a run-length encoded bitvector using delta coding.
 */
 
 class RLEVector : public BitVector

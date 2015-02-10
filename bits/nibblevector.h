@@ -47,7 +47,7 @@ class NibbleEncoder : public VectorEncoder
 
 
 /*
-  This bit vector uses nibble coding. Each block is either run-length encoded or
+  This bitvector uses nibble coding. Each block is either run-length encoded or
   gap encoded, depending on the first nibble.
 
   // FIXME reverting to gap encoding not implemented yet

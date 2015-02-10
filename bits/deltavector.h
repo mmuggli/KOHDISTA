@@ -35,7 +35,7 @@ class DeltaEncoder : public VectorEncoder
 
 
 /*
-  This is a gap-encoded bit vector using delta coding.
+  This is a gap-encoded bitvector using delta coding.
 */
 
 class DeltaVector : public BitVector

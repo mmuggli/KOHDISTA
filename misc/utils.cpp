@@ -59,34 +59,67 @@ largeWrite(std::ofstream& file, char* data, std::streamoff size, std::streamoff 
 
 //--------------------------------------------------------------------------
 
-void
-readRows(std::ifstream& file, std::vector<std::string>& rows, bool skipEmptyRows)
+usint
+readRows(const std::string& filename, std::vector<std::string>& rows, bool skip_empty_rows)
 {
+  std::ifstream input(filename.c_str(), std::ios_base::binary);
+  if(!input)
+  {
+    std::cerr << "readRows(): Cannot open input file " << filename << std::endl;
+    return 0;
+  }
+
+  usint chars = readRows(input, rows, skip_empty_rows);
+  input.close();
+  return chars;
+}
+
+usint
+readRows(std::ifstream& file, std::vector<std::string>& rows, bool skip_empty_rows)
+{
+  usint chars = 0;
   while(file)
   {
     std::string buf;
     std::getline(file, buf);
-    if(skipEmptyRows && buf.length() == 0) { continue; }
+    if(skip_empty_rows && buf.length() == 0) { continue; }
     rows.push_back(buf);
+    chars += buf.length();
   }
+  return chars;
 }
 
-void
+usint
+readPizzaChili(const std::string& filename, std::vector<std::string>& patterns)
+{
+  std::ifstream input(filename.c_str(), std::ios_base::binary);
+  if(!input)
+  {
+    std::cerr << "readPizzaChili(): Cannot open input file " << filename << std::endl;
+    return 0;
+  }
+
+  usint chars = readPizzaChili(input, patterns);
+  input.close();
+  return chars;
+}
+
+usint
 readPizzaChili(std::ifstream& file, std::vector<std::string>& patterns)
 {
   std::string header;
   std::getline(file, header);
 
   std::size_t start = header.find("number=");
-  if(start == std::string::npos) { return; }
+  if(start == std::string::npos) { return 0; }
   int temp = std::atoi(header.substr(start + 7).c_str());
-  if(temp <= 0) { return; }
+  if(temp <= 0) { return 0; }
   usint n = temp;
 
   start = header.find("length=");
-  if(start == std::string::npos) { return; }
+  if(start == std::string::npos) { return 0; }
   temp = std::atoi(header.substr(start + 7).c_str());
-  if(temp <= 0) { return; }
+  if(temp <= 0) { return 0; }
   usint l = temp;
 
   char buffer[l];
@@ -95,6 +128,8 @@ readPizzaChili(std::ifstream& file, std::vector<std::string>& patterns)
     file.read(buffer, l);
     patterns.push_back(std::string(buffer, l));
   }
+
+  return n * l;
 }
 
 //--------------------------------------------------------------------------

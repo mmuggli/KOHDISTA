@@ -68,6 +68,9 @@ class DocArray
     std::vector<usint>* listDocuments(const std::string& pattern) const;
     std::vector<usint>* listDocuments(pair_type range) const;
 
+    usint count(const std::string& pattern) const;
+    usint count(pair_type sa_range) const;
+
     // These versions run-length encode the answers.
     std::vector<pair_type>* listDocumentsRLE(const std::string& pattern) const;
     std::vector<pair_type>* listDocumentsRLE(pair_type range) const;

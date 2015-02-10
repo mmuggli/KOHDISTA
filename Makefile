@@ -1,4 +1,5 @@
-CXX = g++
+# Change this if the default compiler does not work.
+#CXX = g++
 
 # Use 64-bit integers in a 64-bit environment.
 SIZE_FLAGS = -DMASSIVE_DATA_RLCSA
@@ -15,7 +16,7 @@ VECTOR_FLAGS = $(PSI_FLAGS) $(LCP_FLAGS) $(SA_FLAGS)
 # LCP_FLAGS = -DSUCCINCT_LCP_VECTOR
 # SA_FLAGS = -DSUCCINCT_SA_VECTOR
 
-CXXFLAGS = -Wall -O3 $(SIZE_FLAGS) $(PARALLEL_FLAGS) $(VECTOR_FLAGS)
+CXXFLAGS = -Wall -O3 -std=c++11 $(SIZE_FLAGS) $(PARALLEL_FLAGS) $(VECTOR_FLAGS)
 OBJS = rlcsa.o rlcsa_builder.o sasamples.o alphabet.o \
 lcpsamples.o sampler.o suffixarray.o adaptive_samples.o docarray.o \
 bits/array.o bits/bitbuffer.o bits/multiarray.o bits/bitvector.o bits/deltavector.o \
@@ -106,11 +107,11 @@ clean:
 package:
 	mkdir rlcsa
 	mkdir rlcsa/bits rlcsa/misc rlcsa/utils
-	cp LICENSE Makefile README dependencies.mk *.cpp *.h rlcsa
+	cp LICENSE Makefile README dependencies.mk *.cpp *.h targz rlcsa
 	cp bits/*.cpp bits/*.h rlcsa/bits
 	cp misc/*.cpp misc/*.h rlcsa/misc
 	cp utils/*.cpp utils/*.py rlcsa/utils
-	tar cfz rlcsa.tgz rlcsa
+	./targz rlcsa
 	rm -r rlcsa/*
 	rmdir rlcsa
 

@@ -1,5 +1,5 @@
-#ifndef DEFINITIONS_H
-#define DEFINITIONS_H
+#ifndef _RLCSA_DEFINITIONS_H
+#define _RLCSA_DEFINITIONS_H
 
 #include <algorithm>
 #include <climits>
@@ -15,8 +15,8 @@ namespace CSA
 
 #ifdef MASSIVE_DATA_RLCSA
 
-typedef unsigned long usint;
-typedef signed long   sint;
+typedef uint64_t usint;
+typedef int64_t  sint;
 
 inline usint popcount(usint field)
 {
@@ -25,8 +25,8 @@ inline usint popcount(usint field)
 
 #else
 
-typedef unsigned int  usint;
-typedef signed int    sint;
+typedef uint32_t usint;
+typedef int32_t  sint;
 
 inline usint popcount(usint field)
 {
@@ -90,4 +90,4 @@ const pair_type EMPTY_PAIR = pair_type(1, 0);
 } // namespace CSA
 
 
-#endif
+#endif // _RLCSA_DEFINITIONS_H

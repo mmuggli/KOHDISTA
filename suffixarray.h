@@ -44,7 +44,7 @@ class SuffixArray
 
     // Returns SA[index].
     uint locate(uint index) const;
-    
+
 //--------------------------------------------------------------------------
 //  LCP
 //--------------------------------------------------------------------------
@@ -60,7 +60,7 @@ class SuffixArray
     inline uint getSize() const { return this->data_size - this->sequences; }
     inline uint getNumberOfSequences() const { return this->sequences; }
 
-    inline usint* const getRanks() const { return this->ranks; }
+    inline const usint* getRanks() const { return this->ranks; }
 
     // Returns the size of the data structure.
     usint reportSize(bool print = false) const;

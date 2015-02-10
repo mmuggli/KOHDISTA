@@ -37,7 +37,7 @@ std::streamoff fileSize(std::ifstream& file);
 std::streamoff fileSize(std::ofstream& file);
 
 // This is a workaround to a bug in ext4 file system. Writes larger than 2 gigabytes
-// can fail, if done directly.
+// can fail, if done directly. Probably not relevant anymore.
 // Block size is in megabytes.
 void largeWrite(std::ofstream& file, char* data, std::streamoff size, std::streamoff block_size);
 
@@ -49,8 +49,13 @@ std::ostream& operator<<(std::ostream& stream, const std::pair<A, B>& data)
   return stream << "(" << data.first << ", " << data.second << ")";
 }
 
-void readRows(std::ifstream& file, std::vector<std::string>& rows, bool skipEmptyRows);
-void readPizzaChili(std::ifstream& file, std::vector<std::string>& patterns);
+// Returns the total length of the rows, excluding line ends.
+usint readRows(const std::string& filename, std::vector<std::string>& rows, bool skip_empty_rows);
+usint readRows(std::ifstream& file, std::vector<std::string>& rows, bool skip_empty_rows);
+
+// The same as above, but for the Pizza & Chili Corpus pattern format.
+usint readPizzaChili(const std::string& filename, std::vector<std::string>& patterns);
+usint readPizzaChili(std::ifstream& file, std::vector<std::string>& patterns);
 
 //--------------------------------------------------------------------------
 

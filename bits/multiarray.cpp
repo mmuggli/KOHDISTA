@@ -91,7 +91,7 @@ MultiArray::writeTo(std::ofstream& file) const
     std::cerr << "MultiArray::writeTo(): Cannot write MultiArray with status ";
     if(this->status == error) { std::cerr << "error"; }
     else if(this->status == writable) { std::cerr << "writable"; }
-    std::cerr << "!" << std::endl;
+    std::cerr << std::endl;
     return false;
   }
 
@@ -110,7 +110,7 @@ MultiArray::writeTo(FILE* file) const
     std::cerr << "MultiArray::writeTo(): Cannot write MultiArray with status ";
     if(this->status == error) { std::cerr << "error"; }
     else if(this->status == writable) { std::cerr << "writable"; }
-    std::cerr << "!" << std::endl;
+    std::cerr << std::endl;
     return false;
   }
   if(file == 0) { return false; }
