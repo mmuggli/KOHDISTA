@@ -113,6 +113,12 @@ ReadBuffer::claimData()
   this->free_buffer = true;
 }
 
+const usint*
+ReadBuffer::rawData()
+{
+  return this->data;
+}
+
 void
 ReadBuffer::writeTo(std::ofstream& file) const
 {
@@ -145,6 +151,37 @@ ReadBuffer::reportSize() const
   usint bytes = sizeof(*this);
   if(this->free_buffer) { bytes += this->size * sizeof(usint); }
   return bytes;
+}
+
+void
+ReadBuffer::exportTo(const std::string& filename) const
+{
+  std::ofstream output(filename.c_str(), std::ios_base::binary);
+  if(!output)
+  {
+    std::cerr << "ReadBuffer::exportTo(): Cannot open output file " << filename << std::endl;
+    return;
+  }
+
+  if(this->items == 0 || this->item_bits == 0) { this->writeTo(output); }
+  else if(this->item_bits == 1)
+  {
+    for(usint i = 0; i < this->items; i++)
+    {
+      char temp = (this->isSet(i) ? '1' : '0');
+      output.write(&temp, sizeof(temp));
+    }
+  }
+  else
+  {
+    for(usint i = 0; i < this->items; i++)
+    {
+      usint temp = this->readItemConst(i);
+      output.write((char*)(&temp), sizeof(temp));
+    }
+  }
+
+  output.close();
 }
 
 //--------------------------------------------------------------------------
@@ -201,25 +238,49 @@ WriteBuffer::~WriteBuffer()
 
 //--------------------------------------------------------------------------
 
+usint*
+WriteBuffer::rawData()
+{
+  return this->data;
+}
+
+usint*
+WriteBuffer::stealData()
+{
+  this->free_buffer = false;
+  return this->data;
+}
+
 ReadBuffer*
 WriteBuffer::getReadBuffer()
 {
-  ReadBuffer* buffer;
-  if(this->items > 0)
-  {
-    buffer = new ReadBuffer(this->data, this->items, this->item_bits);
-  }
-  else
-  {
-    buffer = new ReadBuffer(this->data, this->size);
-  }
+  if(this->items > 0) { return this->getReadBuffer(this->items, this->item_bits); }
+  else { return this->getReadBuffer(this->size); }
+}
 
+ReadBuffer*
+WriteBuffer::getReadBuffer(usint words)
+{
+  words = std::min(words, this->size);
+
+  ReadBuffer* buffer = new ReadBuffer(this->data, words);
   if(this->free_buffer)
   {
     buffer->claimData();
     this->free_buffer = false;
   }
+  return buffer;
+}
 
+ReadBuffer*
+WriteBuffer::getReadBuffer(usint _items, usint item_size)
+{
+  ReadBuffer* buffer = new ReadBuffer(this->data, _items, item_size);
+  if(this->free_buffer)
+  {
+    buffer->claimData();
+    this->free_buffer = false;
+  }
   return buffer;
 }
 

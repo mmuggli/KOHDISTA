@@ -5,6 +5,7 @@
 #include <algorithm>
 
 #include "bitvector.h"
+#include "succinctvector.h"
 
 
 namespace CSA
@@ -98,14 +99,16 @@ mergeVectors(V* first, V* second, usint* positions, usint n, usint size, usint b
 
 
 /*
-  This function encodes the ReadBuffer as the given vector type. The user must delete the returned vector.
+  These functions encode the buffer as the given vector type.
+  The user must delete the returned vector.
   If there are no 1-bits in the buffer, the function returns 0.
   Does not check whether buffer is large enough.
+  If the WriteBuffer owns the data, the ownership will be lost.
 */
 
 template<class V>
 V*
-encode(const ReadBuffer& buffer, usint block_size, usint n)
+encode(ReadBuffer& buffer, usint block_size, usint n)
 {
   usint onebits = 0;
   typename V::Encoder encoder(block_size);
@@ -117,6 +120,60 @@ encode(const ReadBuffer& buffer, usint block_size, usint n)
 
   if(onebits == 0) { return 0; }
   return new V(encoder, n);
+}
+
+template<class V>
+V*
+encode(WriteBuffer& buffer, usint block_size, usint n)
+{
+  ReadBuffer* buf = buffer.getReadBuffer();
+  V* result = encode<V>(*buf, block_size, n);
+  delete buf; buf = 0;
+  return result;
+}
+
+template<>
+inline SuccinctVector*
+encode(WriteBuffer& buffer, usint block_size, usint n)
+{
+  return new SuccinctVector(buffer, block_size, n);
+}
+
+template<>
+inline SuccinctVector*
+encode(ReadBuffer& buffer, usint block_size, usint n)
+{
+  return new SuccinctVector(buffer, block_size, n);
+}
+
+/*
+  This function is basically the inverse of encode(). The user must delete the returned buffer.
+*/
+
+template<class V>
+inline ReadBuffer*
+decode(const V& vec)
+{
+  WriteBuffer buffer(vec.getSize(), 1);
+  typename V::Iterator iter(vec);
+  for(usint val = iter.select(0); val < vec.getSize(); val = iter.selectNext())
+  {
+    buffer.setBit(val);
+  }
+  return buffer.getReadBuffer();
+}
+
+/*
+  Returns (rank(range.first, true), rank(range.second)). This is the range of
+  ranks of 1-bits in the given range.
+*/
+template<class I>
+pair_type
+onebitRange(I& iter, pair_type range)
+{
+  range.first = iter.rank(range.first, true);
+  range.second = iter.rank(range.second);
+  return range;
 }
 
 

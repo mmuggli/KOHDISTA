@@ -48,7 +48,7 @@ main(int argc, char** argv)
   std::ifstream input(base_name.c_str(), std::ios_base::binary);
   if(!input)
   {
-    std::cerr << "Error opening input file " << base_name << "!" << std::endl;
+    std::cerr << "Error opening input file " << base_name << std::endl;
     return 2;
   }
   usint size = fileSize(input);

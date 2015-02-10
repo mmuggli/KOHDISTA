@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include "succinctvector.h"
 #include "../misc/utils.h"
 
@@ -35,7 +37,7 @@ SuccinctVector::SuccinctVector(Encoder& encoder, usint universe_size) :
 {
   if(encoder.items == 0)
   {
-    std::cerr << "SuccinctVector: Cannot create a bit vector with no 1-bits!" << std::endl;
+    std::cerr << "SuccinctVector: Cannot create a bitvector with no 1-bits!" << std::endl;
     return;
   }
 
@@ -51,25 +53,23 @@ SuccinctVector::SuccinctVector(Encoder& encoder, usint universe_size) :
   this->indexForSelect();
 }
 
-SuccinctVector::SuccinctVector(Encoder& encoder) :
+SuccinctVector::SuccinctVector(ReadBuffer& buffer, usint block_bytes, usint universe_size) :
   BitVector()
 {
-  if(encoder.items == 0)
+  this->initializeUsing(buffer.rawData(), block_bytes, universe_size);
+}
+
+SuccinctVector::SuccinctVector(WriteBuffer& buffer, usint block_bytes, usint universe_size) :
+  BitVector()
+{
+  if(buffer.ownsData())
   {
-    std::cerr << "SuccinctVector: Cannot create a bit vector with no 1-bits!" << std::endl;
-    return;
+    this->initializeFrom(buffer.stealData(), block_bytes, universe_size);
   }
-
-  this->size = std::max(encoder.size, encoder.superblock_bytes * CHAR_BIT);
-  this->items = encoder.items;
-  this->block_size = encoder.block_size;
-
-  this->number_of_blocks = (this->size + this->block_size * WORD_BITS - 1) / (this->block_size * WORD_BITS);
-  this->copyArray(encoder, true);
-
-  this->integer_bits = length(this->size);
-  this->indexForRank();
-  this->indexForSelect();
+  else
+  {
+    this->initializeUsing(buffer.rawData(), block_bytes, universe_size);
+  }
 }
 
 SuccinctVector::~SuccinctVector()
@@ -103,6 +103,45 @@ SuccinctVector::reportSize() const
 //--------------------------------------------------------------------------
 
 void
+SuccinctVector::initializeUsing(const usint* buffer, usint block_bytes, usint universe_size)
+{
+  this->size = universe_size;
+  this->block_size = BYTES_TO_WORDS(block_bytes);
+  this->number_of_blocks = (this->size + this->block_size * WORD_BITS - 1) / (this->block_size * WORD_BITS);
+  this->integer_bits = length(this->size);
+
+  usint* buf = new usint[this->block_size * this->number_of_blocks];
+  memcpy(buf, buffer, sizeof(usint) * this->block_size * this->number_of_blocks);
+  this->array = buf;
+
+  this->indexForRank();
+  if(this->items == 0)
+  {
+    std::cerr << "SuccinctVector: Cannot create a bitvector with no 1-bits!" << std::endl;
+    return;
+  }
+  this->indexForSelect();
+}
+
+void
+SuccinctVector::initializeFrom(usint* buffer, usint block_bytes, usint universe_size)
+{
+  this->size = universe_size;
+  this->block_size = BYTES_TO_WORDS(block_bytes);
+  this->number_of_blocks = (this->size + this->block_size * WORD_BITS - 1) / (this->block_size * WORD_BITS);
+  this->array = buffer;
+  this->integer_bits = length(this->size);
+
+  this->indexForRank();
+  if(this->items == 0)
+  {
+    std::cerr << "SuccinctVector: Cannot create a bitvector with no 1-bits!" << std::endl;
+    return;
+  }
+  this->indexForSelect();
+}
+
+void
 SuccinctVector::indexForRank()
 {
   delete this->rank_index; this->rank_index = 0;
@@ -118,6 +157,7 @@ SuccinctVector::indexForRank()
     buffer.writeItem(bitcount);
   }
 
+  this->items = bitcount;
   this->rank_index = buffer.getReadBuffer();
 }
 

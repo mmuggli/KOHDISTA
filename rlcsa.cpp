@@ -210,7 +210,7 @@ RLCSA::RLCSA(RLCSA& index, RLCSA& increment, usint* positions, usint block_size,
 
       if(this->array[c] == 0)
       {
-        std::cerr << "RLCSA: Merge failed for vectors " << c << "!" << std::endl;
+        std::cerr << "RLCSA: Merge failed for vectors " << c << std::endl;
         should_be_ok = false;
       }
     }
@@ -1020,7 +1020,7 @@ RLCSA::buildPLCP(usint block_size) const
       // If PLCP[i] is minimal, we add the left match to the list.
       // We add pairs of type (j, inverseSA(j) + n_of_s) as inverseSA is < 0 for end markers.
       usint next_y = this->psiUnsafe(x - 1, c, *(iters[c]));
-      next_x = this->psiUnsafeNext(c, *(iters[c])) - this->number_of_sequences;
+      next_x = this->psiUnsafeNext(*(iters[c])) - this->number_of_sequences;
       if(next_y != next_x + this->number_of_sequences - 1)
       {
         matches.push_back(pair_type(maximal, next_y));
@@ -1127,7 +1127,7 @@ RLCSA::buildPLCP(usint block_size, usint threads) const
       // If PLCP[i] is minimal, we add the left match to the list.
       // We add pairs of type (j, inverseSA(j) + n_of_s) as inverseSA is < 0 for end markers.
       usint next_y = this->psiUnsafe(x - 1, c, *(iters[c]));
-      next_x = this->psiUnsafeNext(c, *(iters[c])) - this->number_of_sequences;
+      next_x = this->psiUnsafeNext(*(iters[c])) - this->number_of_sequences;
       if(next_y != next_x + this->number_of_sequences - 1)
       {
         matches.push_back(pair_type(maximal, next_y));
@@ -1269,7 +1269,7 @@ RLCSA::sampleLCP(usint sample_rate, pair_type*& sampled_values, bool report) con
       // We add triples of type (j, inverseSA(j) + n_of_s, x) as inverseSA is < 0 for end markers.
       // x is the original minimal position.
       usint next_y = this->psiUnsafe(x - 1, c, *(iters[c]));
-      next_x = this->psiUnsafeNext(c, *(iters[c]));
+      next_x = this->psiUnsafeNext(*(iters[c]));
       if(next_y != next_x - 1 || next_x < this->number_of_sequences)
       {
         matches.push_back(Triple(i, next_y, x));

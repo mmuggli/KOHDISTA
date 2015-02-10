@@ -42,7 +42,7 @@ BitVector::BitVector(VectorEncoder& encoder, usint universe_size) :
 {
   if(this->items == 0)
   {
-    std::cerr << "BitVector: Cannot create a bit vector with no 1-bits!" << std::endl;
+    std::cerr << "BitVector: Cannot create a bitvector with no 1-bits!" << std::endl;
     return;
   }
   this->copyArray(encoder);

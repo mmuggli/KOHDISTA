@@ -13,7 +13,7 @@ namespace CSA
 
 
 /*
-  This class provides the core functionality for encoding a bit vector.
+  This class provides the core functionality for encoding a bitvector.
 */
 
 class VectorEncoder
@@ -67,8 +67,8 @@ class VectorEncoder
 
 
 /*
-  This class provides the core functionality for a bit vector.
-  A bit vector must have at least one 1-bit.
+  This class provides the core functionality for a bitvector.
+  A bitvector must have at least one 1-bit.
 */
 
 class BitVector
@@ -158,7 +158,9 @@ class BitVector
     };
 
 /*
-    These should be implemented in any actual iterator.
+    These should be implemented in any actual iterator. If the query parameter is out of bounds,
+    rank-type queries return the number of items, while select-type queries return the size of
+    the vector.
 
     // rank invalidates the "next" functionality
     // regular:   \sum_{i = 0}^{value} V[i]
@@ -217,7 +219,7 @@ class BitVector
     /*
        These functions build a higher level index for faster rank/select queries.
        The index consists of about (number of samples) / INDEX_RATE pointers.
-       The bit vector cannot be used without the index.
+       The bitvector cannot be used without the index.
     */
     void indexForRank();
     void indexForSelect();

@@ -171,7 +171,7 @@ main(int argc, char** argv)
   std::ofstream output(graph_name.c_str(), std::ios_base::binary);
   if(!output)
   {
-    std::cerr << "Error: Cannot open output file " << graph_name << "!" << std::endl;
+    std::cerr << "Error: Cannot open output file " << graph_name << std::endl;
     delete[] documents;
     return 3;
   }
@@ -179,7 +179,7 @@ main(int argc, char** argv)
   std::ofstream singletons(singleton_name.c_str(), std::ios_base::binary);
   if(!singletons)
   {
-    std::cerr << "Error: Cannot open output file " << singleton_name << "!" << std::endl;
+    std::cerr << "Error: Cannot open output file " << singleton_name << std::endl;
     delete[] documents;
     output.close();
     return 3;

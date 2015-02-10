@@ -31,7 +31,7 @@ int main(int argc, char** argv)
   std::ifstream input(argv[1], std::ios_base::binary);
   if(!input)
   {
-    std::cerr << "Error: Cannot open input file " << argv[1] << "!" << std::endl;
+    std::cerr << "Error: Cannot open input file " << argv[1] << std::endl;
     return 2;
   }
   uint n = fileSize(input);

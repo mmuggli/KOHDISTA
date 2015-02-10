@@ -3,6 +3,8 @@ General Information
 
 This is an implementation of the Run-Length Compressed Suffix Array (RLCSA) [1,2] and its incremental construction [2]. The implementation includes experimental support for LCP information [3], distribution-aware sampling [4], and document listing [5].
 
+Adam Novak's fork of RLCSA can be found at https://github.com/adamnovak/rlcsa. Among other things, the repository includes SWIG bindngs and an utility for merging indexes.
+
 Copyright 2007 - 2014, Jouni Siren, unless otherwise noted. See LICENSE for further information.
 
 
@@ -13,7 +15,7 @@ The code should compile in both 32-bit and 64-bit environments. Uncomment SIZE_F
 
 Parallelism is supported by libstdc++ Parallel Mode and by MCSTL. Uncomment either version of PARALLEL_FLAGS to compile the parallel version of the library, and set MCSTL_ROOT if necessary. GCC 4.2 or newer is required for the MCSTL version.
 
-Uncomment PSI_FLAGS to use a faster encoding for the run-length encoded bit vectors in .rlcsa.array. This increases the size somewhat. Uncomment LCP_FLAGS and SA_FLAGS to use a succinct bit vector instead of a gap encoded one to mark the sampled positions in the LCP array and the suffix array, respectively. This can increase the size of the samples, especially for sparse sampling. On the other hand, retrieving LCP values and locate() queries for single suffix array values can speed up significantly. LCP_FLAGS also uses a succinct vector instead of a run-length encoded one in PLCP.
+Uncomment PSI_FLAGS to use a faster encoding for the run-length encoded bitvectors in .rlcsa.array. This increases the size somewhat. Uncomment LCP_FLAGS and SA_FLAGS to use a succinct bitvector instead of a gap encoded one to mark the sampled positions in the LCP array and the suffix array, respectively. This can increase the size of the samples, especially for sparse sampling. On the other hand, retrieving LCP values and locate() queries for single suffix array values can speed up significantly. LCP_FLAGS also uses a succinct vector instead of a run-length encoded one in PLCP.
 
 32-bit integers limit the size of the collection to less than 4 gigabytes. The size of individual input files is limited to less than 2 gigabytes in both 32-bit and 64-bit versions.
 
@@ -143,12 +145,40 @@ For example, the following inserts the sequences into the collection one at a ti
   }
 
 
-Incremental construction for multiple sequences
+Incremental Construction for Multiple Sequences
 -----------------------------------------------
 
 When there are multiple sequences in one increment, character '\0' is assumed to represent the end of sequence marker. Hence the sequences themselves cannot contain character '\0'. This is always the case when using RLCSABuilder to build the partial indexes.
 
 If there is just one sequence in the increment, character '\0' is considered a normal character. This requires setting multiple_sequences = false in the RLCSA constructor. Note that RLCSABuilder cannot be used to merge these indexes, as it assumes character '\0' an end of sequence marker.
+
+
+Using Bitvectors
+----------------
+
+The bitvectors (SuccinctVector, DeltaVector, RLEVector, NibbleVector) all use a similar interface. All bitvectors are based on blocks containing a fixed amount of compressed data (32 bytes is a good default choice). Due to certain design choices, the a bitvector must always contain at least one 1-bit.
+
+The vectors are queried through iterators (class VectorType::Iterator), which are documented in file bits/bitvector.h. Queries selectNext, selectNextRun, and nextValue are intended for iterating quickly through the 1-bits after an initial call to select, selectRun, or valueBefore/valueAfter.
+
+The primary construction option is through classes VectorType::Encoder. The 1-bits should be written to the encoder in increasing order. Methods setBit() and setRun() write the bits immediately, while addBit() and addRun() may buffer them to save space. The set and add methods may not always mix gracefully. If addBit() and addRun() are used, flush() should be called when the encoding is finished. (flush() might actually not be necessary, and calling it will eventually become obsolete.)
+
+An alternate construction method is to encode a ReadBuffer/WriteBuffer by using the method encode<VectorType> found in file bits/vectors.h. There is also an inverse method decode<VectorType>. See the header file for further information.
+
+A quick example of vector construction:
+
+  // The vector contains an increasing sequence of pairs (run_start, run_length).
+  std::vector<pair_type> runs;
+  usint n;  // Desired vector length.
+  RLEVector::Encoder encoder(32);
+  for(usint i = 0; i < runs.size(); i++) { encoder.addRun(runs[i].first, runs[i].second); }
+  encoder.flush();
+  RLEVector rle(encoder, n);
+
+  // Convert the RLEVector into a DeltaVector.
+  ReadBuffer* bits = decode(rle);
+  DeltaVector* delta = encode<DeltaVector>(*bits, 32, n);
+  delete bits; bits = 0;
+  delete delta; delta = 0;
 
 
 LCP Support
@@ -222,6 +252,26 @@ The rest of the programs have not been used recently. They might no longer work 
 Technical Information
 =====================
 
+Bitvectors
+----------
+
+(This was taken from an email, so the notation might not be consistent with the rest of the file.)
+
+RLEVector and DeltaVector are basically the same structure, and rank and select (and valueBefore, valueAfter, selectRun, and isSet) are basically the same operation. NibbleVector is RLEVector with a different encoding for the integers. Most of the following does not apply for SuccinctVector.
+
+At the lowest level, the data is stored as a sequence of delta-coded integers in 32-byte blocks. In DeltaVector, each integer is the distance from the previous 1-bit. RLEVector uses the integers in pairs, with the first one indicating the distance from the previous run of 1-bits, while the second one indicates the length of the current run.
+
+For each block, the vector stores two additional integers: the position of the first 1-bit of that block in the uncompressed vector, and the rank of that 1-bit. Then there are separate indexes for rank and select. If there are n_b blocks, both of the indexes contain about n_b/5 integers. If I want to compute rank(i), for example, the index tells me that the answer can be found from blocks rank_index[i / rank_rate] to rank_index[i / rank_rate + 1].
+
+A query begins by using the appropriate index to narrow the search down to a (hopefully) short range of blocks. After that, the iterator scans the stored integers sequentially, until it finds the correct block. This all happens in BitVector::Iterator::sampleForIndex()  (using select_index, for select-type queries) or ::sampleForValue() (using rank_index). The naming conventions come from the idea that a bitvector is really an array A of distinct integers in increasing order, such that A[index] = value.
+
+After the correct block has been found, the query starts decompressing the integers in that block sequentially, until it finds the answer. This is done in several different functions. valueLoop() is the most common one in rank-type queries. It decompresses the block until it finds an 1-bit at position >= i (for rank(i)). Equivalently, it stops when it finds A[index] >= i.
+
+In a typical case with large bitvectors, each query requires three random memory accesses (index, stored integers, block) and a few hundred nanoseconds. My hypothesis has been that about half of the time is taken by cache misses, while decompressing the block takes the other half. I have never bothered to profile it though.
+
+Creating new iterators is relatively cheap. An iterator contains a pointer to the bitvector, seven integers of state information (some of it is redundant), and two iterators to raw bitvector data. Those iterators in turn contain one pointer, six integers, and one boolean value each, so the total size should be about 184 bytes. The constructors just assign values to those variables. The destructors contain a total of two if() statements, where the condition (the boolean value in an inner iterator) is false.
+
+
 A collection of sequences
 -------------------------
 
@@ -241,7 +291,7 @@ Bit vector E is used to mark the last character of each sequence. The starting p
 Suffix array samples
 --------------------
 
-For a given sample rate d, we store the positions of each sequence divisible by d. The sampled positions of suffix array are marked in a bit vector S, while the multipliers of d are stored in an array A in the same order. Another array B contains the inverse permutation of A.
+For a given sample rate d, we store the positions of each sequence divisible by d. The sampled positions of suffix array are marked in a bitvector S, while the multipliers of d are stored in an array A in the same order. Another array B contains the inverse permutation of A.
 
 When locating, we can use S.valueAfter(i - r) to get (j, k = S.rank(j) - 1) for the first sampled j >= i - r in the suffix array order. If j == i - r, we can get the suffix array value as d * A[k]. If i < r, we have reached the implicit end of sequence marker. In this case, the suffix array value is E.select(i) + 1 (this value should only be used to derive SA values for earlier positions). Note that i is BWT position, not SA position.
 
@@ -261,7 +311,7 @@ Data formats
   DeltaVector or SuccinctVector S
   array A (number_of_samples items of length(number_of_samples - 1) bits)
 
-Any bit vector
+Any bitvector
   universe size (sizeof(usint) bytes)
   item count (sizeof(usint) bytes)
   number of blocks (sizeof(usint) bytes)
@@ -269,7 +319,16 @@ Any bit vector
   block data (number_of_blocks * block_size words)
   sample array (2 * (number_of_blocks + 1) items of length(size) bits)
 
-Note that the samples are not stored for a succinct bit vector. Any bit vector must have at least one 1-bit.
+Note that the samples are not stored for a succinct bitvector. Any bitvector must have at least one 1-bit.
+
+ReadBuffer and WriteBuffer
+  raw data as sizeof(usint)-byte integers
+
+ReadBuffer exportable format with 1-bit items
+  the bits as characters '1' and '0'
+
+ReadBuffer exportable format with >1-bit items
+  the items written as sizeof(usint)-byte integers
 
 Array
   item count (sizeof(usint) bytes)
@@ -325,7 +384,7 @@ Parameter -w can be used to write just the sampled positions for use with anothe
 
 Only one sequence is currently supported, and the weighted samples cannot be merged.
 
-The current implementations uses the same samples for both locate and display. It would be preferable to be able to select them separately. For locate, bit vector S stores the sampled SA positions, and array A contains the sampled SA values. For display, bit vector S' stores the sampled text positions, and array B contains the sampled inverse SA values. A possible size optimization similar to the one used in standard sampling (where the values of A and B have been divided by d) would be to use
+The current implementations uses the same samples for both locate and display. It would be preferable to be able to select them separately. For locate, bitvector S stores the sampled SA positions, and array A contains the sampled SA values. For display, bitvector S' stores the sampled text positions, and array B contains the sampled inverse SA values. A possible size optimization similar to the one used in standard sampling (where the values of A and B have been divided by d) would be to use
 
   SA[i] = select(S', A[rank(S, i)]), SA^-1[j] = select(S, B[rank(S', j]).
 

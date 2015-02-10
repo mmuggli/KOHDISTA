@@ -293,7 +293,7 @@ DocArray::DocArray(STNode* root, const RLCSA& _rlcsa) :
     if(curr == curr->parent->child) { child_encoder.setBit(curr->id); }
   }
   this->leaf_ranges = new DeltaVector(range_encoder, root->range.second + 1);
-  this->first_children = new SuccinctVector(child_encoder);
+  this->first_children = new SuccinctVector(child_encoder, nodes);
 
   // Pointers to the parents for first children and to the next leaf for internal nodes.
   WriteBuffer par_buffer(nodes - leaves, length(nodes - leaves - 1));
@@ -332,7 +332,7 @@ DocArray::DocArray(const RLCSA& _rlcsa, const std::string& base_name, bool load_
   std::ifstream input(input_name.c_str(), std::ios_base::binary);
   if(!input)
   {
-    std::cerr << "DocArray: Error opening input file " << input_name << "!" << std::endl;
+    std::cerr << "DocArray: Error opening input file " << input_name << std::endl;
     return;
   }
 
@@ -653,7 +653,7 @@ DocArray::writeTo(const std::string& base_name) const
   std::ofstream output(output_name.c_str(), std::ios_base::binary);
   if(!output)
   {
-    std::cerr << "DocArray: Error creating output file " << output_name << "!" << std::endl;
+    std::cerr << "DocArray: Error creating output file " << output_name << std::endl;
     return;
   }
 
@@ -729,6 +729,27 @@ DocArray::listDocuments(pair_type range) const
   if(result != 0) { removeDuplicates(result, false); }
 
   return result;
+}
+
+usint
+DocArray::count(const std::string& pattern) const
+{
+  if(!(this->isOk())) { return 0; }
+  return this->count(this->rlcsa.count(pattern));
+}
+
+usint
+DocArray::count(pair_type sa_range) const
+{
+  if(!(this->isOk()) || CSA::isEmpty(sa_range) || sa_range.second >= this->rlcsa.getSize()) { return 0; }
+
+  std::vector<usint>* result = this->documentListing<usint>(sa_range);
+  if(result == 0) { return 0; }
+  removeDuplicates(result, false);
+  usint num = result->size();
+  delete result; result = 0;
+
+  return num;
 }
 
 std::vector<pair_type>*

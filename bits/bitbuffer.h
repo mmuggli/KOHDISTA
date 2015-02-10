@@ -30,17 +30,28 @@ class ReadBuffer
 
 //--------------------------------------------------------------------------
 
-    void claimData();
+    void claimData(); // Make the buffer own the current data.
+    const usint* rawData(); // Get access to the raw data.
 
     void writeTo(std::ofstream& file) const;
     inline void writeBuffer(std::ofstream& file) const { this->writeTo(file); }
     void writeTo(FILE* file) const;
     inline void writeBuffer(FILE* file) const { this->writeTo(file); }
 
+    // Write the buffer in an exportable format.
+    // If the buffer contains 1-bit items, each bit becomes '0' or '1'.
+    // For other item sizes, each item becomes a word.
+    void exportTo(const std::string& filename) const;
+
     // The buffer will no longer own the data.
     void moveBuffer(const usint* buffer);
 
     usint reportSize() const;
+
+    inline usint getSize() const { return this->size; } // In words.
+    inline usint getItemSize() const { return this->item_bits; }
+    inline usint getNumberOfItems() const { return this->items; }
+    inline bool ownsData() const { return this->free_buffer; }
 
 //--------------------------------------------------------------------------
 
@@ -158,16 +169,6 @@ class ReadBuffer
       These operations work on fixed-size items. No sanity checks are made
       for parameter values.
     */
-
-    inline usint getItemSize() const
-    {
-      return this->item_bits;
-    }
-
-    inline usint getNumberOfItems() const
-    {
-      return this->items;
-    }
 
     inline void goToItem(usint item)
     {
@@ -295,8 +296,16 @@ class WriteBuffer
 
 //--------------------------------------------------------------------------
 
-    // This transfers the ownership of the data to the read buffer.
+    // Get access to the raw data.
+    usint* rawData();
+    usint* stealData(); // The buffer no longer owns the data.
+
+    // These transfer the ownership of the data to the ReadBuffer.
+    // Resizing does not affect the allocated size.
+    // The last version does not check whether the items fit in the buffer.
     ReadBuffer* getReadBuffer();
+    ReadBuffer* getReadBuffer(usint words);
+    ReadBuffer* getReadBuffer(usint _items, usint item_size);
 
     void writeTo(std::ofstream& file) const;
     inline void writeBuffer(std::ofstream& file) const { this->writeTo(file); }
@@ -307,6 +316,11 @@ class WriteBuffer
     void moveBuffer(usint* buffer);
 
     usint reportSize() const;
+
+    inline usint getSize() const { return this->size; } // In words.
+    inline usint getItemSize() const { return this->item_bits; }
+    inline usint getNumberOfItems() const { return this->items; }
+    inline bool ownsData() const { return this->free_buffer; }
 
 //--------------------------------------------------------------------------
 
@@ -342,12 +356,15 @@ class WriteBuffer
       if(count >= this->bits)
       {
         count -= this->bits;
+        this->data[this->pos] &= HIGHER(WORD_MAX, this->bits);  // Clear low-order bits.
         this->data[this->pos] |= GET(LOWER(value, count), this->bits);
         this->pos++; this->bits = WORD_BITS;
       }
       if(count > 0)
       {
         this->bits -= count;
+        // Clear low-order bits.
+        this->data[this->pos] &= ~HIGHER(LOWER(WORD_MAX, WORD_BITS - count), this->bits);
         this->data[this->pos] |= HIGHER(GET(value, count), this->bits);
       }
     }
@@ -375,11 +392,6 @@ class WriteBuffer
     /*
       These operations work on fixed-size items.
     */
-
-    inline usint getItemSize() const
-    {
-      return this->item_bits;
-    }
 
     inline void goToItem(usint item)
     {

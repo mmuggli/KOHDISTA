@@ -1,9 +1,9 @@
 Graph CSA
 =========
 
-This is an implementation of the Generalized CSA (GCSA) [2] and its doubling-based construction algorithm.
+This is an implementation of the Generalized CSA (GCSA) [2, 3] and its doubling-based construction algorithm.
 
-Copyright 2010-2013, Jouni Sirén. See LICENSE for further information.
+Copyright 2010-2014, Jouni Sirén. See LICENSE for further information.
 
 
 Compiling
@@ -115,3 +115,6 @@ Journal of Computational Biology 17(3):281-308, 2010.
 
 [2] Jouni Sirén, Niko Välimäki, and Veli Mäkinen: Indexing Finite Language Representation of Population Genotypes.
 In WABI 2011, Springer LNCS 6833, pp. 270-281, Saarbrücken, Germany, September 5-7, 2011.
+
+[3] Jouni Sirén, Niko Välimäki, and Veli Mäkinen: Indexing Graphs for Path Queries with Applications in Genome Research.
+IEEE/ACM Transactions on Computational Biology and Bioinformatics 11(2):375-388, 2014.

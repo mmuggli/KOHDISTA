@@ -29,7 +29,7 @@ int main(int argc, char** argv)
   std::ifstream input(argv[2], std::ios_base::binary);
   if(!input)
   {
-    std::cerr << "Error: Cannot open input file " << argv[2] << "!" << std::endl;
+    std::cerr << "Error: Cannot open input file " << argv[2] << std::endl;
     return 2;
   }
 

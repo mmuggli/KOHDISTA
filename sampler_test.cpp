@@ -115,7 +115,7 @@ int main(int argc, char** argv)
     }
     else
     {
-      std::cerr << "Negative value found: weights[" << i << "] == " << weights[i] << "!" << std::endl;
+      std::cerr << "Negative value found: weights[" << i << "] == " << weights[i] << std::endl;
       delete[] weights;
       return 4;
     }
@@ -164,7 +164,7 @@ int main(int argc, char** argv)
     std::ifstream input_file(base_name, std::ios_base::binary);
     if(!input_file)
     {
-      std::cerr << "Error opening input file " << base_name << "!" << std::endl;
+      std::cerr << "Error opening input file " << base_name << std::endl;
       return 5;
     }
     uchar* data = new uchar[n];
