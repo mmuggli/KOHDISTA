@@ -7,7 +7,7 @@
 #include <misc/definitions.h>
 
 
-namespace CSA
+namespace GCSA
 {
 
 
@@ -74,7 +74,7 @@ class PatternClassifier
 };
 
 
-} // namespace CSA
+} // namespace GCSA
 
 
 #endif // GCSA_H

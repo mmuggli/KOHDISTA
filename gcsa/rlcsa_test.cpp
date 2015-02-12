@@ -35,7 +35,7 @@ int main(int argc, char** argv)
     std::cerr << "Error opening pattern file!" << std::endl;
     return 3;
   }
-  CSA::PatternClassifier classifier(handler.write ? handler.patterns_name : "");
+  GCSA::PatternClassifier classifier(handler.write ? handler.patterns_name : "");
 
   std::vector<std::string> rows;
   CSA::readRows(patterns, rows, true);
