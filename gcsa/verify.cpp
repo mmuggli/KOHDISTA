@@ -8,9 +8,11 @@
 #include "gcsa.h"
 
 
-using namespace CSA;
-
-
+//using namespace CSA;
+typedef CSA::sint sint;
+typedef CSA::usint usint;
+typedef CSA::uchar uchar;
+const usint CHARS = CSA::CHARS;
 int main(int argc, char** argv)
 {
   std::cout << "GCSA verifier" << std::endl;
@@ -22,7 +24,7 @@ int main(int argc, char** argv)
     return 1;
   }
 
-  const GCSA gcsa(argv[1]);
+  const GCSA::GCSA gcsa(argv[1]);
   if(!gcsa.isOk()) { return 2; }
   gcsa.reportSize(true);
 
@@ -33,12 +35,12 @@ int main(int argc, char** argv)
     return 2;
   }
 
-  DeltaVector::Iterator** array_iters = new DeltaVector::Iterator*[CHARS];
+  CSA::DeltaVector::Iterator** array_iters = new CSA::DeltaVector::Iterator*[CHARS];
   for(usint i = 0; i < CHARS; i++)
   {
     array_iters[i] = gcsa.getIterator(i);
   }
-  RLEVector::Iterator* edge_iter = gcsa.getEdgeIterator();
+  CSA::RLEVector::Iterator* edge_iter = gcsa.getEdgeIterator();
 
   std::cout << "Starting verification..." << std::endl;
   usint lines = 0, prev = edge_iter->select(0);
@@ -88,7 +90,7 @@ int main(int argc, char** argv)
       std::cout << ", edges = " << (next - prev) << " / " << (ones - 1) << std::endl;
     }
     prev = next;
-    if(lines % (10 * MILLION) == 0)
+    if(lines % (10 * CSA::MILLION) == 0)
     {
       std::cout << "Processed " << lines << " lines..." << std::endl;
     }

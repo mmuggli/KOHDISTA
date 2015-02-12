@@ -7,8 +7,11 @@
 #include <misc/utils.h>
 
 
-using namespace CSA;
+//using namespace CSA;
 
+typedef CSA::usint usint;
+
+typedef CSA::pair_type pair_type;
 
 int
 main(int argc, char** argv)
@@ -45,18 +48,18 @@ main(int argc, char** argv)
     }
   }
 
-  std::cout << "Number of automata: " << length(range) << std::endl;
+  std::cout << "Number of automata: " << CSA::length(range) << std::endl;
   std::string base_name = argv[argc - 1];
   std::cout << "Base name: " << base_name << std::endl;
   std::cout << std::endl;
 
-  double start = readTimer();
-  Graph* result = 0;
+  double start = CSA::readTimer();
+  GCSA::Graph* result = 0;
   for(usint arg = range.first; arg <= range.second; arg++)
   {
     std::string automaton_name(argv[arg]);
     std::cout << "Automaton: " << automaton_name << std::endl;
-    Graph* graph = new Graph(automaton_name, true);
+    GCSA::Graph* graph = new GCSA::Graph(automaton_name, true);
     if(!(graph->ok)) { delete graph; std::cout << std::endl; continue; }
     graph->printInfo();
     if(remove_backbone) { graph->removeBackbone(); }
@@ -85,10 +88,10 @@ main(int argc, char** argv)
     result->write(base_name);
     delete result;
   }
-  double stop = readTimer();
+  double stop = CSA::readTimer();
 
   std::cout << "Used " << (stop - start) << " seconds." << std::endl;
-  std::cout << "Memory: " << memoryUsage() << " kB" << std::endl;
+  std::cout << "Memory: " << CSA::memoryUsage() << " kB" << std::endl;
   std::cout << std::endl;
 
   return 0;

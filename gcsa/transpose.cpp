@@ -7,8 +7,11 @@
 #include <misc/utils.h>
 
 
-using namespace CSA;
-
+//using namespace CSA;
+typedef CSA::sint sint;
+typedef CSA::usint usint;
+typedef CSA::uchar uchar;
+const usint CHARS = CSA::CHARS;
 
 std::string gapChars = " =-_";
 
@@ -45,7 +48,7 @@ main(int argc, char** argv)
   std::string line;
   std::getline(alignment_file, line);
   usint sequences = line.size();
-  usint filesize = fileSize(alignment_file);
+  usint filesize = CSA::fileSize(alignment_file);
   std::cout << "Sequences: " << sequences << std::endl;
   std::cout << std::endl;
 

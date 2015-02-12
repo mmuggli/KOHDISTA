@@ -3,10 +3,10 @@
 #include "parameter_handler.h"
 
 
-using namespace CSA;
+//using namespace CSA;
 
 
-ParameterHandler::ParameterHandler(int argc, char** argv, bool _rlcsa, std::string _usage) :
+GCSA::ParameterHandler::ParameterHandler(int argc, char** argv, bool _rlcsa, std::string _usage) :
   ok(true), rlcsa(_rlcsa), usage(_usage),
   indels(false), locate(false), penalties(false), reverse_complement(false), verbose(false), write(false),
   index_name(0), patterns_name(0),
@@ -71,7 +71,7 @@ ParameterHandler::ParameterHandler(int argc, char** argv, bool _rlcsa, std::stri
 }
 
 void
-ParameterHandler::printUsage() const
+GCSA::ParameterHandler::printUsage() const
 {
   std::cout << this->usage << std::endl;
   std::cout << "  -i   Allow indels (requires -k)." << std::endl;
@@ -90,7 +90,7 @@ ParameterHandler::printUsage() const
 }
 
 void
-ParameterHandler::printOptions() const
+GCSA::ParameterHandler::printOptions() const
 {
   std::cout << "Options:";
   if(this->indels) { std::cout << " indels"; }

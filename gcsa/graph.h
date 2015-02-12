@@ -10,8 +10,13 @@
 #include <misc/definitions.h>
 
 
-namespace CSA
+namespace GCSA
 {
+
+
+typedef CSA::pair_type pair_type;
+typedef CSA::usint usint;
+const usint WORD_BITS = CSA::WORD_BITS;
 
 //--------------------------------------------------------------------------
 
@@ -116,7 +121,7 @@ class Graph
     GraphEdge* edges;
     uint       node_count, edge_count;
 
-    SuccinctVector* backbone;
+    CSA::SuccinctVector* backbone;
 
     bool       ok;  // Also tells that edges are sorted by from.
 

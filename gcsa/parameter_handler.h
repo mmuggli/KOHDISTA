@@ -5,8 +5,9 @@
 #include <misc/definitions.h>
 
 
-namespace CSA
+namespace GCSA
 {
+typedef CSA::usint usint;
 
 class ParameterHandler
 {

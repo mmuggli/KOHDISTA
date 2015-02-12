@@ -7,8 +7,10 @@
 const char letters[4] = { 'A', 'C', 'G', 'T' };
 
 
-using namespace CSA;
-
+//using namespace CSA;
+typedef CSA::sint sint;
+typedef CSA::usint usint;
+typedef CSA::uchar uchar;
 
 int
 main(int argc, char** argv)

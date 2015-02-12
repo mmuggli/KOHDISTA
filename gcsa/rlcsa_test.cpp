@@ -10,23 +10,24 @@
 #include "pattern_classifier.h"
 
 
-using namespace CSA;
-
-
+//using namespace CSA;
+typedef CSA::usint usint;
+typedef CSA::pair_type pair_type;
+const pair_type EMPTY_PAIR = CSA::EMPTY_PAIR ;
 int main(int argc, char** argv)
 {
   std::cout << "RLCSA test" << std::endl;
   std::cout << std::endl;
 
-  ParameterHandler handler(argc, argv, true, "Usage: rlcsa_test [options] base_name [patterns]");
+  GCSA::ParameterHandler handler(argc, argv, true, "Usage: rlcsa_test [options] base_name [patterns]");
   if(!(handler.ok)) { handler.printUsage(); return 1; }
   handler.printOptions();
 
-  const RLCSA rlcsa(handler.index_name);
+  const CSA::RLCSA rlcsa(handler.index_name);
   if(!rlcsa.isOk()) { return 2; }
   rlcsa.reportSize(true);
   if(handler.patterns_name == 0) { return 0; }
-  BWASearch<RLCSA> bwasearch(rlcsa);
+  GCSA::BWASearch<CSA::RLCSA> bwasearch(rlcsa);
 
   std::ifstream patterns(handler.patterns_name, std::ios_base::binary);
   if(!patterns)
@@ -34,10 +35,10 @@ int main(int argc, char** argv)
     std::cerr << "Error opening pattern file!" << std::endl;
     return 3;
   }
-  PatternClassifier classifier(handler.write ? handler.patterns_name : "");
+  CSA::PatternClassifier classifier(handler.write ? handler.patterns_name : "");
 
   std::vector<std::string> rows;
-  readRows(patterns, rows, true);
+  CSA::readRows(patterns, rows, true);
 
   usint total = 0, n = rows.size();
   usint found = 0, forward = 0, reverse = 0;
@@ -48,7 +49,7 @@ int main(int argc, char** argv)
   usint* match_counts = new usint[n];
   for(usint i = 0; i < n; i++) { match_counts[i] = 0; }
 
-  double start = readTimer();
+  double start = CSA::readTimer();
   for(usint i = 0; i < n; i++)
   {
     total += rows[i].length();
@@ -87,7 +88,7 @@ int main(int argc, char** argv)
     // Do approximate matching only if there are no exact matches.
     if(handler.k > 0 && !match)
     {
-      std::vector<MatchInfo*>* results = bwasearch.find(rows[i], handler.k, handler.indels, handler.penalties);
+      std::vector<GCSA::MatchInfo*>* results = bwasearch.find(rows[i], handler.k, handler.indels, handler.penalties);
       temp = bwasearch.handleOccurrences(results, handler.locate, handler.max_matches);
       if(temp > 0)
       {
@@ -98,8 +99,8 @@ int main(int argc, char** argv)
       bwasearch.deleteResults(results);
     }
   }
-  double time = readTimer() - start;
-  double megabases = total / (double)MILLION;
+  double time = CSA::readTimer() - start;
+  double megabases = total / (double)CSA::MILLION;
 
   std::cout << "Patterns:     " << n << " (" << (n / time) << " / sec)" << std::endl;
 

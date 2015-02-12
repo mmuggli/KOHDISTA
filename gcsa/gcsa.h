@@ -11,7 +11,7 @@
 #include "graph.h"
 
 
-namespace CSA
+namespace GCSA
 {
 
 
@@ -101,8 +101,8 @@ class GCSA
     // This will not work correctly for an initial node, if there are multiple automata.
     std::vector<usint>* getSuccessors(usint index) const;
 
-    DeltaVector::Iterator* getIterator(usint c) const;
-    RLEVector::Iterator* getEdgeIterator() const;
+    CSA::DeltaVector::Iterator* getIterator(usint c) const;
+    CSA::RLEVector::Iterator* getEdgeIterator() const;
 
 //--------------------------------------------------------------------------
 //  INTERNAL VARIABLES
@@ -113,13 +113,13 @@ class GCSA
 
     usint node_count;
 
-    DeltaVector** array;  // BWT
-    RLEVector* outgoing;        // M
+    CSA::DeltaVector** array;  // BWT
+    CSA::RLEVector* outgoing;        // M
 
-    DeltaVector* sampled_positions;
-    ReadBuffer* samples;
+    CSA::DeltaVector* sampled_positions;
+    CSA::ReadBuffer* samples;
 
-    Alphabet* alphabet;
+    CSA::Alphabet* alphabet;
 
     Backbone* backbone;                   // Only used during construction. FIXME: for now?
 
@@ -175,10 +175,10 @@ class Backbone
       edges.select(i) is the outgoing edge from node i to the next node in the backbone.
       If node i is not in the backbone, edges.select(i) is the first outgoing edge from the node.
     */
-    SuccinctVector* nodes;
-    RLEVector*   edges;
+    CSA::SuccinctVector* nodes;
+    CSA::RLEVector*   edges;
 
-    SuccinctVector* original;
+    CSA::SuccinctVector* original;
 
     usint size; // Number of backbone nodes.
     bool ok;
@@ -190,7 +190,7 @@ class Backbone
 };
 
 
-} // namespace CSA
+} // namespace GCSA
 
 
 #endif // GCSA_H

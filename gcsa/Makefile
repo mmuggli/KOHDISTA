@@ -27,6 +27,7 @@ OBJS = graph.o gcsa.o parameter_handler.o
 LIBRARIES = gcsa.a $(RLCSA)
 PROGRAMS = build_automaton clean_alignment generator build_index gcsa_test transpose rlcsa_test verify determinize
 
+all: default
 
 default: gcsa.a $(PROGRAMS)
 

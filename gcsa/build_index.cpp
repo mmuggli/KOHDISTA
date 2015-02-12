@@ -8,8 +8,10 @@
 #include <misc/utils.h>
 
 
-using namespace CSA;
+//using namespace CSA;
+typedef CSA::usint usint;
 
+//typedef CSA::pair_type pair_type;
 
 int
 main(int argc, char** argv)
@@ -34,9 +36,9 @@ main(int argc, char** argv)
     std::cout << "Input:  " << base_name << std::endl;
     std::cout << std::endl;
 
-    double start = readTimer();
+    double start = CSA::readTimer();
 
-    Graph* graph = new Graph(base_name);
+    GCSA::Graph* graph = new GCSA::Graph(base_name);
     if(!graph->ok) { return 2; }
     if(backbone)
     {
@@ -46,33 +48,33 @@ main(int argc, char** argv)
 	}
     graph->printInfo();
 
-    PathGraph* pg = new PathGraph(*graph);
+    GCSA::PathGraph* pg = new GCSA::PathGraph(*graph);
     delete graph; graph = 0;
     pg->printInfo();
-    while(pg->status != PathGraph::sorted)
+    while(pg->status != GCSA::PathGraph::sorted)
     {
-        if(pg->status != PathGraph::ok)
+        if(pg->status != GCSA::PathGraph::ok)
         {
             std::cerr << "Error: Invalid PathGraph!" << std::endl;
             delete pg; pg = 0;
             return 3;
         }
-        PathGraph* next = new PathGraph(*pg);
+        GCSA::PathGraph* next = new GCSA::PathGraph(*pg);
         delete pg; pg = next;
         pg->printInfo();
     }
     std::cout << std::endl;
 
-    graph = new Graph(base_name);
+    graph = new GCSA::Graph(base_name);
     if(backbone) { graph->createBackbone(); }
-    GCSA gcsa(*pg, *graph, true);
+    GCSA::GCSA gcsa(*pg, *graph, true);
     delete graph; graph = 0;
     delete pg; pg = 0;
     gcsa.writeTo(base_name);
 
-    double time = readTimer() - start;
+    double time = CSA::readTimer() - start;
     std::cout << "Used " << time << " seconds." << std::endl;
-    std::cout << "Memory: " << memoryUsage() << " kB" << std::endl;
+    std::cout << "Memory: " << CSA::memoryUsage() << " kB" << std::endl;
     std::cout << std::endl;
 
     return 0;

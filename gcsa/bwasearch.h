@@ -8,9 +8,12 @@
 #include <misc/utils.h>
 
 
-namespace CSA
+namespace GCSA
 {
-
+	typedef CSA::pair_type pair_type;
+	typedef CSA::uchar uchar;
+	typedef CSA::sint sint;
+	typedef CSA::usint usint;
 /*
   This uses the RANGES part of external module interface.
 */
@@ -196,7 +199,7 @@ class BWASearch
 
       uchar c = (reverse_complement ? this->complement(pat[0]) : pat[pat.length() - 1]);
       pair_type range = this->index.getCharRange(c);
-      if(isEmpty(range)) { return range; }
+      if(CSA::isEmpty(range)) { return range; }
 
       MatchInfo info(1, range, (reverse_complement ? MatchInfo::REVERSE_COMPLEMENT : 0));
       this->backwardSearch(pat, info);
@@ -280,7 +283,7 @@ class BWASearch
           heap.push_back(info);
           push_heap(heap.begin(), heap.end(), comp);
           pair_type rng = this->index.LF(info->range, c);
-          info = (isEmpty(rng) ? 0 : info->match(rng, c));
+          info = (CSA::isEmpty(rng) ? 0 : info->match(rng, c));
           continue;
         }
 
@@ -291,7 +294,7 @@ class BWASearch
           {
             if(alphabet->at(i) == c) { continue; }
             pair_type rng = this->index.LF(info->range, alphabet->at(i));
-            if(isEmpty(rng)) { continue; }
+            if(CSA::isEmpty(rng)) { continue; }
             heap.push_back(info->mismatch(rng, alphabet->at(i)));
             push_heap(heap.begin(), heap.end(), comp);
 
@@ -325,8 +328,8 @@ class BWASearch
 
     usint handleOccurrences(pair_type range, bool locate, usint max_matches)
     {
-      if(isEmpty(range)) { return 0; }
-      usint temp = length(range);
+      if(CSA::isEmpty(range)) { return 0; }
+      usint temp = CSA::length(range);
 
       if(locate)
       {
@@ -360,7 +363,7 @@ class BWASearch
       {
         for(std::vector<pair_type>::iterator iter = ranges->begin(); iter != ranges->end(); ++iter)
         {
-          temp += length(*iter);
+          temp += CSA::length(*iter);
         }
       }
 
@@ -388,7 +391,7 @@ class BWASearch
         usint temp = 0;
         for(std::vector<MatchInfo*>::iterator iter = results->begin(); iter != results->end(); ++iter)
         {
-          temp += length((*iter)->range);
+          temp += CSA::length((*iter)->range);
         }
         if(max_matches > 0 && temp > max_matches) { return max_matches + 1; }
         return temp;
@@ -440,7 +443,7 @@ class BWASearch
       {
         uchar c = (info.isReverseComplement() ? this->complement(pattern[pos]) : pattern[pos]);
         info.range = this->index.LF(info.range, c);
-        if(isEmpty(info.range)) { return; }
+        if(CSA::isEmpty(info.range)) { return; }
       }
     }
 
@@ -466,7 +469,7 @@ class BWASearch
             MatchInfo info(this->index.getBWTRange(), (complement ? MatchInfo::REVERSE_COMPLEMENT : 0));
             usint temp = (complement ? pattern.length() - mid - 1 : start);
             this->backwardSearch(pattern.substr(temp, mid + 1 - start), info);
-            if(isEmpty(info.range))
+            if(CSA::isEmpty(info.range))
             {
               high = mid;
             }
@@ -485,7 +488,7 @@ class BWASearch
           MatchInfo info(this->index.getBWTRange(), (complement ? MatchInfo::REVERSE_COMPLEMENT : 0));
           usint temp = (complement ? 0 : start);
           this->backwardSearch(pattern.substr(temp, pattern.length() - start), info);
-          if(isEmpty(info.range)) { errors++; }
+          if(CSA::isEmpty(info.range)) { errors++; }
           for(usint i = start; i <= limit; i++) { bounds[i] = errors; }
           break;
         }

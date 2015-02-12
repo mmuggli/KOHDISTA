@@ -9,9 +9,10 @@
 #include "graph.h"
 
 
-using namespace CSA;
+//using namespace CSA;
 
-
+typedef CSA::usint usint;
+typedef CSA::pair_type pair_type;
 /*
   Builds an automaton from aligned DNA sequences. Accepted characters are the
   bases ('A', 'C', 'G', 'T'), 'N' denoting any base, and '-' denoting a gap.
@@ -72,7 +73,7 @@ struct Node
   bool atEnd()       { return (this->label == '\0'); }
   bool isGap()       { return (this->label == '-'); }
 
-  GraphNode getNode() { return GraphNode(this->label, this->positions[this->pos]); }
+  GCSA::GraphNode getNode() { return GCSA::GraphNode(this->label, this->positions[this->pos]); }
 
   usint rank(char c)
   {
@@ -116,7 +117,7 @@ struct NodeComparator
 void
 buildAutomaton(std::ifstream& input, const std::string& base_name, usint sequences, usint context_length, bool backbone)
 {
-  usint  lines = fileSize(input) / (sequences + 1) + 2;
+  usint  lines = CSA::fileSize(input) / (sequences + 1) + 2;
   usint  size = lines * (sequences + 1);
   char* data = new char[size];
   char* real_data = data + sequences + 1;
@@ -153,10 +154,10 @@ buildAutomaton(std::ifstream& input, const std::string& base_name, usint sequenc
     nodes[i].init(data, sequences, i, context_length, positions);
     previous[i] = 0;
   }
-  std::vector<GraphNode> node_vector;
+  std::vector<GCSA::GraphNode> node_vector;
   std::vector<pair_type> edge_buffer;
-  std::vector<GraphEdge> edge_vector;
-  node_vector.push_back(GraphNode('Z', positions[0])); // Initial node.
+  std::vector<GCSA::GraphEdge> edge_vector;
+  node_vector.push_back(GCSA::GraphNode('Z', positions[0])); // Initial node.
 
   for(usint line = 1; line < lines; line++)
   {
@@ -170,13 +171,13 @@ buildAutomaton(std::ifstream& input, const std::string& base_name, usint sequenc
     }
 
     // Create nodes and temporary edges.
-    sequentialSort(active, active + active_nodes, node_context_comparator);
+    CSA::sequentialSort(active, active + active_nodes, node_context_comparator);
     edge_buffer.clear();
     for(usint i = 0; i < active_nodes; i++)
     {
       if(i == 0 || active[i]->key != active[i - 1]->key)
       {
-        GraphNode n = active[i]->getNode();
+        GCSA::GraphNode n = active[i]->getNode();
         if(backbone && active[i]->seq > 0) { n.label = tolower(n.label); }
         node_vector.push_back(n);
       }
@@ -185,12 +186,12 @@ buildAutomaton(std::ifstream& input, const std::string& base_name, usint sequenc
     }
 
     // Create edges.
-    sequentialSort(edge_buffer.begin(), edge_buffer.end());
+    CSA::sequentialSort(edge_buffer.begin(), edge_buffer.end());
     for(usint i = 0; i < edge_buffer.size(); i++)
     {
       if(i == 0 || edge_buffer[i] != edge_buffer[i - 1])
       {
-        edge_vector.push_back(GraphEdge(edge_buffer[i].first, edge_buffer[i].second));
+        edge_vector.push_back(GCSA::GraphEdge(edge_buffer[i].first, edge_buffer[i].second));
       }
     }
   }
@@ -202,7 +203,7 @@ buildAutomaton(std::ifstream& input, const std::string& base_name, usint sequenc
 
   delete[] data;
   delete[] positions;
-  Graph graph(node_vector, edge_vector);
+  GCSA::Graph graph(node_vector, edge_vector);
   graph.write(base_name);
 }
 
@@ -244,11 +245,11 @@ main(int argc, char** argv)
   std::cout << "Number of sequences: " << sequences << std::endl;
   std::cout << std::endl;
 
-  double start = readTimer();
+  double start = CSA::readTimer();
   buildAutomaton(alignment_file, base_name, sequences, context_length, backbone);
-  double time = readTimer() - start;
+  double time = CSA::readTimer() - start;
   std::cout << "Used " << time << " seconds." << std::endl;
-  std::cout << "Memory: " << memoryUsage() << " kB" << std::endl;
+  std::cout << "Memory: " << CSA::memoryUsage() << " kB" << std::endl;
   std::cout << std::endl;
 
   return 0;

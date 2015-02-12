@@ -29,6 +29,8 @@ utils/sort_wikipedia utils/genpatterns
 
 VPATH = bits:misc:utils
 
+all: default
+	$(MAKE) -C gcsa
 
 default: parallel_build build_rlcsa rlcsa_test sampler_test display_test document_graph
 

@@ -15,9 +15,11 @@
 #include <bits/bitbuffer.h>
 
 
-namespace CSA
+namespace GCSA
 {
-
+typedef CSA::sint sint;
+typedef CSA::pair_type pair_type;
+const pair_type EMPTY_PAIR = CSA::EMPTY_PAIR ;
 //--------------------------------------------------------------------------
 
 Graph::Graph(std::vector<GraphNode>& node_vector, std::vector<GraphEdge>& edge_vector) :
@@ -91,8 +93,8 @@ Graph::write(const std::string& base_name, bool is_full_name)
 
   outfile.write((char*)&(this->node_count), sizeof(this->node_count));
   outfile.write((char*)&(this->edge_count), sizeof(this->edge_count));
-  largeWrite(outfile, (char*)(this->nodes), this->node_count * sizeof(GraphNode), 1024);
-  largeWrite(outfile, (char*)(this->edges), this->edge_count * sizeof(GraphEdge), 1024);
+  CSA::largeWrite(outfile, (char*)(this->nodes), this->node_count * sizeof(GraphNode), 1024);
+  CSA::largeWrite(outfile, (char*)(this->edges), this->edge_count * sizeof(GraphEdge), 1024);
 
   outfile.close();
 }
@@ -126,11 +128,11 @@ Graph::sortEdges(bool from)
 {
   if(from)
   {
-    parallelSort(this->edges, this->edges + this->edge_count, ge_from_comparator);
+	  CSA::parallelSort(this->edges, this->edges + this->edge_count, ge_from_comparator);
   }
   else
   {
-    parallelSort(this->edges, this->edges + this->edge_count, ge_to_comparator);
+	  CSA::parallelSort(this->edges, this->edges + this->edge_count, ge_to_comparator);
   }
 }
 
@@ -173,7 +175,7 @@ Graph::getNextEdgeRange(pair_type range, bool from)
 {
   if(range.second >= this->edge_count - 1) { return EMPTY_PAIR; }
 
-  if(isEmpty(range)) { range = pair_type(0, 0); } // Create the first range.
+  if(CSA::isEmpty(range)) { range = pair_type(0, 0); } // Create the first range.
   else { range.second++; range.first = range.second; }
 
   if(from)
@@ -201,13 +203,13 @@ Graph::createBackbone()
 {
   if(!(this->ok) || this->backbone != 0) { return; }
 
-  SuccinctEncoder encoder(BACKBONE_BLOCK_SIZE);
+  CSA::SuccinctEncoder encoder(BACKBONE_BLOCK_SIZE);
   for(usint i = 0; i < this->node_count; i++)
   {
     if(islower(this->nodes[i].label)) { this->nodes[i].label = toupper(this->nodes[i].label); }
     else { encoder.setBit(i); }
   }
-  this->backbone = new SuccinctVector(encoder, this->node_count);
+  this->backbone = new CSA::SuccinctVector(encoder, this->node_count);
 }
 
 void
@@ -226,7 +228,7 @@ Graph::encodeBackbone()
 {
   if(!(this->ok) || this->backbone == 0) { return; }
 
-  SuccinctVector::Iterator iter(*(this->backbone));
+  CSA::SuccinctVector::Iterator iter(*(this->backbone));
   for(usint i = 0; i < this->node_count; i++)
   {
     if(!(iter.isSet(i))) { this->nodes[i].label = tolower(this->nodes[i].label); }
@@ -332,12 +334,12 @@ Graph::determinize()
         predecessors.push_back(this->nodes + this->edges[i].from);
       }
     }
-    removeDuplicates(predecessors, false);
+    CSA::removeDuplicates(predecessors, false);
 
     // Build new tempNodes from the predecessors.
-    sequentialSort(predecessors.begin(), predecessors.end(), nli_comparator);
-    SuccinctVector::Iterator* bb_iter = 0;
-    if(create_backbone) { bb_iter = new SuccinctVector::Iterator(*(this->backbone)); }
+    CSA::sequentialSort(predecessors.begin(), predecessors.end(), nli_comparator);
+    CSA::SuccinctVector::Iterator* bb_iter = 0;
+    if(create_backbone) { bb_iter = new CSA::SuccinctVector::Iterator(*(this->backbone)); }
     for(std::vector<GraphNode*>::iterator iter = predecessors.begin(); iter != predecessors.end(); )
     {
       GraphNode* first = *iter; ++iter;
@@ -386,7 +388,7 @@ Graph::determinize()
       TempNode* node = (*iter).second;
       if(node->backbone) { active.push_back(node); }
     }
-    parallelSort(new_edges.begin(), new_edges.end(), tet_comparator);
+    CSA::parallelSort(new_edges.begin(), new_edges.end(), tet_comparator);
     while(!(active.empty()))
     {
       TempNode* curr = active.front(); active.pop_front();
@@ -408,9 +410,9 @@ Graph::determinize()
 
   // Topological sort. Create new nodes in sorted order.
   delete[] this->nodes; this->nodes = new GraphNode[new_nodes.size()]; this->node_count = 0;
-  SuccinctEncoder* encoder = 0;
-  if(create_backbone) { encoder = new SuccinctEncoder(BACKBONE_BLOCK_SIZE); }
-  parallelSort(new_edges.begin(), new_edges.end(), tef_comparator);
+  CSA::SuccinctEncoder* encoder = 0;
+  if(create_backbone) { encoder = new CSA::SuccinctEncoder(BACKBONE_BLOCK_SIZE); }
+  CSA::parallelSort(new_edges.begin(), new_edges.end(), tef_comparator);
   for(std::map<std::basic_string<uint>, TempNode*>::iterator iter = new_nodes.begin(); iter != new_nodes.end(); ++iter)
   {
     TempNode* node = (*iter).second;
@@ -447,7 +449,7 @@ Graph::determinize()
   if(create_backbone)
   {
     delete this->backbone;
-    this->backbone = new SuccinctVector(*encoder, this->node_count);
+    this->backbone = new CSA::SuccinctVector(*encoder, this->node_count);
     usint new_bb = this->backbone->getNumberOfItems();
     if(backbone_nodes != new_bb)
     {
@@ -478,7 +480,7 @@ Graph::isDeterministic()
 
   this->sortEdges(false); // Sort edges by destination node.
   pair_type range = EMPTY_PAIR;
-  for(range = this->getNextEdgeRange(range, false); !isEmpty(range); range = this->getNextEdgeRange(range, false))
+  for(range = this->getNextEdgeRange(range, false); !CSA::isEmpty(range); range = this->getNextEdgeRange(range, false))
   {
     std::set<uint> set_bits;
     for(usint i = range.first; i <= range.second; i++)
@@ -642,7 +644,7 @@ PathGraph::PathGraph(PathGraph& previous) :
     {
       if(left->isSorted()) { new_nodes++; continue; }
       pair_type pn_range = previous.getNodesFrom(left->to);
-      new_nodes += length(pn_range);
+      new_nodes += CSA::length(pn_range);
     }
     std::cout << "Trying to allocate space for " << new_nodes << " nodes." << std::endl;
   }
@@ -695,7 +697,7 @@ PathGraph::generateEdges(Graph& parent)
   pair_type pn_range = this->getNextRange(EMPTY_PAIR);
   pair_type ge_range = parent.getNextEdgeRange(EMPTY_PAIR, false);
   this->edges.reserve(this->node_count + this->node_count / 4);
-  while(!isEmpty(pn_range) && !isEmpty(ge_range))
+  while(!CSA::isEmpty(pn_range) && !CSA::isEmpty(ge_range))
   {
     if(this->nodes[pn_range.first].from == parent.edges[ge_range.first].to)
     {
@@ -762,10 +764,10 @@ PathGraph::getSamples(usint sample_rate, usint& max_sample, const Graph& parent)
   if(this->status != ready && this->status != edges_sorted) { return 0; }
 
   this->sortEdges(true, true);
-  WriteBuffer* found_nodes = new WriteBuffer(this->node_count, 1);
-  ReadBuffer* found = found_nodes->getReadBuffer();
-  WriteBuffer* sampled_nodes = new WriteBuffer(this->node_count, 1);
-  ReadBuffer* sampled = sampled_nodes->getReadBuffer();
+  CSA::WriteBuffer* found_nodes = new CSA::WriteBuffer(this->node_count, 1);
+  CSA::ReadBuffer* found = found_nodes->getReadBuffer();
+  CSA::WriteBuffer* sampled_nodes = new CSA::WriteBuffer(this->node_count, 1);
+  CSA::ReadBuffer* sampled = sampled_nodes->getReadBuffer();
   std::vector<pair_type>* sample_pairs = new std::vector<pair_type>;
 
   std::stack<usint> active; // Push the initial nodes into stack.
@@ -796,7 +798,7 @@ PathGraph::getSamples(usint sample_rate, usint& max_sample, const Graph& parent)
       // No nearby samples.
       // Multiple or no outgoing edges.
       // Discontinuity in values.
-      if(unsampled >= sample_rate || length(successors) != 1 ||
+      if(unsampled >= sample_rate || CSA::length(successors) != 1 ||
          this->nodes[this->edges[successors.first].rank].value() != this->nodes[current].value() + 1)
       {
         sample_pairs->push_back(pair_type(current, this->nodes[current].value()));
@@ -808,7 +810,7 @@ PathGraph::getSamples(usint sample_rate, usint& max_sample, const Graph& parent)
         }
         unsampled = 0;
       }
-      if(isEmpty(successors)) { break; }
+      if(CSA::isEmpty(successors)) { break; }
 
       current = this->edges[successors.first].rank;
       unsampled++;
@@ -852,7 +854,7 @@ PathGraph::sort()
   while(true)
   {
     node_range = this->nextMaximalSet(node_range);
-    if(isEmpty(node_range)) { break; }
+    if(CSA::isEmpty(node_range)) { break; }
     this->nodes[top] = this->nodes[node_range.first]; top++;
   }
   this->node_count = top; this->nodes.resize(this->node_count);
@@ -894,7 +896,7 @@ PathGraph::nextMaximalSet(pair_type range)
 {
   if(range.second >= this->node_count - 1) { return EMPTY_PAIR; }
 
-  if(isEmpty(range)) { range = pair_type(0, 0); }
+  if(CSA::isEmpty(range)) { range = pair_type(0, 0); }
   else
   {
     range.first = range.second + 1; range.second = range.first;
@@ -924,7 +926,7 @@ struct PathNodeComparator
 void
 PathGraph::sortByKey()
 {
-  parallelSort(this->nodes.begin(), this->nodes.end(), pn_comparator);
+	CSA::parallelSort(this->nodes.begin(), this->nodes.end(), pn_comparator);
 }
 
 struct PathEdgeComparator
@@ -939,7 +941,7 @@ struct PathEdgeComparator
 void
 PathGraph::sortEdges()
 {
-  parallelSort(this->edges.begin(), this->edges.end(), pe_comparator);
+	CSA::parallelSort(this->edges.begin(), this->edges.end(), pe_comparator);
 }
 
 //--------------------------------------------------------------------------
@@ -967,14 +969,14 @@ PathGraph::sortEdges(bool by_from, bool create_index)
   {
     if(this->status != edges_sorted)
     {
-      parallelSort(this->edges.begin(), this->edges.end(), pe_from_comparator);
+    	CSA::parallelSort(this->edges.begin(), this->edges.end(), pe_from_comparator);
       if(this->status == ready) { this->status = edges_sorted; }
       else                      { this->status = error; }
     }
   }
   else
   {
-    parallelSort(this->edges.begin(), this->edges.end(), pe_to_comparator);
+	  CSA::parallelSort(this->edges.begin(), this->edges.end(), pe_to_comparator);
     this->status = error;
   }
 
@@ -1030,7 +1032,7 @@ struct PathNodeFromComparator
 void
 PathGraph::sortByFrom(bool create_index)
 {
-  parallelSort(this->nodes.begin(), this->nodes.end(), pn_from_comparator);
+	CSA::parallelSort(this->nodes.begin(), this->nodes.end(), pn_from_comparator);
   this->status = error;
 
   if(create_index)
@@ -1065,7 +1067,7 @@ PathGraph::getNextRange(pair_type range)
 {
   if(range.second >= this->node_count - 1) { return EMPTY_PAIR; }
 
-  if(isEmpty(range)) { range = pair_type(0, 0); } // Create the first range.
+  if(CSA::isEmpty(range)) { range = pair_type(0, 0); } // Create the first range.
   else { range.second++; range.first = range.second; }
 
   while(range.second < this->node_count - 1 && this->nodes[range.second + 1].from == this->nodes[range.first].from)
@@ -1094,4 +1096,4 @@ PathGraph::restoreLabels()
 
 //--------------------------------------------------------------------------
 
-} // namespace CSA
+} // namespace GCSA

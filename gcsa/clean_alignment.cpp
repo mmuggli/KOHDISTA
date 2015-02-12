@@ -5,8 +5,12 @@
 #include <misc/utils.h>
 
 
-using namespace CSA;
+//using namespace CSA;
 
+//CSA stuff
+typedef CSA::usint usint;
+const usint CHARS = CSA::CHARS;
+typedef CSA::pair_type pair_type;
 
 std::string gapChars = " =-_";
 std::string bases = "ACGNT";
@@ -20,7 +24,7 @@ readAlignment(std::ifstream& input, usint& lines, usint sequences, bool quality_
 
   usint *chars = (usint *)malloc(CHARS*sizeof(usint *));
   for(usint c = 0; c < CHARS; c++) { chars[c] = 0; }
-  char* data = new char[fileSize(input)];
+  char* data = new char[CSA::fileSize(input)];
 
   std::string line;
   if(quality_included) { getline(input, line); }
@@ -191,7 +195,7 @@ handleGaps(char* data, std::ofstream& output, usint sequences, usint lines)
     // maximum among those sequences, and update the alignment.
     if(active_seqs > 0)
     {
-      sequentialSort(active, active + active_seqs, pos_comparator);
+      CSA::sequentialSort(active, active + active_seqs, pos_comparator);
       usint prev = 0;
       for(usint j = 1; j < active_seqs; j++)
       {
@@ -252,7 +256,7 @@ main(int argc, char** argv)
     return 3;
   }
 
-  double start = readTimer();
+  double start = CSA::readTimer();
 
   // Determine the format and the number of sequences.
   std::string line;
@@ -284,9 +288,9 @@ main(int argc, char** argv)
   delete[] data;
   output_file.close();
 
-  double time = readTimer() - start;
+  double time = CSA::readTimer() - start;
   std::cout << "Used " << time << " seconds." << std::endl;
-  std::cout << "Memory: " << memoryUsage() << " kB" << std::endl;
+  std::cout << "Memory: " << CSA::memoryUsage() << " kB" << std::endl;
   std::cout << std::endl;
   
   return 0;

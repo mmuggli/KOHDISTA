@@ -10,9 +10,14 @@
 
 
 //TODO find every malloc(CHARS*CHARS) and add a corresponding free()
-namespace CSA
+namespace GCSA
 {
-
+const usint CHARS = CSA::CHARS;
+const usint MEGABYTE = CSA::MEGABYTE;
+const pair_type EMPTY_PAIR = CSA::EMPTY_PAIR;
+typedef CSA::uchar uchar;
+typedef CSA::pair_type pair_type;
+typedef CSA::sint sint;
 //--------------------------------------------------------------------------
 
 GCSA::GCSA(const std::string& base_name) :
@@ -22,7 +27,7 @@ GCSA::GCSA(const std::string& base_name) :
   alphabet(0),
   backbone(0)
 {
-  this->array = (DeltaVector**)malloc(CHARS*sizeof(DeltaVector *));
+  this->array = (CSA::DeltaVector**)malloc(CHARS*sizeof(CSA::DeltaVector *));
   for(usint i = 0; i < CHARS; i++) { this->array[i] = 0; }
 
   std::string index_name = base_name + GCSA_EXTENSION;
@@ -33,21 +38,21 @@ GCSA::GCSA(const std::string& base_name) :
     return;
   }
 
-  this->alphabet = new Alphabet(input);
+  this->alphabet = new CSA::Alphabet(input);
   for(usint i = 1; i < CHARS; i++)
   {
-    if(this->alphabet->hasChar(i)) { this->array[i] = new DeltaVector(input); }
+    if(this->alphabet->hasChar(i)) { this->array[i] = new CSA::DeltaVector(input); }
     else { this->array[i] = 0; }
   }
-  this->outgoing = new RLEVector(input);
+  this->outgoing = new CSA::RLEVector(input);
   this->node_count = this->outgoing->getNumberOfItems();
 
-  this->sampled_positions = new DeltaVector(input);
+  this->sampled_positions = new CSA::DeltaVector(input);
   usint sample_bits = 0;
   input.read((char*)&sample_bits, sizeof(usint));
   if(sample_bits > 0)
   {
-    this->samples = new ReadBuffer(input, this->sampled_positions->getNumberOfItems(), sample_bits);
+    this->samples = new CSA::ReadBuffer(input, this->sampled_positions->getNumberOfItems(), sample_bits);
     this->support_locate = true;
   }
 
@@ -63,11 +68,11 @@ GCSA::GCSA(PathGraph& graph, Graph& parent, bool print) :
   backbone(0)
 {
     if(graph.status != PathGraph::sorted || !(parent.ok)) { return; }
-    this->array = (DeltaVector**)malloc(CHARS*sizeof(DeltaVector *));
+    this->array = (CSA::DeltaVector**)malloc(CHARS*sizeof(CSA::DeltaVector *));
 //  DeltaEncoder* array_encoders[CHARS];
-    std::map<usint, DeltaEncoder*> array_encoders;
+    std::map<usint, CSA::DeltaEncoder*> array_encoders;
     //DeltaEncoder** array_encoders = (DeltaEncoder**)malloc(CHARS);
-    RLEEncoder outedges(OUTGOING_BLOCK_SIZE);
+    CSA::RLEEncoder outedges(OUTGOING_BLOCK_SIZE);
     usint *counts = (usint*)malloc(CHARS*sizeof(usint *));
 //  usint counts[CHARS*CHARS];
     // std::cout << "initializing array encoders..." << std::endl;
@@ -96,7 +101,7 @@ GCSA::GCSA(PathGraph& graph, Graph& parent, bool print) :
             if (label == 257) std::cout << "found larger label "<<label <<  std::endl;
             counts[label]++;
             if (array_encoders.find(label) == array_encoders.end()) {
-                array_encoders[label] = new DeltaEncoder(ARRAY_BLOCK_SIZE); // FIXME this uses a lot of memory
+                array_encoders[label] = new CSA::DeltaEncoder(ARRAY_BLOCK_SIZE); // FIXME this uses a lot of memory
             }
             array_encoders[label]->setBit(offset);
         }
@@ -108,7 +113,7 @@ GCSA::GCSA(PathGraph& graph, Graph& parent, bool print) :
     }
     std::cout << "Done.   array_encoders has " << array_encoders.size() << " elements." << std::endl;
     counts[0] = graph.automata;
-    Alphabet *thealphabet = new Alphabet(counts);
+    CSA::Alphabet *thealphabet = new CSA::Alphabet(counts);
     this->alphabet = thealphabet;
 
     for(usint i = 1; i < CHARS; i++)
@@ -117,13 +122,13 @@ GCSA::GCSA(PathGraph& graph, Graph& parent, bool print) :
         if(this->alphabet->hasChar(i)) {
             if (array_encoders.find(i) == array_encoders.end()) {
                 std::cout << "alphabet has " << i << " but array_encoders does not!" << std::endl;
-                array_encoders[i] = new DeltaEncoder(ARRAY_BLOCK_SIZE); // FIXME this uses a lot of memory
+                array_encoders[i] = new CSA::DeltaEncoder(ARRAY_BLOCK_SIZE); // FIXME this uses a lot of memory
             }
-            this->array[i] = new DeltaVector(*(array_encoders[i]), offset); 
+            this->array[i] = new CSA::DeltaVector(*(array_encoders[i]), offset);
         }
     }
     outedges.flush();
-    this->outgoing = new RLEVector(outedges, edge_offset);
+    this->outgoing = new CSA::RLEVector(outedges, edge_offset);
     this->node_count = this->outgoing->getNumberOfItems();
 
 
@@ -138,9 +143,9 @@ GCSA::GCSA(PathGraph& graph, Graph& parent, bool print) :
     if(print) { std::cout << "Sampling the graph... "; std::cout.flush();  }
     usint max_sample = 0;
     std::vector<pair_type>* sample_pairs = graph.getSamples(SAMPLE_RATE, max_sample, parent);
-    DeltaEncoder sample_encoder(SAMPLE_BLOCK_SIZE);
-    WriteBuffer sample_values(sample_pairs->size(), length(max_sample));
-    parallelSort(sample_pairs->begin(), sample_pairs->end());
+    CSA::DeltaEncoder sample_encoder(SAMPLE_BLOCK_SIZE);
+    CSA::WriteBuffer sample_values(sample_pairs->size(), CSA::length(max_sample));
+    CSA::parallelSort(sample_pairs->begin(), sample_pairs->end());
     for(usint i = 0; i < sample_pairs->size(); i++)
     {
         sample_encoder.addBit(sample_pairs->at(i).first);
@@ -149,7 +154,7 @@ GCSA::GCSA(PathGraph& graph, Graph& parent, bool print) :
     sample_encoder.flush();
     delete sample_pairs; sample_pairs = 0;
 
-    this->sampled_positions = new DeltaVector(sample_encoder, offset);
+    this->sampled_positions = new CSA::DeltaVector(sample_encoder, offset);
     this->samples = sample_values.getReadBuffer();
     this->support_locate = true;
     if(print)
@@ -282,12 +287,12 @@ GCSA::find(const std::string& pattern) const
 
   sint pos = pattern.length() - 1;
   pair_type range = this->getCharRange(pattern[pos]);
-  if(isEmpty(range)) { return range; }
+  if(CSA::isEmpty(range)) { return range; }
 
   for(pos--; pos >= 0; pos--)
   {
     range = this->LF(range, pattern[pos]);
-    if(isEmpty(range)) { return range; }
+    if(CSA::isEmpty(range)) { return range; }
   }
   return range;
 }
@@ -301,7 +306,7 @@ GCSA::locate(pair_type range) const
   std::vector<usint>* vec = new std::vector<usint>;
 
   this->locate(range, *vec);
-  removeDuplicates(vec, false);
+  CSA::removeDuplicates(vec, false);
 
   return vec;
 }
@@ -316,7 +321,7 @@ GCSA::locate(std::vector<pair_type>& ranges) const
   {
     this->locate(*iter, *vec);
   }
-  removeDuplicates(vec, false);
+  CSA::removeDuplicates(vec, false);
 
   return vec;
 }
@@ -326,7 +331,7 @@ GCSA::isSampled(usint index) const
 {
   if(!(this->support_locate) || index >= this->getSize())  { return false; }
 
-  DeltaVector::Iterator sample_iter(*(this->sampled_positions));
+  CSA::DeltaVector::Iterator sample_iter(*(this->sampled_positions));
   return sample_iter.isSet(index);
 }
 
@@ -343,7 +348,7 @@ GCSA::labelOf(usint index) const
 {
   if(index >= this->getSize()) { return 0; }
 
-  RLEVector::Iterator outgoing_iter(*(this->outgoing));
+  CSA::RLEVector::Iterator outgoing_iter(*(this->outgoing));
   index = outgoing_iter.select(index);
   return this->alphabet->charAt(index);
 }
@@ -366,7 +371,7 @@ pair_type
 GCSA::getCharRange(usint c) const
 {
   pair_type range = this->alphabet->getRange(c);
-  if(isEmpty(range)) { return range; }
+  if(CSA::isEmpty(range)) { return range; }
   return this->convertToNodeRange(range);
 }
 
@@ -391,10 +396,10 @@ GCSA::LF(pair_type range, usint c) const
   if(!(this->alphabet->hasChar(c))) { return EMPTY_PAIR; }
 
   // Follow edges backward using BWT.
-  DeltaVector::Iterator array_iter(*(this->array[c]));
+  CSA::DeltaVector::Iterator array_iter(*(this->array[c]));
   range.first = this->alphabet->cumulative(c) + array_iter.rank(range.first, true) - 1;
   range.second = this->alphabet->cumulative(c) + array_iter.rank(range.second) - 1;
-  if(isEmpty(range)) { return EMPTY_PAIR; }
+  if(CSA::isEmpty(range)) { return EMPTY_PAIR; }
 
   return this->convertToNodeRange(range);
 }
@@ -421,30 +426,30 @@ GCSA::getSuccessors(usint index) const
   std::vector<usint>* result = new std::vector<usint>;
   if(index == 0) { return result; } // Final node.
 
-  RLEVector::Iterator outgoing_iter(*(this->outgoing));
+  CSA::RLEVector::Iterator outgoing_iter(*(this->outgoing));
   index = outgoing_iter.select(index);
   usint successors = outgoing_iter.selectNext() - index;
   usint c = this->alphabet->charAt(index);
 
   // Find the corresponding incoming edges using BWT.
-  DeltaVector::Iterator array_iter(*(this->array[c]));
+  CSA::DeltaVector::Iterator array_iter(*(this->array[c]));
   result->push_back(array_iter.select(index - this->alphabet->cumulative(c)));
   for(usint i = 1; i < successors; i++) { result->push_back(array_iter.selectNext()); }
 
   return result;
 }
 
-DeltaVector::Iterator*
+CSA::DeltaVector::Iterator*
 GCSA::getIterator(usint c) const
 {
-  if(c < CHARS && c > 0 && this->alphabet->hasChar(c)) { return new DeltaVector::Iterator(*(this->array[c])); }
+  if(c < CHARS && c > 0 && this->alphabet->hasChar(c)) { return new CSA::DeltaVector::Iterator(*(this->array[c])); }
   return 0;
 }
 
-RLEVector::Iterator*
+CSA::RLEVector::Iterator*
 GCSA::getEdgeIterator() const
 {
-  return new RLEVector::Iterator(*(this->outgoing));
+  return new CSA::RLEVector::Iterator(*(this->outgoing));
 }
 
 //--------------------------------------------------------------------------
@@ -452,7 +457,7 @@ GCSA::getEdgeIterator() const
 pair_type
 GCSA::convertToNodeRange(pair_type edge_range) const
 {
-  RLEVector::Iterator outgoing_iter(*(this->outgoing));
+	CSA::RLEVector::Iterator outgoing_iter(*(this->outgoing));
   edge_range.first = outgoing_iter.rank(edge_range.first) - 1;
   edge_range.second = outgoing_iter.rank(edge_range.second) - 1;
   return edge_range;
@@ -463,12 +468,12 @@ GCSA::Psi(usint index) const
 {
   if(index == 0) { return this->getSize() - 1; } // Final node.
 
-  RLEVector::Iterator outgoing_iter(*(this->outgoing));
+  CSA::RLEVector::Iterator outgoing_iter(*(this->outgoing));
   index = outgoing_iter.select(index);
   usint c = this->alphabet->charAt(index);
 
   // Find the corresponding incoming edge using BWT.
-  DeltaVector::Iterator array_iter(*(this->array[c]));
+  CSA::DeltaVector::Iterator array_iter(*(this->array[c]));
   index = array_iter.select(index - this->alphabet->cumulative(c));
 
   return index;
@@ -477,10 +482,10 @@ GCSA::Psi(usint index) const
 usint
 GCSA::LF(usint index, usint c) const
 {
-  DeltaVector::Iterator array_iter(*(this->array[c]));
+	CSA::DeltaVector::Iterator array_iter(*(this->array[c]));
   index = this->alphabet->cumulative(c) + array_iter.rank(index) - 1;
   
-  RLEVector::Iterator edge_iter(*(this->outgoing));
+  CSA::RLEVector::Iterator edge_iter(*(this->outgoing));
   index = edge_iter.rank(index) - 1;
 
   return index;
@@ -492,7 +497,7 @@ void
 GCSA::locate(pair_type range, std::vector<usint>& vec) const
 {
   range.second = std::min(range.second, this->getSize() - 1);
-  if(isEmpty(range)) { return; }
+  if(CSA::isEmpty(range)) { return; }
 
   for(usint pos = range.first; pos <= range.second; pos++)
   {
@@ -503,7 +508,7 @@ GCSA::locate(pair_type range, std::vector<usint>& vec) const
 usint
 GCSA::locateUnsafe(usint index) const
 {
-  DeltaVector::Iterator sample_iter(*(this->sampled_positions));
+	CSA::DeltaVector::Iterator sample_iter(*(this->sampled_positions));
   usint temp = index, steps = 0;
 
   while(!(sample_iter.isSet(temp))) { temp = this->Psi(temp); steps++; }
@@ -511,6 +516,7 @@ GCSA::locateUnsafe(usint index) const
 }
 
 //--------------------------------------------------------------------------
+
 
 Backbone::Backbone(const GCSA& _gcsa, PathGraph& graph, Graph& parent, bool print) :
   gcsa(_gcsa),
@@ -524,14 +530,14 @@ Backbone::Backbone(const GCSA& _gcsa, PathGraph& graph, Graph& parent, bool prin
     std::cout << "Compressing backbone... "; std::cout.flush();
   }
 
-  SuccinctEncoder original_encoder(NODE_BLOCK_SIZE);
-  SuccinctVector::Iterator iter(*(parent.backbone));
+  CSA::SuccinctEncoder original_encoder(NODE_BLOCK_SIZE);
+  CSA::SuccinctVector::Iterator iter(*(parent.backbone));
   for(usint i = 0; i < graph.node_count; i++)
   {
     if(iter.isSet(graph.nodes[i].from)) { original_encoder.addBit(i); }
   }
   original_encoder.flush();
-  this->original = new SuccinctVector(original_encoder, graph.node_count);
+  this->original = new CSA::SuccinctVector(original_encoder, graph.node_count);
   if(print)
   {
     std::cout << "original(" << this->original->getNumberOfItems() << ") ";
@@ -574,9 +580,9 @@ Backbone::Backbone(const GCSA& _gcsa, PathGraph& graph, Graph& parent, bool prin
 
 
   // Scan the graph forward and build backbone information.
-  SuccinctEncoder node_encoder(NODE_BLOCK_SIZE);
-  RLEEncoder edge_encoder(EDGE_BLOCK_SIZE);
-  RLEVector::Iterator edge_iter(*(this->gcsa.outgoing));
+  CSA::SuccinctEncoder node_encoder(NODE_BLOCK_SIZE);
+  CSA::RLEEncoder edge_encoder(EDGE_BLOCK_SIZE);
+  CSA::RLEVector::Iterator edge_iter(*(this->gcsa.outgoing));
   usint offset = edge_iter.select(0);
 
   graph.sortEdges(true, true);
@@ -612,8 +618,8 @@ Backbone::Backbone(const GCSA& _gcsa, PathGraph& graph, Graph& parent, bool prin
   }
 
   node_encoder.flush(); edge_encoder.flush();
-  this->nodes = new SuccinctVector(node_encoder, graph.node_count);
-  this->edges = new RLEVector(edge_encoder, this->gcsa.outgoing->getSize());
+  this->nodes = new CSA::SuccinctVector(node_encoder, graph.node_count);
+  this->edges = new CSA::RLEVector(edge_encoder, this->gcsa.outgoing->getSize());
 
 
   if(print)
@@ -637,9 +643,9 @@ Backbone::Backbone(const std::string& base_name, const GCSA& _gcsa) :
   }
 
   input.read((char*)&(this->size), sizeof(this->size));
-  this->nodes = new SuccinctVector(input);
-  this->edges = new RLEVector(input);
-  this->original = new SuccinctVector(input);
+  this->nodes = new CSA::SuccinctVector(input);
+  this->edges = new CSA::RLEVector(input);
+  this->original = new CSA::SuccinctVector(input);
 
   this->ok = true;
   input.close();
@@ -708,14 +714,14 @@ Backbone::reportSize(bool print) const
 bool
 Backbone::contains(usint index) const
 {
-  SuccinctVector::Iterator iter(*(this->nodes));
+	CSA::SuccinctVector::Iterator iter(*(this->nodes));
   return iter.isSet(index);
 }
 
 bool
 Backbone::originalContains(usint index) const
 {
-  SuccinctVector::Iterator iter(*(this->original));
+	CSA::SuccinctVector::Iterator iter(*(this->original));
   return iter.isSet(index);
 }
 
@@ -727,12 +733,12 @@ Backbone::next(usint index) const
     return this->gcsa.getSize() - this->gcsa.getNumberOfAutomata() + index;
   }
 
-  RLEVector::Iterator iter(*(this->edges));
+  CSA::RLEVector::Iterator iter(*(this->edges));
   index = iter.select(index);
   usint c = this->gcsa.alphabet->charAt(index);
 
   // Find the corresponding incoming edge using BWT.
-  DeltaVector::Iterator array_iter(*(this->gcsa.array[c]));
+  CSA::DeltaVector::Iterator array_iter(*(this->gcsa.array[c]));
   index = array_iter.select(index - this->gcsa.alphabet->cumulative(c));
 
   return index;
@@ -746,18 +752,18 @@ Backbone::previous(usint index) const
     return index - (this->gcsa.getSize() - this->gcsa.getNumberOfAutomata());
   }
 
-  Alphabet* alpha = this->gcsa.alphabet;
+  CSA::Alphabet* alpha = this->gcsa.alphabet;
   for(usint i = 0; i < alpha->getAlphabetSize(); i++)
   {
     usint c = alpha->getTextChar(i);
 
     // If BWT[index] contains c, follow the corresponding edge backward.
-    DeltaVector::Iterator array_iter(*(this->gcsa.array[c]));
+    CSA::DeltaVector::Iterator array_iter(*(this->gcsa.array[c]));
     if(!(array_iter.isSet(index))) { continue; }
     index = array_iter.rank(index) - 1;
 
     // If we followed a backbone edge, return the node we ended up in.
-    RLEVector::Iterator edge_iter(*(this->edges));
+    CSA::RLEVector::Iterator edge_iter(*(this->edges));
     if(!(edge_iter.isSet(index))) { continue; }
     return edge_iter.rank(index) - 1;
   }
@@ -767,4 +773,4 @@ Backbone::previous(usint index) const
 
 //--------------------------------------------------------------------------
 
-} // namespace CSA
+} // namespace GCSA
