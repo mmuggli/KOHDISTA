@@ -1,0 +1,54 @@
+
+*** things in RLCSA used by GCSA ***
+
+
+
+** meaty things **
+encoder is something that has bits incrementally added to it
+it is later converted to a vector
+
+CSA::DeltaEncoder
+CSA::DeltaVector
+CSA::SuccinctEncoder
+CSA::SuccinctVector
+CSA::RLEEncoder
+CSA::RLEVector
+CSA::RLCSA
+CSA::ReadBuffer
+CSA::WriteBuffer
+CSA::Alphabet
+
+** simple utilities **
+CSA::readRows
+CSA::fileSize
+CSA::largeWrite
+CSA::length
+CSA::memoryUsage
+CSA::parallelSort
+CSA::sequentialSort
+CSA::removeDuplicates
+CSA::readTimer
+
+** simple types **
+CSA::uchar
+CSA::usint
+CSA::sint
+CSA::MEGABYTE
+CSA::CHARS
+CSA::EMPTY_PAIR
+CSA::MILLION
+CSA::pair_type
+
+
+*** where different vectors are used ***
+
+GCSA::array deltaarray for each character that exists in alphabet
+
+
+GCSA::outgoing rlevector
+GCSA::sampled_positions delta
+GCSA::backbone succinct
+
+backbone::original succinct
+backbone::nodes succinct
+bacbone::edges rle
