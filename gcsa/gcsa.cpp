@@ -759,13 +759,14 @@ Backbone::previous(usint index) const
     usint c = alpha->getTextChar(i);
 
     // If BWT[index] contains c, follow the corresponding edge backward.
-    CSA::BitVector::Iterator* array_iter = new CSA::DeltaVector::iterator(*(this->gcsa.array[c]));
-    if(!(array_iter.isSet(index))) { continue; }
-    index = array_iter.rank(index) - 1;
+    CSA::BitVector::Iterator* array_iter = this->gcsa.array[c]->newIterator();
+    if(!(array_iter->isSet(index))) { continue; }
+    index = array_iter->rank(index) - 1;
 
     // If we followed a backbone edge, return the node we ended up in.
     CSA::RLEVector::Iterator edge_iter(*(this->edges));
     if(!(edge_iter.isSet(index))) { continue; }
+    delete array_iter;
     return edge_iter.rank(index) - 1;
   }
 

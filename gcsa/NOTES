@@ -81,4 +81,8 @@ original->writeTo(output)
 original->reportSize()
 
 backbone::nodes succinct
+his->nodes[this->edges[successors.first].rank].value() != this->nodes[current].value() + 1)
+iter.isSet(index);
+this->nodes[i].label
+
 backbone::edges rle
