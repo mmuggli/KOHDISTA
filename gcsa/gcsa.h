@@ -101,7 +101,7 @@ class GCSA
     // This will not work correctly for an initial node, if there are multiple automata.
     std::vector<usint>* getSuccessors(usint index) const;
 
-    CSA::DeltaVector::Iterator* getIterator(usint c) const;
+    CSA::BitVector::Iterator* getIterator(usint c) const;
     CSA::RLEVector::Iterator* getEdgeIterator() const;
 
 //--------------------------------------------------------------------------
@@ -113,7 +113,7 @@ class GCSA
 
     usint node_count;
 
-    CSA::DeltaVector** array;  // BWT
+    CSA::BitVector** array;  // BWT
     CSA::RLEVector* outgoing;        // M
 
     CSA::DeltaVector* sampled_positions;

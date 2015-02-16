@@ -27,7 +27,7 @@ GCSA::GCSA(const std::string& base_name) :
   alphabet(0),
   backbone(0)
 {
-  this->array = (CSA::DeltaVector**)malloc(CHARS*sizeof(CSA::DeltaVector *));
+  this->array = (CSA::BitVector**)malloc(CHARS*sizeof(CSA::DeltaVector *));
   for(usint i = 0; i < CHARS; i++) { this->array[i] = 0; }
 
   std::string index_name = base_name + GCSA_EXTENSION;
@@ -68,7 +68,7 @@ GCSA::GCSA(PathGraph& graph, Graph& parent, bool print) :
   backbone(0)
 {
     if(graph.status != PathGraph::sorted || !(parent.ok)) { return; }
-    this->array = (CSA::DeltaVector**)malloc(CHARS*sizeof(CSA::DeltaVector *));
+    this->array = (CSA::BitVector**)malloc(CHARS*sizeof(CSA::DeltaVector *));
 //  DeltaEncoder* array_encoders[CHARS];
     std::map<usint, CSA::DeltaEncoder*> array_encoders;
     //DeltaEncoder** array_encoders = (DeltaEncoder**)malloc(CHARS);
@@ -396,10 +396,11 @@ GCSA::LF(pair_type range, usint c) const
   if(!(this->alphabet->hasChar(c))) { return EMPTY_PAIR; }
 
   // Follow edges backward using BWT.
-  CSA::DeltaVector::Iterator array_iter(*(this->array[c]));
+  CSA::BitVector::Iterator * array_iter = new CSA::DeltaVector::Iterator((CSA::DeltaVector*)*(this->array[c]));
   range.first = this->alphabet->cumulative(c) + array_iter.rank(range.first, true) - 1;
   range.second = this->alphabet->cumulative(c) + array_iter.rank(range.second) - 1;
   if(CSA::isEmpty(range)) { return EMPTY_PAIR; }
+  delete array_iter;
 
   return this->convertToNodeRange(range);
 }
@@ -432,17 +433,17 @@ GCSA::getSuccessors(usint index) const
   usint c = this->alphabet->charAt(index);
 
   // Find the corresponding incoming edges using BWT.
-  CSA::DeltaVector::Iterator array_iter(*(this->array[c]));
+  CSA::BitVector::Iterator array_iter(*(this->array[c]));
   result->push_back(array_iter.select(index - this->alphabet->cumulative(c)));
   for(usint i = 1; i < successors; i++) { result->push_back(array_iter.selectNext()); }
 
   return result;
 }
 
-CSA::DeltaVector::Iterator*
+CSA::BitVector::Iterator*
 GCSA::getIterator(usint c) const
 {
-  if(c < CHARS && c > 0 && this->alphabet->hasChar(c)) { return new CSA::DeltaVector::Iterator(*(this->array[c])); }
+  if(c < CHARS && c > 0 && this->alphabet->hasChar(c)) { return new CSA::BitVector::Iterator(*(this->array[c])); }
   return 0;
 }
 
@@ -473,7 +474,7 @@ GCSA::Psi(usint index) const
   usint c = this->alphabet->charAt(index);
 
   // Find the corresponding incoming edge using BWT.
-  CSA::DeltaVector::Iterator array_iter(*(this->array[c]));
+  CSA::BitVector::Iterator array_iter(*(this->array[c]));
   index = array_iter.select(index - this->alphabet->cumulative(c));
 
   return index;
@@ -482,7 +483,7 @@ GCSA::Psi(usint index) const
 usint
 GCSA::LF(usint index, usint c) const
 {
-	CSA::DeltaVector::Iterator array_iter(*(this->array[c]));
+	CSA::BitVector::Iterator array_iter(*(this->array[c]));
   index = this->alphabet->cumulative(c) + array_iter.rank(index) - 1;
   
   CSA::RLEVector::Iterator edge_iter(*(this->outgoing));
@@ -738,7 +739,7 @@ Backbone::next(usint index) const
   usint c = this->gcsa.alphabet->charAt(index);
 
   // Find the corresponding incoming edge using BWT.
-  CSA::DeltaVector::Iterator array_iter(*(this->gcsa.array[c]));
+  CSA::BitVector::Iterator array_iter(*(this->gcsa.array[c]));
   index = array_iter.select(index - this->gcsa.alphabet->cumulative(c));
 
   return index;
@@ -758,7 +759,7 @@ Backbone::previous(usint index) const
     usint c = alpha->getTextChar(i);
 
     // If BWT[index] contains c, follow the corresponding edge backward.
-    CSA::DeltaVector::Iterator array_iter(*(this->gcsa.array[c]));
+    CSA::BitVector::Iterator* array_iter = new CSA::DeltaVector::iterator(*(this->gcsa.array[c]));
     if(!(array_iter.isSet(index))) { continue; }
     index = array_iter.rank(index) - 1;
 

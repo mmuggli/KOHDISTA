@@ -105,12 +105,17 @@ class BitVector
     {
       public:
         explicit Iterator(const BitVector& par);
-        ~Iterator();
+        virtual ~Iterator();
 
         inline bool hasNext() const
         {
           return (this->sample.first + this->cur < this->parent.items - 1);
         }
+        virtual usint rank(usint value, bool at_least = false) = 0;
+
+        virtual usint select(usint index) = 0;
+        virtual usint selectNext() = 0;
+        virtual bool isSet(usint value) = 0;
 
       protected:
         const BitVector& parent;

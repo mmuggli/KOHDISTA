@@ -40,15 +40,45 @@ CSA::MILLION
 CSA::pair_type
 
 
-*** where different vectors are used ***
+*** where different vectors are used and the methods invoked on them***
 
-GCSA::array deltaarray for each character that exists in alphabet
+GCSA::array deltaVector for each character that exists in alphabet
+array_iter.rank(range.first, true)
+array_iter.select(index - this->alphabet->cumulative(c)
+array_iter.selectNext()
+array_iters[i]->isSet(lines - 1)
 
 
 GCSA::outgoing rlevector
+->getNumberOfItems()
+->writeTo(output)
+->reportSize()
+->getSize()
+outgoing_iter.select(index)
+outgoing_iter.selectNext()
+outgoing_iter.rank(edge_range.first)
+
+
 GCSA::sampled_positions delta
+sample_iter.isSet(index)
+sample_iter.rank(temp)
+sampled_positions->getNumberOfItems()
+sampled_positions->writeTo(output)
+sampled_positions->reportSize()
+
+* there is a backbone attribute of Graph and also a Backbone class!
+
 GCSA::backbone succinct
 
+backbone->writeTo(base_name)
+backbone->reportSize(print)
+backbone->getNumberOfItems()
+bb_iter->isSet(first - this->nodes)
+
 backbone::original succinct
+iter.isSet(index)
+original->writeTo(output)
+original->reportSize()
+
 backbone::nodes succinct
-bacbone::edges rle
+backbone::edges rle
