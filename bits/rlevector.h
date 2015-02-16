@@ -54,7 +54,7 @@ class RLEVector : public BitVector
 {
   public:
     typedef RLEEncoder Encoder;
-
+    BitVector::Iterator* newIterator();
     explicit RLEVector(std::ifstream& file);
     explicit RLEVector(FILE* file);
     RLEVector(Encoder& encoder, usint universe_size);

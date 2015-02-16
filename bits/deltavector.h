@@ -53,7 +53,7 @@ class DeltaVector : public BitVector
     usint reportSize() const;
 
 //--------------------------------------------------------------------------
-
+    BitVector::Iterator* newIterator();
     class Iterator : public BitVector::Iterator
     {
       public:

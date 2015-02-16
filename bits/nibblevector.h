@@ -19,7 +19,7 @@ class NibbleEncoder : public VectorEncoder
   public:
     NibbleEncoder(usint block_bytes, usint superblock_size = VectorEncoder::SUPERBLOCK_SIZE);
     ~NibbleEncoder();
-
+    BitVector::Iterator* newIterator();
     void setBit(usint value);
     void setRun(usint start, usint len);
 

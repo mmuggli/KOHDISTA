@@ -37,8 +37,12 @@ DeltaVector::reportSize() const
 }
 
 //--------------------------------------------------------------------------
+  BitVector::Iterator*  DeltaVector::newIterator()
+  {
+    return new DeltaVector::Iterator(*this);
+  }
 
-DeltaVector::Iterator::Iterator(const DeltaVector& par) :
+  DeltaVector::Iterator::Iterator(const DeltaVector& par) :
   BitVector::Iterator(par)
 {
 }

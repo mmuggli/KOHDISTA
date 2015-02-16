@@ -83,7 +83,8 @@ class BitVector
     ~BitVector();
 
 //--------------------------------------------------------------------------
-
+    class Iterator;
+    virtual Iterator* newIterator();
     void writeTo(std::ofstream& file) const;
     void writeTo(FILE* file) const;
 
@@ -111,11 +112,11 @@ class BitVector
         {
           return (this->sample.first + this->cur < this->parent.items - 1);
         }
-        virtual usint rank(usint value, bool at_least = false) = 0;
+        virtual usint rank(usint value, bool at_least = false);
 
-        virtual usint select(usint index) = 0;
-        virtual usint selectNext() = 0;
-        virtual bool isSet(usint value) = 0;
+        virtual usint select(usint index);
+        virtual usint selectNext();
+        virtual bool isSet(usint value);
 
       protected:
         const BitVector& parent;
