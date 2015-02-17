@@ -80,11 +80,10 @@ class BitVector
     explicit BitVector(FILE* file);
     BitVector(VectorEncoder& encoder, usint universe_size);
     explicit BitVector(WriteBuffer& vector);
-    ~BitVector();
+    virtual ~BitVector();
 
 //--------------------------------------------------------------------------
-    class Iterator;
-    virtual Iterator* newIterator();
+
     void writeTo(std::ofstream& file) const;
     void writeTo(FILE* file) const;
 
@@ -116,7 +115,7 @@ class BitVector
 
         virtual usint select(usint index);
         virtual usint selectNext();
-        virtual bool isSet(usint value);
+        virtual bool isSet(usint value) ;
 
       protected:
         const BitVector& parent;
@@ -162,6 +161,9 @@ class BitVector
         Iterator(const Iterator&);
         Iterator& operator = (const Iterator&);
     };
+    
+    virtual Iterator* newIterator() ;
+
 
 /*
     These should be implemented in any actual iterator. If the query parameter is out of bounds,

@@ -35,7 +35,7 @@ int main(int argc, char** argv)
     return 2;
   }
 
-  CSA::DeltaVector::Iterator** array_iters = new CSA::DeltaVector::Iterator*[CHARS];
+  CSA::BitVector::Iterator** array_iters = new CSA::BitVector::Iterator*[CHARS];
   for(usint i = 0; i < CHARS; i++)
   {
     array_iters[i] = gcsa.getIterator(i);

@@ -1,6 +1,6 @@
 #include <cstring>
 #include <cstdlib>
-
+#include <assert.h>
 #include "bitvector.h"
 
 
@@ -331,6 +331,29 @@ BitVector::Iterator::sampleForValue(usint value)
   return low;
 }
 
+//FIXME: figure out why these are necessary to get it to link, these should never be called    
+usint BitVector::Iterator::rank(usint value, bool at_least)
+{
+    assert(false);
+    return 0;
+}
+
+usint BitVector::Iterator::select(usint index)
+{
+    assert(false);
+    return 0;
+}
+usint BitVector::Iterator::selectNext()
+{
+    assert(false);
+    return 0;
+}
+bool BitVector::Iterator::isSet(usint value)
+{
+    assert(false);
+    return false;
+}
+BitVector::Iterator* BitVector::newIterator() {return 0;};    
 //--------------------------------------------------------------------------
 
 VectorEncoder::VectorEncoder(usint block_bytes, usint superblock_size, bool _use_small_blocks) :
@@ -418,4 +441,5 @@ VectorEncoder::setFirstBit(usint value)
 }
 
 
+    
 } // namespace CSA

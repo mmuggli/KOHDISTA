@@ -396,9 +396,9 @@ GCSA::LF(pair_type range, usint c) const
   if(!(this->alphabet->hasChar(c))) { return EMPTY_PAIR; }
 
   // Follow edges backward using BWT.
-  CSA::BitVector::Iterator* array_iter = new CSA::DeltaVector::Iterator((CSA::DeltaVector*)*(this->array[c]));
-  range.first = this->alphabet->cumulative(c) + array_iter.rank(range.first, true) - 1;
-  range.second = this->alphabet->cumulative(c) + array_iter.rank(range.second) - 1;
+  CSA::BitVector::Iterator* array_iter = this->array[c]->newIterator();
+  range.first = this->alphabet->cumulative(c) + array_iter->rank(range.first, true) - 1;
+  range.second = this->alphabet->cumulative(c) + array_iter->rank(range.second) - 1;
   if(CSA::isEmpty(range)) { return EMPTY_PAIR; }
   delete array_iter;
 
