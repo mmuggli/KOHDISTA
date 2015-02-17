@@ -348,8 +348,9 @@ GCSA::labelOf(usint index) const
 {
   if(index >= this->getSize()) { return 0; }
 
-  CSA::RLEVector::Iterator outgoing_iter(*(this->outgoing));
-  index = outgoing_iter.select(index);
+  CSA::BitVector::Iterator* outgoing_iter = this->outgoing->newIterator();
+  index = outgoing_iter->select(index);
+  delete outgoing_iter;
   return this->alphabet->charAt(index);
 }
 
@@ -427,16 +428,16 @@ GCSA::getSuccessors(usint index) const
   std::vector<usint>* result = new std::vector<usint>;
   if(index == 0) { return result; } // Final node.
 
-  CSA::RLEVector::Iterator outgoing_iter(*(this->outgoing));
-  index = outgoing_iter.select(index);
-  usint successors = outgoing_iter.selectNext() - index;
+  CSA::BitVector::Iterator* outgoing_iter = this->outgoing->newIterator();
+  index = outgoing_iter->select(index);
+  usint successors = outgoing_iter->selectNext() - index;
   usint c = this->alphabet->charAt(index);
 
   // Find the corresponding incoming edges using BWT.
   CSA::BitVector::Iterator array_iter(*(this->array[c]));
   result->push_back(array_iter.select(index - this->alphabet->cumulative(c)));
   for(usint i = 1; i < successors; i++) { result->push_back(array_iter.selectNext()); }
-
+  delete outgoing_iter;
   return result;
 }
 
@@ -447,10 +448,10 @@ GCSA::getIterator(usint c) const
   return 0;
 }
 
-CSA::RLEVector::Iterator*
+CSA::BitVector::Iterator*
 GCSA::getEdgeIterator() const
 {
-  return new CSA::RLEVector::Iterator(*(this->outgoing));
+    return this->outgoing->newIterator();
 }
 
 //--------------------------------------------------------------------------
@@ -458,9 +459,10 @@ GCSA::getEdgeIterator() const
 pair_type
 GCSA::convertToNodeRange(pair_type edge_range) const
 {
-	CSA::RLEVector::Iterator outgoing_iter(*(this->outgoing));
-  edge_range.first = outgoing_iter.rank(edge_range.first) - 1;
-  edge_range.second = outgoing_iter.rank(edge_range.second) - 1;
+  CSA::BitVector::Iterator* outgoing_iter = this->outgoing->newIterator();
+  edge_range.first = outgoing_iter->rank(edge_range.first) - 1;
+  edge_range.second = outgoing_iter->rank(edge_range.second) - 1;
+  delete outgoing_iter;
   return edge_range;
 }
 
@@ -469,14 +471,14 @@ GCSA::Psi(usint index) const
 {
   if(index == 0) { return this->getSize() - 1; } // Final node.
 
-  CSA::RLEVector::Iterator outgoing_iter(*(this->outgoing));
-  index = outgoing_iter.select(index);
+  CSA::BitVector::Iterator* outgoing_iter = this->outgoing->newIterator();
+  index = outgoing_iter->select(index);
   usint c = this->alphabet->charAt(index);
 
   // Find the corresponding incoming edge using BWT.
   CSA::BitVector::Iterator array_iter(*(this->array[c]));
   index = array_iter.select(index - this->alphabet->cumulative(c));
-
+  delete outgoing_iter;
   return index;
 }
 
@@ -486,8 +488,8 @@ GCSA::LF(usint index, usint c) const
 	CSA::BitVector::Iterator array_iter(*(this->array[c]));
   index = this->alphabet->cumulative(c) + array_iter.rank(index) - 1;
   
-  CSA::RLEVector::Iterator edge_iter(*(this->outgoing));
-  index = edge_iter.rank(index) - 1;
+  CSA::BitVector::Iterator* edge_iter = this->outgoing->newIterator();
+  index = edge_iter->rank(index) - 1;
 
   return index;
 }
@@ -583,8 +585,8 @@ Backbone::Backbone(const GCSA& _gcsa, PathGraph& graph, Graph& parent, bool prin
   // Scan the graph forward and build backbone information.
   CSA::SuccinctEncoder node_encoder(NODE_BLOCK_SIZE);
   CSA::RLEEncoder edge_encoder(EDGE_BLOCK_SIZE);
-  CSA::RLEVector::Iterator edge_iter(*(this->gcsa.outgoing));
-  usint offset = edge_iter.select(0);
+  CSA::BitVector::Iterator* edge_iter = this->gcsa.outgoing->newIterator();
+  usint offset = edge_iter->select(0);
 
   graph.sortEdges(true, true);
   for(usint i = 0; i < graph.node_count; i++)
@@ -615,7 +617,7 @@ Backbone::Backbone(const GCSA& _gcsa, PathGraph& graph, Graph& parent, bool prin
       }
     }
     edge_encoder.addBit(offset);
-    offset = edge_iter.selectNext();
+    offset = edge_iter->selectNext();
   }
 
   node_encoder.flush(); edge_encoder.flush();
@@ -628,6 +630,7 @@ Backbone::Backbone(const GCSA& _gcsa, PathGraph& graph, Graph& parent, bool prin
     std::cout << "done." << std::endl;
   }
   this->ok = true;
+  delete edge_iter;
 }
 
 Backbone::Backbone(const std::string& base_name, const GCSA& _gcsa) :

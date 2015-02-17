@@ -102,7 +102,7 @@ class GCSA
     std::vector<usint>* getSuccessors(usint index) const;
 
     CSA::BitVector::Iterator* getIterator(usint c) const;
-    CSA::RLEVector::Iterator* getEdgeIterator() const;
+    CSA::BitVector::Iterator* getEdgeIterator() const;
 
 //--------------------------------------------------------------------------
 //  INTERNAL VARIABLES
@@ -114,7 +114,7 @@ class GCSA
     usint node_count;
 
     CSA::BitVector** array;  // BWT
-    CSA::RLEVector* outgoing;        // M
+    CSA::BitVector* outgoing;        // M
 
     CSA::DeltaVector* sampled_positions;
     CSA::ReadBuffer* samples;

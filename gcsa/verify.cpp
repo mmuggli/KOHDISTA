@@ -40,7 +40,7 @@ int main(int argc, char** argv)
   {
     array_iters[i] = gcsa.getIterator(i);
   }
-  CSA::RLEVector::Iterator* edge_iter = gcsa.getEdgeIterator();
+  CSA::BitVector::Iterator* edge_iter = gcsa.getEdgeIterator();
 
   std::cout << "Starting verification..." << std::endl;
   usint lines = 0, prev = edge_iter->select(0);
