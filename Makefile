@@ -105,6 +105,7 @@ clean:
 	rm -f rlcsa.a
 	rm -f $(PROGRAMS)
 	rm -f *.o bits/*.o misc/*.o utils/*.o
+	$(MAKE) -C gcsa clean
 
 package:
 	mkdir rlcsa
