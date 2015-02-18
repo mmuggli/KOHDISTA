@@ -6,6 +6,10 @@
 
 namespace CSA
 {
+  BitVector::Iterator*  RLEVector::newIterator()
+  {
+    return new RLEVector::Iterator(*this);
+  }
 
 
 RLEVector::RLEVector(std::ifstream& file) :
@@ -218,6 +222,8 @@ RLEVector::Iterator::selectNextRun(usint max_length)
 
   return pair_type(value, len);
 }
+
+
 
 bool
 RLEVector::Iterator::isSet(usint value)

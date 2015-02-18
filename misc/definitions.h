@@ -17,7 +17,7 @@ namespace CSA
 
 typedef uint64_t usint;
 typedef int64_t  sint;
-
+typedef unsigned int uint;
 inline usint popcount(usint field)
 {
   return __builtin_popcountl(field);

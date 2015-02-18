@@ -6,6 +6,10 @@
 
 namespace CSA
 {
+  BitVector::Iterator*  SuccinctVector::newIterator()
+  {
+    return new SuccinctVector::Iterator(*this);
+  }
 
 
 SuccinctVector::SuccinctVector(std::ifstream& file) :
@@ -189,6 +193,7 @@ SuccinctVector::indexForSelect()
 //--------------------------------------------------------------------------
 
 SuccinctVector::Iterator::Iterator(const SuccinctVector& par) :
+  BitVector::Iterator(par),
   parent(par),
   cur(0)
 {

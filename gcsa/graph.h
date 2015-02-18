@@ -16,6 +16,7 @@ namespace GCSA
 
 typedef CSA::pair_type pair_type;
 typedef CSA::usint usint;
+ typedef CSA::uint uint;
 const usint WORD_BITS = CSA::WORD_BITS;
 
 //--------------------------------------------------------------------------

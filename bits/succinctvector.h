@@ -72,7 +72,7 @@ class SuccinctVector : public BitVector
 
 //--------------------------------------------------------------------------
 
-    class Iterator
+    class Iterator : public BitVector::Iterator
     {
       public:
         explicit Iterator(const SuccinctVector& par);

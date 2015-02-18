@@ -434,17 +434,18 @@ GCSA::getSuccessors(usint index) const
   usint c = this->alphabet->charAt(index);
 
   // Find the corresponding incoming edges using BWT.
-  CSA::BitVector::Iterator array_iter(*(this->array[c]));
-  result->push_back(array_iter.select(index - this->alphabet->cumulative(c)));
-  for(usint i = 1; i < successors; i++) { result->push_back(array_iter.selectNext()); }
+  CSA::BitVector::Iterator* array_iter = this->array[c]->newIterator();
+  result->push_back(array_iter->select(index - this->alphabet->cumulative(c)));
+  for(usint i = 1; i < successors; i++) { result->push_back(array_iter->selectNext()); }
   delete outgoing_iter;
+  delete array_iter;
   return result;
 }
 
 CSA::BitVector::Iterator*
 GCSA::getIterator(usint c) const
 {
-  if(c < CHARS && c > 0 && this->alphabet->hasChar(c)) { return new CSA::BitVector::Iterator(*(this->array[c])); }
+  if(c < CHARS && c > 0 && this->alphabet->hasChar(c)) { return this->array[c]->newIterator(); }
   return 0;
 }
 
@@ -476,18 +477,19 @@ GCSA::Psi(usint index) const
   usint c = this->alphabet->charAt(index);
 
   // Find the corresponding incoming edge using BWT.
-  CSA::BitVector::Iterator array_iter(*(this->array[c]));
-  index = array_iter.select(index - this->alphabet->cumulative(c));
+  CSA::BitVector::Iterator* array_iter = this->array[c]->newIterator();
+  index = array_iter->select(index - this->alphabet->cumulative(c));
   delete outgoing_iter;
+  delete array_iter;
   return index;
 }
 
 usint
 GCSA::LF(usint index, usint c) const
 {
-	CSA::BitVector::Iterator array_iter(*(this->array[c]));
-  index = this->alphabet->cumulative(c) + array_iter.rank(index) - 1;
-  
+	CSA::BitVector::Iterator* array_iter = this->array[c]->newIterator();
+  index = this->alphabet->cumulative(c) + array_iter->rank(index) - 1;
+  delete array_iter;
   CSA::BitVector::Iterator* edge_iter = this->outgoing->newIterator();
   index = edge_iter->rank(index) - 1;
 
@@ -742,9 +744,9 @@ Backbone::next(usint index) const
   usint c = this->gcsa.alphabet->charAt(index);
 
   // Find the corresponding incoming edge using BWT.
-  CSA::BitVector::Iterator array_iter(*(this->gcsa.array[c]));
-  index = array_iter.select(index - this->gcsa.alphabet->cumulative(c));
-
+  CSA::BitVector::Iterator* array_iter = this->gcsa.array[c]->newIterator();
+  index = array_iter->select(index - this->gcsa.alphabet->cumulative(c));
+  delete array_iter;
   return index;
 }
 

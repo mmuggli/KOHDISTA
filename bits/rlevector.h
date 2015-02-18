@@ -58,6 +58,8 @@ class RLEVector : public BitVector
     explicit RLEVector(std::ifstream& file);
     explicit RLEVector(FILE* file);
     RLEVector(Encoder& encoder, usint universe_size);
+
+
     ~RLEVector();
 
 //--------------------------------------------------------------------------
