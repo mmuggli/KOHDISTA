@@ -20,7 +20,7 @@ CXXFLAGS = -Wall -O3 -std=c++11 $(SIZE_FLAGS) $(PARALLEL_FLAGS) $(VECTOR_FLAGS)
 OBJS = rlcsa.o rlcsa_builder.o sasamples.o alphabet.o \
 lcpsamples.o sampler.o suffixarray.o adaptive_samples.o docarray.o \
 bits/array.o bits/bitbuffer.o bits/multiarray.o bits/bitvector.o bits/deltavector.o \
-bits/rlevector.o bits/nibblevector.o bits/succinctvector.o misc/parameters.o misc/utils.o
+bits/sdslvector.o bits/rlevector.o bits/nibblevector.o bits/succinctvector.o misc/parameters.o misc/utils.o
 
 PROGRAMS = rlcsa_test lcp_test parallel_build build_rlcsa build_sa locate_test \
 display_test document_graph read_bwt extract_sequence rlcsa_grep build_plcp sample_lcp \
