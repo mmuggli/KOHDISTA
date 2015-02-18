@@ -6,6 +6,7 @@
 
 #include <bits/deltavector.h>
 #include <bits/rlevector.h>
+#include <bits/sdslvector.h>
 #include <alphabet.h>
 
 #include "graph.h"

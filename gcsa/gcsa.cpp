@@ -27,7 +27,7 @@ GCSA::GCSA(const std::string& base_name) :
   alphabet(0),
   backbone(0)
 {
-  this->array = (CSA::BitVector**)malloc(CHARS*sizeof(CSA::DeltaVector *));
+  this->array = (CSA::BitVector**)malloc(CHARS*sizeof(CSA::SDSLVector *));
   for(usint i = 0; i < CHARS; i++) { this->array[i] = 0; }
 
   std::string index_name = base_name + GCSA_EXTENSION;
@@ -41,7 +41,7 @@ GCSA::GCSA(const std::string& base_name) :
   this->alphabet = new CSA::Alphabet(input);
   for(usint i = 1; i < CHARS; i++)
   {
-    if(this->alphabet->hasChar(i)) { this->array[i] = new CSA::DeltaVector(input); }
+    if(this->alphabet->hasChar(i)) { this->array[i] = new CSA::SDSLVector(input); }
     else { this->array[i] = 0; }
   }
   this->outgoing = new CSA::RLEVector(input);
