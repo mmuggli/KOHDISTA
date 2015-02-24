@@ -47,6 +47,7 @@ SDSLVector::reportSize() const
 SDSLVector::Iterator::Iterator(const SDSLVector& par) :
   BitVector::Iterator(par)
 {
+    current = 0;
 }
 
 SDSLVector::Iterator::~Iterator()
@@ -65,10 +66,13 @@ static inline    bool min(usint i, int j)
 usint
 SDSLVector::Iterator::rank(usint value, bool at_least)
 {
+    //FIXME: handle at_least arg
     usint ret =0;
     for(usint i = 0; i < min(value, backing_vector.size()); ++i)
     {
-        ret += backing_vector[i];
+        if (backing_vector[i]) {
+            ++ret;
+            current = i;
     }
     return ret;
         
@@ -96,11 +100,14 @@ usint
 SDSLVector::Iterator::select(usint index)
 {
 
-    usint ret =0;
+    usint seen =0;
     for(usint i = 0; i < backing_vector.size(); ++i)
     {
-        ret += backing_vector[i];
-        if (ret == index) return i;
+        seen += backing_vector[i];
+        if (seen == index) {
+            current = i;
+            return i;
+        }
     }
     return backing_vector.size();
     
@@ -131,26 +138,36 @@ SDSLVector::Iterator::select(usint index)
 usint
 SDSLVector::Iterator::selectNext()
 {
-  if(this->cur >= this->block_items)
-  {
-    this->getSample(this->block + 1);
-    this->run = 0;
-    return this->val;
-  }
+    
+    for(usint i = current + 1; i < backing_vector.size(); ++i)
+    {
+        if (backing_vector[i]) {
+            current = i;
+            return i;
+        }
+    }
 
-  this->cur++;
-  if(this->run > 0)
-  {
-    this->val++;
-    this->run--;
-  }
-  else
-  {
-    this->val += this->buffer.readDeltaCode();
-    this->run = this->buffer.readDeltaCode() - 1;
-  }
+    return backing_vector.size();
+  // if(this->cur >= this->block_items)
+  // {
+  //   this->getSample(this->block + 1);
+  //   this->run = 0;
+  //   return this->val;
+  // }
 
-  return this->val;
+  // this->cur++;
+  // if(this->run > 0)
+  // {
+  //   this->val++;
+  //   this->run--;
+  // }
+  // else
+  // {
+  //   this->val += this->buffer.readDeltaCode();
+  //   this->run = this->buffer.readDeltaCode() - 1;
+  // }
+
+  // return this->val;
 }
 
 // pair_type

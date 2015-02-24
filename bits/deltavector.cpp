@@ -51,6 +51,9 @@ DeltaVector::Iterator::~Iterator()
 {
 }
 
+
+// cur is a cursor within a block
+// getSample presumably gets to the right block
 usint
 DeltaVector::Iterator::rank(usint value, bool at_least)
 {
@@ -59,12 +62,14 @@ DeltaVector::Iterator::rank(usint value, bool at_least)
   if(value >= par.size) { return par.items; }
   this->getSample(this->sampleForValue(value));
 
+  // this scans through a block till it finds the position
   while(this->cur < this->block_items && this->val < value)
   {
     this->val += this->buffer.readDeltaCode();
     this->cur++;
   }
 
+  
   usint idx = this->sample.first + this->cur + 1;
   if(!at_least && this->val > value) { idx--; }
   if(at_least && this->val < value)

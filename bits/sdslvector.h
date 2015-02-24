@@ -82,6 +82,8 @@ class SDSLVector : public BitVector
         Iterator();
         Iterator(const Iterator&);
         Iterator& operator = (const Iterator&);
+    private:
+        usint current;
     };
 
 //--------------------------------------------------------------------------

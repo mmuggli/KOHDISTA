@@ -7,15 +7,22 @@
 encoder is something that has bits incrementally added to it
 it is later converted to a vector
 
+* These are all derived from BitVector.  BitVector has a /buffer/ attribute which stores all the data.  It also has superblock and sample bookkeeping datastructures which are presumably used by the rank/select operations for constant time lookups (regardless of the encoding of the full dataset).  The original purpose of the common base class seems to be that they all share a common superblock/sample datastructure and routines -- not because they all have a similar interface (although they actually do).  Composition instead of inheritance might have been more fitting from a software engineering perspective. 
+
 CSA::DeltaEncoder
 CSA::DeltaVector
 CSA::SuccinctEncoder
 CSA::SuccinctVector
 CSA::RLEEncoder
 CSA::RLEVector
+
+
 CSA::RLCSA
+
+* contain various methods to encode the raw data in various ways.  These are used to access the /buffer/ attribute of a bitvector.
 CSA::ReadBuffer
 CSA::WriteBuffer
+
 CSA::Alphabet
 
 ** simple utilities **
