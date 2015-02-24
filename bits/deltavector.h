@@ -1,6 +1,8 @@
 #ifndef DELTAVECTOR_H
 #define DELTAVECTOR_H
 
+
+
 #include "bitvector.h"
 
 
@@ -12,6 +14,9 @@ namespace CSA
   This class is used to construct a DeltaVector.
 */
 
+    // The DeltaEncoder stores the number of bits between 1's, so if you call:
+    //    setBit(0); setBit(4); setBit(6);
+    // it will end up calling buffer->writeDeltaCode(4), buffer->writeDeltaCode(2) for the last two
 class DeltaEncoder : public VectorEncoder
 {
   public:

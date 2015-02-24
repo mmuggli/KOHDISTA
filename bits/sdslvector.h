@@ -1,6 +1,6 @@
 #ifndef SDSLVECTOR_H
 #define SDSLVECTOR_H
-
+#include <vector>
 #include <fstream>
 
 #include "bitvector.h"
@@ -9,6 +9,31 @@
 namespace CSA
 {
 
+class SDSLEncoder : public VectorEncoder
+{
+  public:
+    SDSLEncoder(usint block_bytes, usint superblock_size = VectorEncoder::SUPERBLOCK_SIZE);
+    ~SDSLEncoder();
+
+    void setBit(usint value);
+    void setRun(usint start, usint len);
+
+    void addBit(usint value);
+    void addRun(usint start, usint len);
+    void flush();
+
+  protected:
+
+    // These are not allowed.
+    SDSLEncoder();
+    SDSLEncoder(const SDSLEncoder&);
+    SDSLEncoder& operator = (const SDSLEncoder&);
+private:
+    std_vector<bool> backing_vector;
+};
+
+
+    
 class SDSLVector : public BitVector
 {
   public:
@@ -68,7 +93,8 @@ class SDSLVector : public BitVector
     SDSLVector(const SDSLVector&);
     SDSLVector& operator = (const SDSLVector&);
 };
-
+private:
+    std::vector<bool> backing_vector;
 
 } // namespace CSA
 

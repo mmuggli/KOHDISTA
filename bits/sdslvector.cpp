@@ -25,6 +25,7 @@ SDSLVector::SDSLVector(FILE* file) :
 SDSLVector::SDSLVector(Encoder& encoder, usint universe_size) :
   BitVector(encoder, universe_size)
 {
+    backing_vector = encoder.backing_vector;
 }
 
 SDSLVector::~SDSLVector()
@@ -52,54 +53,79 @@ SDSLVector::Iterator::~Iterator()
 {
 }
 
+static inline    bool min(usint i, int j)
+{
+    if (i < j) {
+        return i;
+    }else{
+        return j;
+    }
+}
+    
 usint
 SDSLVector::Iterator::rank(usint value, bool at_least)
 {
-  const SDSLVector& par = (const SDSLVector&)(this->parent);
+    usint ret =0;
+    for(usint i = 0; i < min(value, backing_vector.size()); ++i)
+    {
+        ret += backing_vector[i];
+    }
+    return ret;
+        
+//   const SDSLVector& par = (const SDSLVector&)(this->parent);
 
-  if(value >= par.size) { return par.items; }
+//   if(value >= par.size) { return par.items; }
 
-//  this->valueLoop(value);
+// //  this->valueLoop(value);
 
-  usint idx = this->sample.first + this->cur + 1;
-  if(!at_least && this->val > value)
-  {
-    idx--;
-  }
-  if(at_least && this->val < value)
-  {
-    this->getSample(this->block + 1);
-    this->run = 0;
-    idx = this->sample.first + this->cur + 1;
-  }
-  return idx;
+//   usint idx = this->sample.first + this->cur + 1;
+//   if(!at_least && this->val > value)
+//   {
+//     idx--;
+//   }
+//   if(at_least && this->val < value)
+//   {
+//     this->getSample(this->block + 1);
+//     this->run = 0;
+//     idx = this->sample.first + this->cur + 1;
+//   }
+//   return idx;
 }
 
 usint
 SDSLVector::Iterator::select(usint index)
 {
-  const SDSLVector& par = (const SDSLVector&)(this->parent);
 
-  if(index >= par.items) { return par.size; }
-  this->getSample(this->sampleForIndex(index));
-  this->run = 0;
+    usint ret =0;
+    for(usint i = 0; i < backing_vector.size(); ++i)
+    {
+        ret += backing_vector[i];
+        if (ret == index) return i;
+    }
+    return backing_vector.size();
+    
+  // const SDSLVector& par = (const SDSLVector&)(this->parent);
 
-  usint lim = index - this->sample.first;
-  while(this->cur < lim)
-  {
-    this->val += this->buffer.readDeltaCode();
-    usint temp = this->buffer.readDeltaCode();
-    this->val += temp - 1;
-    this->cur += temp;
-  }
-  if(this->cur > lim)
-  {
-    this->run = this->cur - lim;
-    this->cur -= this->run;
-    this->val -= this->run;
-  }
+  // if(index >= par.items) { return par.size; }
+  // this->getSample(this->sampleForIndex(index));
+  // this->run = 0;
 
-  return this->val;
+  // usint lim = index - this->sample.first;
+  // while(this->cur < lim)
+  // {
+  //   this->val += this->buffer.readDeltaCode();
+  //   usint temp = this->buffer.readDeltaCode();
+  //   this->val += temp - 1;
+  //   this->cur += temp;
+  // }
+  // if(this->cur > lim)
+  // {
+  //   this->run = this->cur - lim;
+  //   this->cur -= this->run;
+  //   this->val -= this->run;
+  // }
+
+  // return this->val;
 }
 
 usint
@@ -228,13 +254,10 @@ SDSLVector::Iterator::selectNext()
 bool
 SDSLVector::Iterator::isSet(usint value)
 {
-  const SDSLVector& par = (const SDSLVector&)(this->parent);
-
-  if(value >= par.size) { return false; }
 
 //  this->valueLoop(value);
 
-  return (this->val == value);
+    return backing_vector[value];
 }
 
 // usint
@@ -387,6 +410,46 @@ SDSLVector::Iterator::isSet(usint value)
 //   this->setRun(this->run.first, this->run.second);
 //   this->run.second = 0;
 // }
+    
+SDSLEncoder::SDSLEncoder(usint block_bytes, usint superblock_size) :
+  VectorEncoder(block_bytes, superblock_size)
+{
+}
+
+SDSLEncoder::~SDSLEncoder()
+{
+}
+
+void
+SDSLEncoder::setBit(usint value)
+{
+    backing_vector[value] = 1;
+}
+
+void
+SDSLEncoder::setRun(usint start, usint len)
+{
+  for(usint i = start; i < start + len; i++) { this->setBit(i); }
+}
+
+void
+SDSLEncoder::addBit(usint value)
+{
+  this->setBit(value);
+}
+
+void
+SDSLEncoder::addRun(usint start, usint len)
+{
+  this->setRun(start, len);
+}
+
+void
+SDSLEncoder::flush()
+{
+}
+
+} // namespace CSA
 
 
 } // namespace CSA
