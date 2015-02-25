@@ -25,7 +25,7 @@ SDSLVector::SDSLVector(FILE* file) :
 SDSLVector::SDSLVector(Encoder& encoder, usint universe_size) :
   BitVector(encoder, universe_size)
 {
-    backing_vector = encoder.backing_vector;
+    backing_vector = static_cast<SDSLEncoder*>(&encoder)->backing_vector;
 }
 
 SDSLVector::~SDSLVector()
@@ -62,17 +62,18 @@ static inline    bool min(usint i, int j)
         return j;
     }
 }
-    
+#define ITER_BACKING_VECTOR     static_cast<const SDSLVector*>(&(this->parent))->backing_vector
 usint
 SDSLVector::Iterator::rank(usint value, bool at_least)
 {
     //FIXME: handle at_least arg
     usint ret =0;
-    for(usint i = 0; i < min(value, backing_vector.size()); ++i)
+    for(usint i = 0; i < min(value, ITER_BACKING_VECTOR.size()); ++i)
     {
-        if (backing_vector[i]) {
+        if (ITER_BACKING_VECTOR[i]) {
             ++ret;
             current = i;
+        }
     }
     return ret;
         
@@ -101,15 +102,15 @@ SDSLVector::Iterator::select(usint index)
 {
 
     usint seen =0;
-    for(usint i = 0; i < backing_vector.size(); ++i)
+    for(usint i = 0; i < ITER_BACKING_VECTOR.size(); ++i)
     {
-        seen += backing_vector[i];
+        seen += ITER_BACKING_VECTOR[i];
         if (seen == index) {
             current = i;
             return i;
         }
     }
-    return backing_vector.size();
+    return ITER_BACKING_VECTOR.size();
     
   // const SDSLVector& par = (const SDSLVector&)(this->parent);
 
@@ -139,15 +140,15 @@ usint
 SDSLVector::Iterator::selectNext()
 {
     
-    for(usint i = current + 1; i < backing_vector.size(); ++i)
+    for(usint i = current + 1; i < ITER_BACKING_VECTOR.size(); ++i)
     {
-        if (backing_vector[i]) {
+        if (ITER_BACKING_VECTOR[i]) {
             current = i;
             return i;
         }
     }
 
-    return backing_vector.size();
+    return ITER_BACKING_VECTOR.size();
   // if(this->cur >= this->block_items)
   // {
   //   this->getSample(this->block + 1);
@@ -274,7 +275,7 @@ SDSLVector::Iterator::isSet(usint value)
 
 //  this->valueLoop(value);
 
-    return backing_vector[value];
+    return ITER_BACKING_VECTOR[value];
 }
 
 // usint
@@ -469,4 +470,4 @@ SDSLEncoder::flush()
 } // namespace CSA
 
 
-} // namespace CSA
+

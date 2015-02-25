@@ -22,14 +22,14 @@ class SDSLEncoder : public VectorEncoder
     void addRun(usint start, usint len);
     void flush();
 
+    std::vector<bool> backing_vector; //FIXME: make this private?
+
   protected:
 
     // These are not allowed.
     SDSLEncoder();
     SDSLEncoder(const SDSLEncoder&);
     SDSLEncoder& operator = (const SDSLEncoder&);
-private:
-    std_vector<bool> backing_vector;
 };
 
 
@@ -88,15 +88,16 @@ class SDSLVector : public BitVector
 
 //--------------------------------------------------------------------------
 
+    std::vector<bool> backing_vector;
+
   protected:
 
     // These are not allowed.
     SDSLVector();
     SDSLVector(const SDSLVector&);
     SDSLVector& operator = (const SDSLVector&);
+
 };
-private:
-    std::vector<bool> backing_vector;
 
 } // namespace CSA
 
