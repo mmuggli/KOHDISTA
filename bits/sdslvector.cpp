@@ -54,7 +54,7 @@ SDSLVector::Iterator::~Iterator()
 {
 }
 
-static inline    bool min(usint i, int j)
+static inline    bool min(usint i, usint j)
 {
     if (i < j) {
         return i;

@@ -68,9 +68,10 @@ main(int argc, char** argv)
     graph = new GCSA::Graph(base_name);
     if(backbone) { graph->createBackbone(); }
     GCSA::GCSA gcsa(*pg, *graph, true);
-    delete graph; graph = 0;
-    delete pg; pg = 0;
     gcsa.writeTo(base_name);
+    //delete graph; graph = 0;
+    //delete pg; pg = 0;
+
 
     double time = CSA::readTimer() - start;
     std::cout << "Used " << time << " seconds." << std::endl;

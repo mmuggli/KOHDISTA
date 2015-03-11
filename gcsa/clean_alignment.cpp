@@ -3,7 +3,7 @@
 #include <iostream>
 
 #include <misc/utils.h>
-
+#include <map>
 
 //using namespace CSA;
 
@@ -21,9 +21,9 @@ readAlignment(std::ifstream& input, usint& lines, usint sequences, bool quality_
 {
   input.clear();
   input.seekg(0, std::ios_base::beg);
-
-  usint *chars = (usint *)malloc(CHARS*sizeof(usint *));
-  for(usint c = 0; c < CHARS; c++) { chars[c] = 0; }
+  std::map<usint, usint> chars;
+  //usint *chars = (usint *)malloc(CHARS*sizeof(usint *));
+  //for(usint c = 0; c < CHARS; c++) { chars[c] = 0; }
   char* data = new char[CSA::fileSize(input)];
 
   std::string line;
@@ -47,14 +47,16 @@ readAlignment(std::ifstream& input, usint& lines, usint sequences, bool quality_
   }
 
   std::cout << "Character counts:" << std::endl;
-  for(usint c = 0; c < CHARS; c++)
+  //for(usint c = 0; c < CHARS; c++)
+  for(std::map<usint, usint>::iterator mapiter = chars.begin(); mapiter != chars.end(); ++mapiter)
   {
-    if(chars[c] > 0) { std::cout << "  " << (char)c << " (" << c << "): " << chars[c] << std::endl; }
+      //if(chars[c] > 0) { std::cout << "  " << (char)c << " (" << c << "): " << chars[c] << std::endl; }
+       { std::cout << "  " << (char)mapiter->first << " (" << mapiter->first << "): " << mapiter->second << std::endl; }
   }
   std::cout << std::endl;
 
   std::cout << "Lines (initial): " << lines << std::endl;
-  free(chars);
+//  free(chars);
   return data;
 }
 

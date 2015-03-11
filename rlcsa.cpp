@@ -4,7 +4,7 @@
 #include <fstream>
 #include <iostream>
 #include <list>
-
+#include <assert.h>
 #include "rlcsa.h"
 #include "misc/utils.h"
 #include "bits/vectors.h"
@@ -36,8 +36,12 @@ RLCSA::RLCSA(const std::string& base_name, bool print) :
     return;
   }
 
-  usint distribution[CHARS];
-  array_file.read((char*)distribution, CHARS * sizeof(usint));
+
+//  usint distribution[CHARS];
+  std::map<usint,usint> distribution;
+  assert (!"FIXME: next comment line doesn't use new counts properly");
+
+//  array_file.read((char*)distribution, CHARS * sizeof(usint));
   this->alphabet = new Alphabet(distribution); this->data_size = this->alphabet->getDataSize();
 
   Parameters parameters;
@@ -180,11 +184,14 @@ RLCSA::RLCSA(RLCSA& index, RLCSA& increment, usint* positions, usint block_size,
   increment.strip();
 
   // Build character tables etc.
-  usint distribution[CHARS];
-  for(usint c = 0; c < CHARS; c++)
-  {
-    distribution[c] = index.alphabet->countOf(c) + increment.alphabet->countOf(c);
-  }
+//  usint distribution[CHARS];
+  std::map<usint,usint> distribution;
+  assert (!"FIXME: next comment line doesn't use new counts properly");
+
+  // for(usint c = 0; c < CHARS; c++)
+  // {
+  //   distribution[c] = index.alphabet->countOf(c) + increment.alphabet->countOf(c);
+  // }
   this->alphabet = new Alphabet(distribution); this->data_size = this->alphabet->getDataSize();
   this->sample_rate = index.sample_rate;
   this->number_of_sequences = index.number_of_sequences + increment.number_of_sequences;
@@ -1508,10 +1515,13 @@ RLCSA::buildRLCSA(uchar* data, usint* ranks, usint bytes, usint block_size, usin
 
 
   // Build character tables etc.
-  usint distribution[CHARS];
-  for(usint c = 0; c < CHARS; c++) { distribution[c] = 0; }
-  for(usint i = 0; i < bytes; i++) { distribution[(usint)data[i]]++; }
-  if(multiple_sequences) { distribution[0] = 0; } // \0 is an end marker
+//  usint distribution[CHARS];
+  std::map<usint,usint> distribution;
+  assert (!"FIXME: next comment line doesn't use new counts properly");
+
+//  for(usint c = 0; c < CHARS; c++) { distribution[c] = 0; }
+//  for(usint i = 0; i < bytes; i++) { distribution[(usint)data[i]]++; }
+//  if(multiple_sequences) { distribution[0] = 0; } // \0 is an end marker
   this->alphabet = new Alphabet(distribution); this->data_size = this->alphabet->getDataSize();
 
 

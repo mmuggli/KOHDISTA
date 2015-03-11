@@ -114,7 +114,7 @@ class GCSA
 
     usint node_count;
 
-    CSA::BitVector** array;  // BWT
+    std::map<usint, CSA::BitVector*> array;  // BWT
     CSA::BitVector* outgoing;        // M
 
     CSA::DeltaVector* sampled_positions;

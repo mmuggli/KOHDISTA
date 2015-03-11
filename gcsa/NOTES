@@ -93,3 +93,27 @@ iter.isSet(index);
 this->nodes[i].label
 
 backbone::edges rle
+
+
+* build_index crash notes *
+BitVector::Iterator::Iterator(const BitVector& par) :
+  parent(par),
+  buffer(par.array, par.block_size), // this ReadBuffer is contructed successfully
+  samples(*(par.samples)) //this one seems to crash
+
+// the following constructor is running when the process is killed
+ReadBuffer::ReadBuffer(const ReadBuffer& original) :
+  data(original.data),
+  size(original.size),
+  item_bits(original.item_bits),
+  items(original.items),
+  free_buffer(false) 
+
+
+seems to be backbone related; when -b is on early commands but omitted for build_index, it seems to work in the debugger
+
+
+* build_index big mmap calls *
+mmap(NULL, 137438957568, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f0027166000
+mmap(NULL, 34359742464, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f2027f75000
+mmap(NULL, 34359742464, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f2828077000
