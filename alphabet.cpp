@@ -94,7 +94,7 @@ Alphabet::initialize(const std::map<usint, usint>& counts)
 void
 Alphabet::writeTo(std::ofstream& file) const
 {
-    for(usint c = 0; c < CHARS; c++) {
+    for(usint c = 0; c < 256/*FIXME:CHARS*/; c++) {
         usint temp = this->countOf(c);
         if (temp != 0) {
             file.write((char*)&c, sizeof(c));//FIXME: possibly not portable wrt endianness

@@ -39,8 +39,9 @@ GCSA::GCSA(const std::string& base_name) :
   }
 
   this->alphabet = new CSA::Alphabet(input);
-  for(usint i = 1; i < CHARS; i++)
+  for(usint i = 1; i < 256 /*FIXME:CHARS*/; i++)
   {
+      if (i % (CHARS/256) == 0) std::cout << "gcsa: processing symbol " << i << " -- (this->array[i] = new CSA::SDSLVector(input);)" << std::endl;
     if(this->alphabet->hasChar(i)) { this->array[i] = new CSA::SDSLVector(input); }
     //else { this->array[i] = 0; }
   }
@@ -118,10 +119,10 @@ GCSA::GCSA(PathGraph& graph, Graph& parent, bool print) :
     CSA::Alphabet *thealphabet = new CSA::Alphabet(counts);
     this->alphabet = thealphabet;
     std::cout << "gcsa: Constructing array encoders and vectors" << std::endl;
-    for(usint i = 1; i < CHARS; i++) //     for(std::map<usint,  pair_type>::iterator mapiter = this->alphabet.begin(); mapiter != this->alphabet.end(); ++mapiter)     
+    for(usint i = 1; i < 256/*FIXME:CHARS*/; i++) //     for(std::map<usint,  pair_type>::iterator mapiter = this->alphabet.begin(); mapiter != this->alphabet.end(); ++mapiter)     
     {
-        if (i % (CHARS/256) == 0) std::cout << "gcsa: processing symbol " << i << std::endl;
 
+      if (i % (CHARS/256) == 0) std::cout << "gcsa: processing symbol " << i << " -- (this->array[i] = new CSA::DeltaVector(*(array_encoders[i]), offset))" << std::endl;
         if(this->alphabet->hasChar(i)) {
             if (array_encoders.find(i) == array_encoders.end()) {
                 std::cout << "alphabet has " << i << " but array_encoders does not!" << std::endl;
@@ -186,13 +187,11 @@ GCSA::GCSA(PathGraph& graph, Graph& parent, bool print) :
 
 GCSA::~GCSA()
 {
-  for(usint i = 0; i < CHARS; i++)
-  {
-      for(std::map<usint,  CSA::BitVector*>::iterator mapiter = this->array.begin(); mapiter != this->array.end(); ++mapiter) {
-          delete mapiter->second; 
-         mapiter->second = 0;
-      }
-  }
+    for(std::map<usint,  CSA::BitVector*>::iterator mapiter = this->array.begin(); mapiter != this->array.end(); ++mapiter) {
+        delete mapiter->second; 
+        mapiter->second = 0;
+    }
+
   delete this->outgoing; this->outgoing = 0;
   delete this->sampled_positions; this->sampled_positions = 0;
   delete this->samples; this->samples = 0;
@@ -213,7 +212,7 @@ GCSA::writeTo(const std::string& base_name) const
   }
 
   this->alphabet->writeTo(output);
-  for(usint i = 1; i < CHARS; i++)
+  for(usint i = 1; i < 256/*FIXME:CHARS*/; i++)
   {
       if(this->alphabet->hasChar(i)) { this->array.at(i)->writeTo(output); }
   }
@@ -244,7 +243,7 @@ usint
 GCSA::reportSize(bool print) const
 {
   usint array_size = 0;
-  for(usint i = 1; i < CHARS; i++)
+  for(usint i = 1; i < 256/*FIXME:CHARS*/; i++)
   {
     if(this->alphabet->hasChar(i)) { array_size += this->array.at(i)->reportSize(); }
   }

@@ -53,7 +53,10 @@ main(int argc, char** argv)
   std::cout << std::endl;
 
   usint *counts = (usint *)malloc(CHARS * sizeof(usint *));
-  for(usint c = 0; c < CHARS; c++) { counts[c] = 0; }
+  for(usint c = 0; c < CHARS; c++) { 
+      if (c % (CHARS/256) == 0) std::cout << "transpose: processing symbol " << c << " -- (counts[c] = 0)" << std::endl;
+      counts[c] = 0; 
+}
 
   if(!multiple_files) { output_file = new std::ofstream(output_name.c_str(), std::ios_base::binary); }
   for(usint i = 0; i < sequences; i++)
@@ -103,8 +106,9 @@ main(int argc, char** argv)
   std::cout << "Character counts: " << std::endl;
   for(usint c = 0; c < CHARS; c++)
   {
-    if(counts[c] == 0) { continue; }
-    std::cout << "  " << ((char)c) << " (" << c << "): " << counts[c] << std::endl;
+      if (c % (CHARS/256) == 0) std::cout << "transpose: processing symbol " << c << " -- (counts[c])" << std::endl;
+      if(counts[c] == 0) { continue; }
+      std::cout << "  " << ((char)c) << " (" << c << "): " << counts[c] << std::endl;
   }
   std::cout << std::endl;
 
