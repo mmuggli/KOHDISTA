@@ -125,7 +125,7 @@ class BitVector
         usint      cur, val, run; // cur == 0 is the sample
         usint      block_items;
 
-        ReadBuffer buffer, samples;
+        ReadBuffer buffer, *samples;
 
         /*
           These functions return the sample corresponding to the block the given
@@ -136,23 +136,23 @@ class BitVector
 
         inline usint getSampledIndex(usint sample_number)
         {
-          return this->samples.readItem(2 * sample_number);
+          return this->samples->readItem(2 * sample_number);
         }
 
         inline usint getSampledValue(usint sample_number)
         {
-          return this->samples.readItem(2 * sample_number + 1);
+          return this->samples->readItem(2 * sample_number + 1);
         }
 
         inline void getSample(usint sample_number)
         {
           this->block = sample_number;
-          this->samples.goToItem(2 * sample_number);
-          this->sample.first = this->samples.readItem();
-          this->sample.second = this->samples.readItem();
+          this->samples->goToItem(2 * sample_number);
+          this->sample.first = this->samples->readItem();
+          this->sample.second = this->samples->readItem();
           this->cur = 0;
           this->val = this->sample.second;
-          this->block_items = this->samples.readItem() - this->sample.first - 1;
+          this->block_items = this->samples->readItem() - this->sample.first - 1;
           this->buffer.moveBuffer(this->parent.array + (this->block * this->parent.block_size));
         }
 

@@ -291,7 +291,7 @@ BitVector::indexForSelect()
 BitVector::Iterator::Iterator(const BitVector& par) :
   parent(par),
   buffer(par.array, par.block_size),
-  samples(*(par.samples))
+  samples((par.samples))
 {
 }
 
@@ -305,11 +305,11 @@ BitVector::Iterator::sampleForIndex(usint index)
   usint low = this->parent.select_index->readItemConst(index / this->parent.select_rate);
   usint high = this->parent.number_of_blocks - 1;
 
-  this->samples.goToItem(2 * low + 2);
+  this->samples->goToItem(2 * low + 2);
   for(; low < high; low++)
   {
-    if(this->samples.readItem() > index) { return low; }
-    this->samples.skipItem();
+    if(this->samples->readItem() > index) { return low; }
+    this->samples->skipItem();
   }
 
   return low;
@@ -321,11 +321,11 @@ BitVector::Iterator::sampleForValue(usint value)
   usint low = this->parent.rank_index->readItemConst(value / this->parent.rank_rate);
   usint high = this->parent.number_of_blocks - 1;
 
-  this->samples.goToItem(2 * low + 3);
+  this->samples->goToItem(2 * low + 3);
   for(; low < high; low++)
   {
-    if(this->samples.readItem() > value) { return low; }
-    this->samples.skipItem();
+    if(this->samples->readItem() > value) { return low; }
+    this->samples->skipItem();
   }
 
   return low;
