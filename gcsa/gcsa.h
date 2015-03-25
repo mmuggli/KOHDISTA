@@ -7,6 +7,7 @@
 #include <bits/deltavector.h>
 #include <bits/rlevector.h>
 #include <bits/sdslvector.h>
+#include <bits/charvector.h>
 #include <alphabet.h>
 
 #include "graph.h"
@@ -102,7 +103,7 @@ class GCSA
     // This will not work correctly for an initial node, if there are multiple automata.
     std::vector<usint>* getSuccessors(usint index) const;
 
-    CSA::BitVector::Iterator* getIterator(usint c) const;
+    CSA::CharVector::Iterator* getIterator(usint c) const;
     CSA::BitVector::Iterator* getEdgeIterator() const;
 
 //--------------------------------------------------------------------------
@@ -114,7 +115,8 @@ class GCSA
 
     usint node_count;
 
-    std::map<usint, CSA::BitVector*> array;  // BWT
+//    std::map<usint, CSA::BitVector*> array;  // BWT
+    CSA::CharVector array;  // BWT
     CSA::BitVector* outgoing;        // M
 
     CSA::DeltaVector* sampled_positions;

@@ -2,7 +2,7 @@
 #include <ctime>
 #include <iostream>
 #include <vector>
-
+#include <assert.h>
 #include <misc/utils.h>
 
 #include "gcsa.h"
@@ -38,7 +38,8 @@ int main(int argc, char** argv)
   CSA::BitVector::Iterator** array_iters = new CSA::BitVector::Iterator*[CHARS];
   for(usint i = 0; i < CHARS; i++)
   {
-    array_iters[i] = gcsa.getIterator(i);
+      assert(!"next line commented out, needs fixing");
+      //array_iters[i] = gcsa.getIterator(i);
   }
   CSA::BitVector::Iterator* edge_iter = gcsa.getEdgeIterator();
 

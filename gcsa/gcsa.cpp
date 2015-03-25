@@ -39,12 +39,12 @@ GCSA::GCSA(const std::string& base_name) :
   }
 
   this->alphabet = new CSA::Alphabet(input);
-  for(usint i = 1; i < 256 /*FIXME:CHARS*/; i++)
-  {
-      if (i % (CHARS/256) == 0) std::cout << "gcsa: processing symbol " << i << " -- (this->array[i] = new CSA::SDSLVector(input);)" << std::endl;
-    if(this->alphabet->hasChar(i)) { this->array[i] = new CSA::SDSLVector(input); }
-    //else { this->array[i] = 0; }
-  }
+  // for(usint i = 1; i < 256 /*FIXME:CHARS*/; i++)
+  // {
+  //     if (i % (CHARS/256) == 0) std::cout << "gcsa: processing symbol " << i << " -- (this->array[i] = new CSA::SDSLVector(input);)" << std::endl;
+  //   if(this->alphabet->hasChar(i)) { this->array[i] = new CSA::SDSLVector(input); }
+  //   //else { this->array[i] = 0; }
+  // }
   this->outgoing = new CSA::RLEVector(input);
   this->node_count = this->outgoing->getNumberOfItems();
 
@@ -128,7 +128,7 @@ GCSA::GCSA(PathGraph& graph, Graph& parent, bool print) :
                 std::cout << "alphabet has " << i << " but array_encoders does not!" << std::endl;
                 array_encoders[i] = new CSA::DeltaEncoder(ARRAY_BLOCK_SIZE); // FIXME this uses a lot of memory
             }
-            this->array[i] = new CSA::DeltaVector(*(array_encoders[i]), offset);
+            //this->array[i] = new CSA::DeltaVector(*(array_encoders[i]), offset);
         }
     }
     outedges.flush();
@@ -187,10 +187,10 @@ GCSA::GCSA(PathGraph& graph, Graph& parent, bool print) :
 
 GCSA::~GCSA()
 {
-    for(std::map<usint,  CSA::BitVector*>::iterator mapiter = this->array.begin(); mapiter != this->array.end(); ++mapiter) {
-        delete mapiter->second; 
-        mapiter->second = 0;
-    }
+    // for(std::map<usint,  CSA::BitVector*>::iterator mapiter = this->array.begin(); mapiter != this->array.end(); ++mapiter) {
+    //     delete mapiter->second; 
+    //     mapiter->second = 0;
+    // }
 
   delete this->outgoing; this->outgoing = 0;
   delete this->sampled_positions; this->sampled_positions = 0;
@@ -212,10 +212,11 @@ GCSA::writeTo(const std::string& base_name) const
   }
 
   this->alphabet->writeTo(output);
-  for(usint i = 1; i < 256/*FIXME:CHARS*/; i++)
-  {
-      if(this->alphabet->hasChar(i)) { this->array.at(i)->writeTo(output); }
-  }
+  this->array.writeTo(output);
+  // for(usint i = 1; i < 256/*FIXME:CHARS*/; i++)
+  // {
+  //     if(this->alphabet->hasChar(i)) { this->array.at(i)->writeTo(output); }
+  // }
   this->outgoing->writeTo(output);
 
   this->sampled_positions->writeTo(output);
@@ -242,11 +243,11 @@ GCSA::isOk() const
 usint
 GCSA::reportSize(bool print) const
 {
-  usint array_size = 0;
-  for(usint i = 1; i < 256/*FIXME:CHARS*/; i++)
-  {
-    if(this->alphabet->hasChar(i)) { array_size += this->array.at(i)->reportSize(); }
-  }
+    usint array_size = this->array.reportSize();
+  // for(usint i = 1; i < 256/*FIXME:CHARS*/; i++)
+  // {
+  //   if(this->alphabet->hasChar(i)) { array_size += this->array.at(i)->reportSize(); }
+  // }
 
   usint outedges = this->outgoing->reportSize();
 
@@ -404,9 +405,12 @@ GCSA::LF(pair_type range, usint c) const
   if(!(this->alphabet->hasChar(c))) { return EMPTY_PAIR; }
 
   // Follow edges backward using BWT.
-  CSA::BitVector::Iterator* array_iter = this->array.at(c)->newIterator();
+  CSA::CharVector::Iterator* array_iter = this->array.newIterator(c);
+  
   range.first = this->alphabet->cumulative(c) + array_iter->rank(range.first, true) - 1;
+
   range.second = this->alphabet->cumulative(c) + array_iter->rank(range.second) - 1;
+
   if(CSA::isEmpty(range)) { return EMPTY_PAIR; }
   delete array_iter;
 
@@ -441,7 +445,7 @@ GCSA::getSuccessors(usint index) const
   usint c = this->alphabet->charAt(index);
 
   // Find the corresponding incoming edges using BWT.
-  CSA::BitVector::Iterator* array_iter = this->array.at(c)->newIterator();
+  CSA::CharVector::Iterator* array_iter = this->array.newIterator(c);
   result->push_back(array_iter->select(index - this->alphabet->cumulative(c)));
   for(usint i = 1; i < successors; i++) { result->push_back(array_iter->selectNext()); }
   delete outgoing_iter;
@@ -449,10 +453,10 @@ GCSA::getSuccessors(usint index) const
   return result;
 }
 
-CSA::BitVector::Iterator*
+CSA::CharVector::Iterator*
 GCSA::getIterator(usint c) const
 {
-  if(c < CHARS && c > 0 && this->alphabet->hasChar(c)) { return this->array.at(c)->newIterator(); }
+  if(c < CHARS && c > 0 && this->alphabet->hasChar(c)) { return this->array.newIterator(c); }
   return 0;
 }
 
@@ -484,7 +488,7 @@ GCSA::Psi(usint index) const
   usint c = this->alphabet->charAt(index);
 
   // Find the corresponding incoming edge using BWT.
-  CSA::BitVector::Iterator* array_iter = this->array.at(c)->newIterator();
+  CSA::CharVector::Iterator* array_iter = this->array.newIterator(c);
   index = array_iter->select(index - this->alphabet->cumulative(c));
   delete outgoing_iter;
   delete array_iter;
@@ -494,7 +498,7 @@ GCSA::Psi(usint index) const
 usint
 GCSA::LF(usint index, usint c) const
 {
-	CSA::BitVector::Iterator* array_iter = this->array.at(c)->newIterator();
+	CSA::CharVector::Iterator* array_iter = this->array.newIterator(c);
   index = this->alphabet->cumulative(c) + array_iter->rank(index) - 1;
   delete array_iter;
   CSA::BitVector::Iterator* edge_iter = this->outgoing->newIterator();
@@ -751,7 +755,7 @@ Backbone::next(usint index) const
   usint c = this->gcsa.alphabet->charAt(index);
 
   // Find the corresponding incoming edge using BWT.
-  CSA::BitVector::Iterator* array_iter = this->gcsa.array.at(c)->newIterator();
+  CSA::CharVector::Iterator* array_iter = this->gcsa.array.newIterator(c);
   index = array_iter->select(index - this->gcsa.alphabet->cumulative(c));
   delete array_iter;
   return index;
@@ -771,7 +775,7 @@ Backbone::previous(usint index) const
     usint c = alpha->getTextChar(i);
 
     // If BWT[index] contains c, follow the corresponding edge backward.
-    CSA::BitVector::Iterator* array_iter = this->gcsa.array.at(c)->newIterator();
+    CSA::CharVector::Iterator* array_iter = this->gcsa.array.newIterator(c);
     if(!(array_iter->isSet(index))) { continue; }
     index = array_iter->rank(index) - 1;
 
