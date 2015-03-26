@@ -1,5 +1,6 @@
 #include "charvector.h"
 #include "deltavector.h"
+#include <iostream>
 
 namespace CSA
 {
@@ -8,6 +9,13 @@ namespace CSA
     {
 
         array[c] = new CSA::DeltaVector(*encoder, offset);
+        std::cout << "populating element " << c << " with " << array.at(c)->reportSize() << " elements. Total: " << reportSize() << std::endl;
+    }
+
+    void CharVector::populate(usint c, DeltaVector *dv)
+    {
+        array[c] = dv;
+        std::cout << "populating element " << c << " with " << array.at(c)->reportSize() << " elements. Total: " << reportSize() << std::endl;
     }
     void CharVector::writeTo(std::ofstream& file) const
     {

@@ -39,12 +39,12 @@ GCSA::GCSA(const std::string& base_name) :
   }
 
   this->alphabet = new CSA::Alphabet(input);
-  // for(usint i = 1; i < 256 /*FIXME:CHARS*/; i++)
-  // {
-  //     if (i % (CHARS/256) == 0) std::cout << "gcsa: processing symbol " << i << " -- (this->array[i] = new CSA::SDSLVector(input);)" << std::endl;
-  //   if(this->alphabet->hasChar(i)) { this->array[i] = new CSA::SDSLVector(input); }
-  //   //else { this->array[i] = 0; }
-  // }
+  for(usint i = 1; i < 256 /*FIXME:CHARS*/; i++)
+  {
+      if (i % (CHARS/256) == 0) std::cout << "gcsa: processing symbol " << i << " -- (this->array[i] = new CSA::SDSLVector(input);)" << std::endl;
+      if(this->alphabet->hasChar(i)) { this->array.populate(i, new CSA::DeltaVector(input)); }
+    //else { this->array[i] = 0; }
+  }
   this->outgoing = new CSA::RLEVector(input);
   this->node_count = this->outgoing->getNumberOfItems();
 
