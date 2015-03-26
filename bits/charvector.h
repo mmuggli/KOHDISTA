@@ -2,6 +2,8 @@
 #define CHARVECTOR_H
 #include <fstream>
 #include "../misc/definitions.h"
+#include "bitvector.h"
+#include <map>
 
 namespace CSA
 {
@@ -17,13 +19,20 @@ public:
 
     class Iterator {
     public:
+        Iterator(BitVector::Iterator *itr);
+        ~Iterator();
         usint select(usint);
         usint selectNext();
         usint rank(usint, bool at_least = false);
         bool isSet(usint);
-};
+
+    private:
+        BitVector::Iterator *itr;
+    };
 
     Iterator *newIterator(usint c) const;
+private:
+    std::map<usint, CSA::BitVector*> array;
 
 };
 
