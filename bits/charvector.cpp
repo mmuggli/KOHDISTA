@@ -1,7 +1,14 @@
 #include "charvector.h"
+#include "deltavector.h"
 
 namespace CSA
 {
+
+    void CharVector::populate(usint c, DeltaVector::Encoder* encoder, usint offset)
+    {
+
+        array[c] = new CSA::DeltaVector(*encoder, offset);
+    }
     void CharVector::writeTo(std::ofstream& file) const
     {
         for(usint i = 1; i < 256/*FIXME:CHARS*/; i++)

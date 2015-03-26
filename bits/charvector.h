@@ -4,14 +4,14 @@
 #include "../misc/definitions.h"
 #include "bitvector.h"
 #include <map>
-
+#include "deltavector.h"
 namespace CSA
 {
 
 class CharVector
 {
 public:
-    
+    void populate(usint c, DeltaVector::Encoder*, usint offset);
     void writeTo(std::ofstream& file) const;
     void writeTo(FILE* file) const;
     usint reportSize() const;

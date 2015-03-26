@@ -129,6 +129,7 @@ GCSA::GCSA(PathGraph& graph, Graph& parent, bool print) :
                 array_encoders[i] = new CSA::DeltaEncoder(ARRAY_BLOCK_SIZE); // FIXME this uses a lot of memory
             }
             //this->array[i] = new CSA::DeltaVector(*(array_encoders[i]), offset);
+            array.populate(i, array_encoders[i], offset);
         }
     }
     outedges.flush();
