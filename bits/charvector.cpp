@@ -27,6 +27,24 @@ namespace CSA
         array[c] = dv;
         std::cout << "populating element " << c << " with " << array.at(c)->reportSize() << " elements. Total: " << reportSize() << std::endl;
     }
+
+    void CharVector::syncFMIndex()
+    {
+        sdsl::int_vector<> temp;
+        for(usint c = 1; c < 256/*FIXME:CHARS*/; c++)
+        {
+            Iterator *itr = newIterator(c);
+            if(array.count(c))  {  
+                for(usint i = 0; i < array.at(c)->getSize(); ++i) {
+                    if (itr->isSet(i)) {
+                        temp[i] = c;
+                    }
+                }
+            }
+        }
+        sdsl::construct_im(fm_index, temp);
+
+    }
     void CharVector::writeTo(std::ofstream& file) const
     {
         for(usint i = 1; i < 256/*FIXME:CHARS*/; i++)

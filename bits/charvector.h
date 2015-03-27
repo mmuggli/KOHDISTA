@@ -15,6 +15,7 @@ class CharVector
 public:
     void populate(usint c, DeltaVector::Encoder*, usint offset);
     void populate(usint c, DeltaVector *);
+    void syncFMIndex();
     void writeTo(std::ofstream& file) const;
     void writeTo(FILE* file) const;
     usint reportSize() const;
