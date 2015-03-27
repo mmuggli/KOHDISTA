@@ -30,11 +30,17 @@ namespace CSA
 
     void CharVector::syncFMIndex()
     {
+        std::cout << "Syncing FMIndex/WT to charwise bit vectors..." << std::endl;
         sdsl::int_vector<> temp;
+        usint m = maxlength();
+        temp.resize(m);
+
         for(usint c = 1; c < 256/*FIXME:CHARS*/; c++)
         {
-            Iterator *itr = newIterator(c);
+
+
             if(array.count(c))  {  
+                Iterator *itr = newIterator(c);
                 for(usint i = 0; i < array.at(c)->getSize(); ++i) {
                     if (itr->isSet(i)) {
                         temp[i] = c;
@@ -42,7 +48,14 @@ namespace CSA
                 }
             }
         }
+        for (usint i = 0; i < m; ++i) {
+            if (temp[i] == 0) {
+                std::cout << "replacing 0 element at position " << i << std::endl;
+                temp[i] = 1; //FIXME: hack to deal with "Error: File "@24135_0" contains zero symbol."
+            }
+        }
         sdsl::construct_im(fm_index, temp);
+        std::cout << "WT size is " << fm_index.size() << std::endl;
 
     }
     void CharVector::writeTo(std::ofstream& file) const

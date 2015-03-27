@@ -45,6 +45,7 @@ GCSA::GCSA(const std::string& base_name) :
       if(this->alphabet->hasChar(i)) { this->array.populate(i, new CSA::DeltaVector(input)); }
     //else { this->array[i] = 0; }
   }
+  array.syncFMIndex();
   this->outgoing = new CSA::RLEVector(input);
   this->node_count = this->outgoing->getNumberOfItems();
 
