@@ -5,6 +5,8 @@
 #include "bitvector.h"
 #include <map>
 #include "deltavector.h"
+#include <sdsl/suffix_arrays.hpp>
+
 namespace CSA
 {
 
@@ -17,7 +19,7 @@ public:
     void writeTo(FILE* file) const;
     usint reportSize() const;
 //    usint rank(usint c, usint num, bool at_least = false) const ;
-
+    usint maxlength() const;
     class Iterator {
     public:
         Iterator(BitVector::Iterator *itr);
@@ -34,6 +36,14 @@ public:
     Iterator *newIterator(usint c) const;
 private:
     std::map<usint, CSA::BitVector*> array;
+    sdsl::csa_wt<sdsl::wt_int<>, 
+                 64, 
+                 64, 
+                 sdsl::sa_order_sa_sampling<>, 
+                 sdsl::int_vector<>, 
+                 sdsl::int_alphabet<>
+                 > fm_index;
+
 
 };
 

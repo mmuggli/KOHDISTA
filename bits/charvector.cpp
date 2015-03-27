@@ -5,6 +5,16 @@
 namespace CSA
 {
 
+    usint CharVector::maxlength() const
+    {
+        usint maxl = 0;
+        for(usint i = 1; i < 256/*FIXME:CHARS*/; i++)
+        {
+            if(array.count(i) && array.at(i)->getSize() > maxl) { maxl =  array.at(i)->getSize();}
+        }
+        return maxl;
+    }
+
     void CharVector::populate(usint c, DeltaVector::Encoder* encoder, usint offset)
     {
 
@@ -35,6 +45,8 @@ namespace CSA
     }
     usint CharVector::reportSize() const
     {
+
+        std::cout << "maxxlength = " << maxlength() << std::endl;
         usint array_size = 0;
         for(usint i = 1; i < 256/*FIXME:CHARS*/; i++)
         {

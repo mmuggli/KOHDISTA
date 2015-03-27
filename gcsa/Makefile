@@ -20,11 +20,13 @@ RLCSA_ROOT =..
 RLCSA = $(RLCSA_ROOT)/rlcsa.a
 
 # DEBUG_FLAGS = -DDEBUG
+SDSL_PREFIX = /s/chopin/l/grad/muggli/local
+SDSL_STUFF =  -I/usr/include/boost/ -I$(SDSL_PREFIX)/include -L /usr/lib64 -L$(SDSL_PREFIX)/lib  -lsdsl -ldivsufsort -ldivsufsort64 
 
-CXXFLAGS = -Wall -g $(DEBUG_FLAGS) $(SIZE_FLAGS) $(PARALLEL_FLAGS) $(VECTOR_FLAGS) -I$(RLCSA_ROOT)
+CXXFLAGS = -Wall -g $(DEBUG_FLAGS) $(SIZE_FLAGS) $(PARALLEL_FLAGS) $(VECTOR_FLAGS) -I$(RLCSA_ROOT) $(SDSL_STUFF) -std=c++11
 
 OBJS = graph.o gcsa.o parameter_handler.o
-LIBRARIES = gcsa.a $(RLCSA)
+LIBRARIES = gcsa.a $(RLCSA) ~/local/lib/libsdsl.a
 PROGRAMS = build_automaton clean_alignment generator build_index gcsa_test transpose rlcsa_test verify determinize
 
 all: default
@@ -39,7 +41,7 @@ gcsa.a: $(OBJS)
 	ar rcs gcsa.a $(OBJS)
 
 build_automaton: build_automaton.o $(LIBRARIES)
-	$(CXX) $(CXXFLAGS) -o build_automaton build_automaton.o $(LIBRARIES)
+	$(CXX) $(CXXFLAGS) -o build_automaton build_automaton.o $(LIBRARIES) 
 
 clean_alignment: clean_alignment.o $(RLCSA)
 	$(CXX) $(CXXFLAGS) -o clean_alignment clean_alignment.o $(RLCSA)
