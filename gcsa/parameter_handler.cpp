@@ -8,7 +8,7 @@
 
 GCSA::ParameterHandler::ParameterHandler(int argc, char** argv, bool _rlcsa, std::string _usage) :
   ok(true), rlcsa(_rlcsa), usage(_usage),
-  indels(false), locate(false), penalties(false), reverse_complement(false), verbose(false), write(false),
+  indels(false), locate(false), penalties(false), reverse_complement(false), verbose(false), write(false), binary_patterns(false),
   index_name(0), patterns_name(0),
   k(0), skip(0), max_matches(0)
 {
@@ -34,6 +34,8 @@ GCSA::ParameterHandler::ParameterHandler(int argc, char** argv, bool _rlcsa, std
           this->verbose = true; break;
         case 'w':
           this->write = true; break;
+        case 'b':
+          this->binary_patterns = true; break;
         case 's':
           if(this->rlcsa) { this->skip = atoi(argv[i] + 2); break; } // Fall through.
         default:

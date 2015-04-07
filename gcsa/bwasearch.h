@@ -192,17 +192,31 @@ class BWASearch
     {
     }
 
-    pair_type find(const std::string& pattern, bool reverse_complement, usint skip = 0) const
+    pair_type find(const std::vector<usint>& pattern, bool reverse_complement, usint skip = 0) const
     {
-      std::string pat = pattern.substr(skip);
-      if(pat.length() == 0) { return this->index.getSARange(); }
+        std::cout << "skip value is " << skip << std::endl;
+        std::vector<usint> pat, revpat;
+        for (usint i = skip; i < pattern.size(); ++i) {
+            pat.push_back(pattern[i]);
+        }//= pattern.substr(skip);
+        revpat = pat; //FIXME: do something more effient that copy the whole vector, change code to iterate in rev order
+        std::reverse(revpat.begin(), revpat.end());  
+      
+      if(pat.size() == 0) { return this->index.getSARange(); }
 
-      uchar c = (reverse_complement ? this->complement(pat[0]) : pat[pat.length() - 1]);
+      uchar c = (reverse_complement ? this->complement(pat[0]) : pat[pat.size() - 1]);
       pair_type range = this->index.getCharRange(c);
       if(CSA::isEmpty(range)) { return range; }
 
       MatchInfo info(1, range, (reverse_complement ? MatchInfo::REVERSE_COMPLEMENT : 0));
+      std::cout << "DEBUG: my forward search for pattern:" << std::endl;
+      this->mybackwardSearch(pat, pat.size(), range);
+      //FIXME: reverse pattern here and rerun
+      std::cout << "DEBUG: my reverse search for pattern:" << std::endl;
+      this->mybackwardSearch(revpat, revpat.size(), range);
+      std::cout << "DEBUG: normal search for pattern:" << std::endl;
       this->backwardSearch(pat, info);
+      std::cout << "Normal search interval is [" << info.range.first <<".."<<info.range.second<<"]" << std::endl;
       this->index.convertToSARange(info.range);
 
       return info.range;
@@ -221,7 +235,7 @@ class BWASearch
       H. Li, R. Durbin: Fast and accurate short read alignment with
       Burrows-Wheeler transform. Bioinformatics, 2009.
     */
-    std::vector<MatchInfo*>* find(const std::string& pattern, usint k, bool allow_indels, bool weighted) const
+    std::vector<MatchInfo*>* find(const std::vector<usint>& pattern, usint k, bool allow_indels, bool weighted) const
     {
       std::vector<MatchInfo*>* results = new std::vector<MatchInfo*>;
       std::vector<MatchInfo*>  heap;
@@ -256,7 +270,7 @@ class BWASearch
           info = heap.back(); heap.pop_back();
           if(info->getEstimate() > best_match) { info->expand(); this->deleteBranch(info); break; }
         }
-        if(info->matched >= pattern.length())
+        if(info->matched >= pattern.size())
         {
           results->push_back(info);
           best_match = std::min(best_match, info->score);
@@ -271,7 +285,7 @@ class BWASearch
         }
         else
         {
-          c = pattern[pattern.length() - info->matched - 1];
+          c = pattern[pattern.size() - info->matched - 1];
           bounds = fw_bounds;
           alphabet = &(this->ALPHABET);
         }
@@ -434,26 +448,72 @@ class BWASearch
       }
     }
 
-    void backwardSearch(const std::string& pattern, MatchInfo& info) const
+    //TODO: convert this to recursive call
+    void mybackwardSearch(const std::vector<usint>& pattern,  unsigned int it, pair_type range) const
+        {
+            if (it == 0) { // match complete
+                std::cout << "Found match in interval [" << range.first << ".." << range.second << "]" << std::endl;
+            } else {
+                unsigned int c = pattern[it-1];
+
+                //wt stuff
+                usint delta = 13;
+                std::vector<long unsigned int> hits = this->index.restricted_unique_range_values(range.first, range.second, 
+                                                                                                 c - delta, c + delta);
+                std::cout << it << " DEBUGmybs - wavelet tree query in SA interval [" << range.first << ".."<< range.second 
+                          << "] has the following symbols within " << delta << " alphabet symbols of " << c << ": " ;
+                for(std::vector<long unsigned int>::iterator itr = hits.begin(); itr != hits.end(); ++itr) {
+                    std::cout << *itr << " ";
+                }
+                std::cout << std::endl;
+                // actual algo
+                for(std::vector<long unsigned int>::iterator itr = hits.begin(); itr != hits.end(); ++itr) {
+                    pair_type new_range = this->index.LF(range, *itr);
+                    std::cout << "LF(<" <<range.first << "," << range.second << ">, " << *itr <<") = <" << new_range.first <<  "," << new_range.second << ">" << std::endl;
+                    if(!CSA::isEmpty(new_range)) {
+                        this->mybackwardSearch(pattern, it-1, new_range);
+                    }
+                }
+            }
+
+
+        }
+
+    void backwardSearch(const std::vector<usint>& pattern, MatchInfo& info) const
     {
-      sint pos = (info.isReverseComplement() ? info.matched : pattern.length() - info.matched - 1);
+        std::cout << "matched is " << info.matched << std::endl;
+      sint pos = (info.isReverseComplement() ? info.matched : pattern.size() - info.matched - 1);
       sint adj = (info.isReverseComplement() ? 1 : -1);
 
-      for(; info.matched < pattern.length(); info.matched++, pos += adj)
+      for(; info.matched < pattern.size(); info.matched++, pos += adj)
       {
-        uchar c = (info.isReverseComplement() ? this->complement(pattern[pos]) : pattern[pos]);
+        unsigned int c = (info.isReverseComplement() ? this->complement(pattern[pos]) : pattern[pos]);
+
+        //wavelet tree stuff
+        usint delta = 13;
+        std::vector<long unsigned int> hits = this->index.restricted_unique_range_values(info.range.first, info.range.second, 
+                                                                                         c - delta, c + delta);
+        std::cout << "DEBUG - wavelet tree query in SA interval [" << info.range.first << ".."<< info.range.second 
+                  << "] has the following symbols within " << delta << " alphabet symbols of " << c << ": " ;
+        for(std::vector<long unsigned int>::iterator itr = hits.begin(); itr != hits.end(); ++itr) {
+            std::cout << *itr << " ";
+        }
+        std::cout << std::endl;
+
+        std::cout << "LF(<" <<info.range.first << "," << info.range.second << ">, " << c <<") = <" ;
         info.range = this->index.LF(info.range, c);
+        std::cout << info.range.first <<  "," << info.range.second << ">" << std::endl;
         if(CSA::isEmpty(info.range)) { return; }
       }
     }
 
-    usint* errorBounds(const std::string& pattern, usint k, bool complement) const
+    usint* errorBounds(const std::vector<usint>& pattern, usint k, bool complement) const
     {
       // bounds[i]: lower bound for errors after matching 'i' characters.
-      usint* bounds = new usint[pattern.length() + 1];
+      usint* bounds = new usint[pattern.size() + 1];
 
       usint errors = 0;
-      usint start = 0, limit = pattern.length() - 1;
+      usint start = 0, limit = pattern.size() - 1;
       while(start <= limit)
       {
         // Search for the lowest 'low' such that there is no match for 'pattern[start, low]'.
@@ -467,8 +527,15 @@ class BWASearch
             usint mid = std::min(low + 2 * diff, low + (high - low) / 2);
             diff = mid - low;
             MatchInfo info(this->index.getBWTRange(), (complement ? MatchInfo::REVERSE_COMPLEMENT : 0));
-            usint temp = (complement ? pattern.length() - mid - 1 : start);
-            this->backwardSearch(pattern.substr(temp, mid + 1 - start), info);
+            usint temp = (complement ? pattern.size() - mid - 1 : start);
+
+            // pattern.substr(temp, mid + 1 - start)
+            std::vector<usint> pat;
+            for (usint i = temp; i < mid + 1 - start; ++i) {
+                pat.push_back(pattern[i]);
+            }
+
+            this->backwardSearch(pat, info);
             if(CSA::isEmpty(info.range))
             {
               high = mid;
@@ -487,15 +554,22 @@ class BWASearch
         {
           MatchInfo info(this->index.getBWTRange(), (complement ? MatchInfo::REVERSE_COMPLEMENT : 0));
           usint temp = (complement ? 0 : start);
-          this->backwardSearch(pattern.substr(temp, pattern.length() - start), info);
+
+          // pattern.substr(temp, pattern.size() - start)
+          std::vector<usint> pat;
+          for (usint i = temp; i < pattern.size() - start; ++i) {
+              pat.push_back(pattern[i]);
+          }
+          
+          this->backwardSearch(pat, info);
           if(CSA::isEmpty(info.range)) { errors++; }
           for(usint i = start; i <= limit; i++) { bounds[i] = errors; }
           break;
         }
       }
 
-      std::reverse(bounds, bounds + pattern.length());
-      bounds[pattern.length()] = 0;
+      std::reverse(bounds, bounds + pattern.size());
+      bounds[pattern.size()] = 0;
       return bounds;
     }
 

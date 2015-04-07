@@ -50,8 +50,10 @@ std::ostream& operator<<(std::ostream& stream, const std::pair<A, B>& data)
 }
 
 // Returns the total length of the rows, excluding line ends.
-usint readRows(const std::string& filename, std::vector<std::string>& rows, bool skip_empty_rows);
-usint readRows(std::ifstream& file, std::vector<std::string>& rows, bool skip_empty_rows);
+    usint readRows(const std::string& filename, std::vector<std::string>& rows, bool skip_empty_rows);
+    usint readRows(std::ifstream& file, std::vector<std::string>& rows, bool skip_empty_rows);
+    usint readPatternRows(const std::string& filename, std::vector<std::vector<usint> >& rows, bool skip_empty_rows, bool expect_binary_patterns);
+    usint readPatternRows(std::ifstream& file, std::vector<std::vector<usint> >& rows, bool skip_empty_rows, bool expect_binary_patterns);
 
 // The same as above, but for the Pizza & Chili Corpus pattern format.
 usint readPizzaChili(const std::string& filename, std::vector<std::string>& patterns);

@@ -42,27 +42,33 @@ class PatternClassifier
       delete this->notfound_file; this->notfound_file = 0;
     }
 
-    void forward(std::string& pattern)
+    std::string stringify(std::vector<usint>& v) {
+        std::stringstream s;
+        for(std::vector<usint>::iterator itr = v.begin(); itr != v.end(); ++itr)
+            s << *itr << ",";
+        return s.str();
+    }
+    void forward(std::vector<usint>& pattern)
     {
       if(this->classify)
       {
-        *(this->forward_file) << pattern << std::endl;
+          *(this->forward_file) << stringify(pattern) << std::endl;
       }
     }
 
-    void reverse(std::string& pattern)
+    void reverse(std::vector<usint>& pattern)
     {
       if(this->classify)
       {
-        *(this->reverse_file) << pattern << std::endl;
+          *(this->reverse_file) << stringify(pattern) << std::endl;
       }
     }
 
-    void notfound(std::string& pattern)
+    void notfound(std::vector<usint>& pattern)
     {
       if(this->classify)
       {
-        *(this->notfound_file) << pattern << std::endl;
+          *(this->notfound_file) << stringify(pattern) << std::endl;
       }
     }
 

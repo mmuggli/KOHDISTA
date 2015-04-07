@@ -20,6 +20,7 @@ public:
     void writeTo(FILE* file) const;
     usint reportSize() const;
 //    usint rank(usint c, usint num, bool at_least = false) const ;
+    std::vector<usint> restricted_unique_range_values(usint l, usint r, usint min, usint max) const;//FIXME: don't copy vector in return  
     usint maxlength() const;
     class Iterator {
     public:
@@ -29,6 +30,7 @@ public:
         usint selectNext();
         usint rank(usint, bool at_least = false);
         bool isSet(usint);
+  
 
     private:
         BitVector::Iterator *itr;

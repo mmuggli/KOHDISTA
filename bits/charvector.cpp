@@ -15,6 +15,17 @@ namespace CSA
         return maxl;
     }
 
+    std::vector<usint> CharVector::restricted_unique_range_values(usint l, usint r, usint min, usint max) const //FIXME: don't copy vector in return
+    {
+        std::vector<long unsigned int> hits;
+        const sdsl::csa_wt<sdsl::wt_int<>, 64, 64, sdsl::sa_order_sa_sampling<>, 
+                           sdsl::int_vector<>, 
+                           sdsl::int_alphabet<>> * const 
+            fm = dynamic_cast<const sdsl::csa_wt<sdsl::wt_int<>, 64, 64, sdsl::sa_order_sa_sampling<>, sdsl::int_vector<>, sdsl::int_alphabet<>> * const>(&fm_index);
+        hits = sdsl::restricted_unique_range_values(fm->wavelet_tree, /*l, fm->wavelet_tree.size(),*/ l, r, min, max);
+        return hits;
+
+    }
     void CharVector::populate(usint c, DeltaVector::Encoder* encoder, usint offset)
     {
 

@@ -58,7 +58,6 @@ largeWrite(std::ofstream& file, char* data, std::streamoff size, std::streamoff 
 }
 
 //--------------------------------------------------------------------------
-
 usint
 readRows(const std::string& filename, std::vector<std::string>& rows, bool skip_empty_rows)
 {
@@ -77,16 +76,74 @@ readRows(const std::string& filename, std::vector<std::string>& rows, bool skip_
 usint
 readRows(std::ifstream& file, std::vector<std::string>& rows, bool skip_empty_rows)
 {
-  usint chars = 0;
-  while(file)
+    usint chars = 0;
+    while(file)
+    {
+        std::string buf;
+        std::getline(file, buf);
+        if(skip_empty_rows && buf.length() == 0) { continue; }
+
+        rows.push_back(buf);
+        chars += buf.length();
+    }
+
+    return chars;
+}
+
+usint
+readPatternRows(const std::string& filename, std::vector<std::vector<usint> >& rows, bool skip_empty_rows, bool expect_binary_patterns)
+{
+  std::ifstream input(filename.c_str(), std::ios_base::binary);
+  std::cout << "reading patterns from file " << filename << std::endl;
+  if(!input)
   {
-    std::string buf;
-    std::getline(file, buf);
-    if(skip_empty_rows && buf.length() == 0) { continue; }
-    rows.push_back(buf);
-    chars += buf.length();
+    std::cerr << "readRows(): Cannot open input file " << filename << std::endl;
+    return 0;
   }
+
+  usint chars = readPatternRows(input, rows, skip_empty_rows, expect_binary_patterns);
+  input.close();
   return chars;
+}
+
+usint
+readPatternRows(std::ifstream& file, std::vector<std::vector<usint> >& rows, bool skip_empty_rows, bool expect_binary_patterns)
+{
+    usint chars = 0;
+    if (expect_binary_patterns) {
+        unsigned int numsyms = 0;
+        file.read((char*)&numsyms, sizeof(numsyms));
+        while(numsyms) {
+            std::vector<usint> row;
+            std::cout << "reading binary pattern: ";
+            for(usint i = 0; i < numsyms; ++i) {
+                unsigned int elem = 0;
+                file.read((char*)&elem, sizeof(elem));
+                std::cout << elem << ",";
+                row.push_back(elem);
+            }
+            std::cout <<std::endl;
+            rows.push_back(row);
+            chars += numsyms;
+            file.read((char*)&numsyms, sizeof(numsyms));
+        }
+        // TODO: read binary patterns
+    } else {
+        while(file)
+        {
+            std::string buf;
+            std::getline(file, buf);
+            if(skip_empty_rows && buf.length() == 0) { continue; }
+            std::vector<usint> vecbuf;
+            //TODO convert buf to vector<int> vecbuf
+            for(std::string::iterator c = buf.begin(); c != buf.end(); ++c) {
+                vecbuf.push_back(*c);
+            }
+            rows.push_back(vecbuf);
+            chars += buf.length();
+        }
+    }
+    return chars;
 }
 
 usint

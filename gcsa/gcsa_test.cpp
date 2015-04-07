@@ -31,6 +31,7 @@ int main(int argc, char** argv)
   GCSA::BWASearch<GCSA::GCSA> bwasearch(gcsa);
 
   std::ifstream patterns(handler.patterns_name, std::ios_base::binary);
+  std::cout << "Reading patterns from file: " << handler.patterns_name << std::endl;
   if(!patterns)
   {
     std::cerr << "Error opening pattern file!" << std::endl;
@@ -38,8 +39,8 @@ int main(int argc, char** argv)
   }
   GCSA::PatternClassifier classifier(handler.write ? handler.patterns_name : "");
 
-  std::vector<std::string> rows;
-  CSA::readRows(patterns, rows, true);
+  std::vector<std::vector<usint> > rows;
+  CSA::readPatternRows(patterns, rows, true, handler.binary_patterns);
 
   usint total = 0, n = rows.size();
   usint found = 0, forward = 0, reverse = 0;
@@ -53,7 +54,7 @@ int main(int argc, char** argv)
   double start = CSA::readTimer();
   for(usint i = 0; i < n; i++)
   {
-    total += rows[i].length();
+    total += rows[i].size();
     bool match = false;
 
     // Always start with exact matching.

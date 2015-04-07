@@ -93,7 +93,7 @@ class GCSA
     // Note that LF will not work correctly, if there are multiple automata and
     // c is the label of initial nodes.
     pair_type LF(pair_type bwt_range, usint c) const;
-
+    std::vector<usint> restricted_unique_range_values(usint l, usint r, usint min, usint max) const;//FIXME: don't copy vector in return
     // User must free the returned vector.
     std::vector<usint>* locateRange(pair_type range) const;
     std::vector<usint>* locateRanges(std::vector<pair_type>& ranges) const;

@@ -401,6 +401,12 @@ GCSA::convertToSARange(std::vector<pair_type>& bwt_ranges) const
 {
 }
 
+
+    std::vector<usint> GCSA::restricted_unique_range_values(usint l, usint r, usint min, usint max) const
+    {
+        return array.restricted_unique_range_values(l, r, min, max);
+    }
+
 pair_type
 GCSA::LF(pair_type range, usint c) const
 {
@@ -505,7 +511,7 @@ GCSA::LF(usint index, usint c) const
   delete array_iter;
   CSA::BitVector::Iterator* edge_iter = this->outgoing->newIterator();
   index = edge_iter->rank(index) - 1;
-
+  delete edge_iter;
   return index;
 }
 

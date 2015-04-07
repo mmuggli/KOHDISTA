@@ -27,7 +27,7 @@ CXXFLAGS = -Wall -g $(DEBUG_FLAGS) $(SIZE_FLAGS) $(PARALLEL_FLAGS) $(VECTOR_FLAG
 
 OBJS = graph.o gcsa.o parameter_handler.o
 LIBRARIES = gcsa.a $(RLCSA) ~/local/lib/libsdsl.a ~/local/lib/libdivsufsort.a  ~/local/lib/libdivsufsort64.a
-PROGRAMS = build_automaton clean_alignment generator build_index gcsa_test transpose rlcsa_test verify determinize
+PROGRAMS = build_automaton clean_alignment generator build_index gcsa_test transpose  verify determinize # rlcsa_test
 
 all: default
 
