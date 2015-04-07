@@ -4,7 +4,7 @@
 
 #include <algorithm>
 #include <vector>
-
+#include <assert.h>
 #include <misc/utils.h>
 
 
@@ -454,24 +454,38 @@ class BWASearch
             if (it == 0) { // match complete
                 std::cout << "Found match in interval [" << range.first << ".." << range.second << "]" << std::endl;
             } else {
-                unsigned int c = pattern[it-1];
-
-                //wt stuff
-                usint delta = 13;
-                std::vector<long unsigned int> hits = this->index.restricted_unique_range_values(range.first, range.second, 
-                                                                                                 c - delta, c + delta);
-                std::cout << it << " DEBUGmybs - wavelet tree query in SA interval [" << range.first << ".."<< range.second 
-                          << "] has the following symbols within " << delta << " alphabet symbols of " << c << ": " ;
-                for(std::vector<long unsigned int>::iterator itr = hits.begin(); itr != hits.end(); ++itr) {
-                    std::cout << *itr << " ";
+                int lookahead = 1;
+                //trim lookahead to max remaining
+                if ((int)it - 1 - lookahead < 0) {
+                    lookahead = it - 1;
                 }
-                std::cout << std::endl;
-                // actual algo
-                for(std::vector<long unsigned int>::iterator itr = hits.begin(); itr != hits.end(); ++itr) {
-                    pair_type new_range = this->index.LF(range, *itr);
-                    std::cout << "LF(<" <<range.first << "," << range.second << ">, " << *itr <<") = <" << new_range.first <<  "," << new_range.second << ">" << std::endl;
-                    if(!CSA::isEmpty(new_range)) {
-                        this->mybackwardSearch(pattern, it-1, new_range);
+                std::cout << "max lookahead: " << lookahead << std::endl;
+                for (int i = 0; i <= lookahead; ++i) {
+                    std::cout << "active lookahead: " << i << std::endl;
+                    unsigned int c = 0;
+                    for (int j = 0; j <= i; ++j) {
+                        int index = it - 1 - j;
+                        assert(index >= 0);
+                        c += pattern[index];
+                    }
+                    
+                    //wt stuff
+                    usint delta = 13;
+                    std::vector<long unsigned int> hits = this->index.restricted_unique_range_values(range.first, range.second, 
+                                                                                                     c - delta, c + delta);
+                    std::cout << it << " DEBUGmybs - wavelet tree query in SA interval [" << range.first << ".."<< range.second 
+                              << "] has the following symbols within " << delta << " alphabet symbols of " << c << ": " ;
+                    for(std::vector<long unsigned int>::iterator itr = hits.begin(); itr != hits.end(); ++itr) {
+                        std::cout << *itr << " ";
+                    }
+                    std::cout << std::endl;
+                    // actual algo
+                    for(std::vector<long unsigned int>::iterator itr = hits.begin(); itr != hits.end(); ++itr) {
+                        pair_type new_range = this->index.LF(range, *itr);
+                        std::cout << "LF(<" <<range.first << "," << range.second << ">, " << *itr <<") = <" << new_range.first <<  "," << new_range.second << ">" << std::endl;
+                        if(!CSA::isEmpty(new_range)) {
+                            this->mybackwardSearch(pattern, it-1, new_range);
+                        }
                     }
                 }
             }
