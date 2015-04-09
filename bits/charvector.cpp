@@ -8,8 +8,11 @@ namespace CSA
     usint CharVector::maxlength() const
     {
         usint maxl = 0;
-        for(usint i = 1; i < 256/*FIXME:CHARS*/; i++)
+//        for(usint i = 1; i < 256/*FIXME:CHARS*/; i++)
+        for(std::map<usint, CSA::BitVector*>::const_iterator itr = array.begin(); itr != array.end(); ++itr)
         {
+            usint i = itr->first;
+            if (i == 0) continue;
             if(array.count(i) && array.at(i)->getSize() > maxl) { maxl =  array.at(i)->getSize();}
         }
         return maxl;
@@ -45,11 +48,11 @@ namespace CSA
         sdsl::int_vector<> temp;
         usint m = maxlength();
         temp.resize(m);
-
-        for(usint c = 1; c < 256/*FIXME:CHARS*/; c++)
+        for(std::map<usint, CSA::BitVector*>::iterator itr = array.begin(); itr != array.end(); ++itr)
+//        for(usint c = 1; c < 256/*FIXME:CHARS*/; c++)
         {
-
-
+            usint c = itr->first;
+            if (c == 0) continue;
             if(array.count(c))  {  
                 Iterator *itr = newIterator(c);
                 for(usint i = 0; i < array.at(c)->getSize(); ++i) {
@@ -71,17 +74,25 @@ namespace CSA
     }
     void CharVector::writeTo(std::ofstream& file) const
     {
-        for(usint i = 1; i < 256/*FIXME:CHARS*/; i++)
+        for(std::map<usint, CSA::BitVector*>::const_iterator itr = array.begin(); itr != array.end(); ++itr)
+//        for(usint i = 1; i < 256/*FIXME:CHARS*/; i++)
         {
+
+            usint i = itr->first;
+            if (i == 0) continue;
             if(array.count(i)) { array.at(i)->writeTo(file); }
+
         }
 
     }
 
     void CharVector::writeTo(FILE* file) const
     {
-        for(usint i = 1; i < 256/*FIXME:CHARS*/; i++)
+//        for(usint i = 1; i < 256/*FIXME:CHARS*/; i++)
+        for(std::map<usint, CSA::BitVector*>::const_iterator itr = array.begin(); itr != array.end(); ++itr)
         {
+            usint i = itr->first;
+            if (i == 0) continue;
             if(array.count(i)) { array.at(i)->writeTo(file); }
         }
     }
@@ -90,8 +101,11 @@ namespace CSA
 
         std::cout << "maxxlength = " << maxlength() << std::endl;
         usint array_size = 0;
-        for(usint i = 1; i < 256/*FIXME:CHARS*/; i++)
+//        for(usint i = 1; i < 256/*FIXME:CHARS*/; i++)
+        for(std::map<usint, CSA::BitVector*>::const_iterator itr = array.begin(); itr != array.end(); ++itr)
         {
+            usint i = itr->first;
+            if (i == 0) continue;
             if(array.count(i)) { array_size += array.at(i)->reportSize(); }
         }
         return array_size;

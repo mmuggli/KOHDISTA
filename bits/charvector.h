@@ -22,6 +22,8 @@ public:
 //    usint rank(usint c, usint num, bool at_least = false) const ;
     std::vector<usint> restricted_unique_range_values(usint l, usint r, usint min, usint max) const;//FIXME: don't copy vector in return  
     usint maxlength() const;
+    inline std::map<usint, CSA::BitVector*>::const_iterator begin() const { return array.begin();}
+    inline std::map<usint, CSA::BitVector*>::const_iterator end() const { return array.end();}
     class Iterator {
     public:
         Iterator(BitVector::Iterator *itr);

@@ -35,8 +35,8 @@ class Alphabet
 
     inline usint getFirstChar() const { return this->text_chars.at(0); }
     inline usint getTextChar(usint i) const { return this->text_chars.at(i); }
-    inline std::map<usint, pair_type>::iterator begin() { return index_ranges.begin();}
-    inline std::map<usint, pair_type>::iterator end() { return index_ranges.end(); }
+    inline std::map<usint, pair_type>::const_iterator begin() const { return index_ranges.begin();}
+    inline std::map<usint, pair_type>::const_iterator end() const { return index_ranges.end(); }
     inline usint charAt(usint i) const
     {
         const usint* curr = &(this->text_chars.at(this->index_pointers.at(i / this->index_rate)));

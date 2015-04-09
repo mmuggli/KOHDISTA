@@ -39,8 +39,11 @@ GCSA::GCSA(const std::string& base_name) :
   }
 
   this->alphabet = new CSA::Alphabet(input);
-  for(usint i = 1; i < 256 /*FIXME:CHARS*/; i++)
+//  for(usint i = 1; i < 256 /*FIXME:CHARS*/; i++)
+  for( std::map<usint, pair_type>::const_iterator itr = this->alphabet->begin(); itr != this->alphabet->end(); ++itr)
   {
+      usint i = itr->first;
+      if (i == 0) continue;
       if (i % (CHARS/256) == 0) std::cout << "gcsa: processing symbol " << i << " -- (this->array[i] = new CSA::SDSLVector(input);)" << std::endl;
       if(this->alphabet->hasChar(i)) { this->array.populate(i, new CSA::DeltaVector(input)); }
     //else { this->array[i] = 0; }
@@ -120,9 +123,11 @@ GCSA::GCSA(PathGraph& graph, Graph& parent, bool print) :
     CSA::Alphabet *thealphabet = new CSA::Alphabet(counts);
     this->alphabet = thealphabet;
     std::cout << "gcsa: Constructing array encoders and vectors" << std::endl;
-    for(usint i = 1; i < 256/*FIXME:CHARS*/; i++) //     for(std::map<usint,  pair_type>::iterator mapiter = this->alphabet.begin(); mapiter != this->alphabet.end(); ++mapiter)     
+//    for(usint i = 1; i < 256/*FIXME:CHARS*/; i++) //     for(std::map<usint,  pair_type>::iterator mapiter = this->alphabet.begin(); mapiter != this->alphabet.end(); ++mapiter)     
+    for( std::map<usint, pair_type>::const_iterator itr = this->alphabet->begin(); itr != this->alphabet->end(); ++itr)
     {
-
+        usint i = itr->first;
+        if (i == 0) continue;
       if (i % (CHARS/256) == 0) std::cout << "gcsa: processing symbol " << i << " -- (this->array[i] = new CSA::DeltaVector(*(array_encoders[i]), offset))" << std::endl;
         if(this->alphabet->hasChar(i)) {
             if (array_encoders.find(i) == array_encoders.end()) {
