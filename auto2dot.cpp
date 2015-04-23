@@ -1,3 +1,7 @@
+// auto2dot.cpp <gcsa format graph>
+// generates a graphviz dot text file description of a graph
+
+
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <fcntl.h>

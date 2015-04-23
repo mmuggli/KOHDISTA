@@ -1,3 +1,7 @@
+// om2automaton <binary optical map> <gcsa format graph file>
+
+
+
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -52,23 +56,30 @@ unsigned int remap(unsigned int l)
 
 int main(int argc, char** argv)
 {
+    if (argc < 3) {
+        printf("Usage: %s <binary optical map> <gcsa format graph>\n", argv[0]);
+        exit(1);
+    }
+
     std::map<unsigned int, unsigned int> counts;
     unsigned int elems = 364876384 / 4;
-    int fd = 0;
+    int ifd = 0;
     char *addr = 0;
-    fd = open(argv[1], O_RDONLY);
+    char *ifname = argv[1];
+    ifd = open(ifname, O_RDONLY);
 //printf("Attempting to mmap %d elements from %s\n", (elems - 1) * 4, fname);
     // // void *mmap(void *addr, size_t length, int prot, int flags,
-    // //            int fd, off_t offset);
+    // //            int ifd, off_t offset);
     addr = (char*)malloc(elems * 4);
     off_t  pa_offset = 0;
-    printf("Reading file\n");
-    int r = read(fd, addr, elems * 4);
+    
+    printf("Reading file %s\n", ifname);
+    int r = read(ifd, addr, elems * 4);
     printf("read %d bytes\n", r);
     if (r != 4*elems) { printf("Incomplete read ERROR!\n");}
 
     int j = 0;
-    Node *start = new Node(-1, 0, 0);
+    Node *start = new Node(-2, 0, 0);
     ++j;
     Node *current = start;
     std::vector<Node *> nodes;
@@ -80,9 +91,11 @@ int main(int argc, char** argv)
 
     for (i = 0; i < r / 4; ++i) {
 
-        unsigned int val = ((unsigned int *)addr)[i];
-        if (val == 0) continue;
-        Node *n = new Node(val, j, j);
+        unsigned int lab = ((unsigned int *)addr)[i];
+        if (lab == 0) continue;
+        if (lab & 0x1) lab -= 1; // mark it as a backbone "uppercase" node
+
+        Node *n = new Node(lab, j, j);
         ++j;
         nodes.push_back(n);
         Edge *e = new Edge(current, n);
@@ -91,7 +104,7 @@ int main(int argc, char** argv)
     }
 
 
-    Node *end = new Node(0, 0, j);
+    Node *end = new Node(0, j, j);
     j++;
     nodes.push_back(end);
     std::cout << "creating edge from " << current->pos << " to " << end->pos << std::endl;
@@ -104,7 +117,9 @@ int main(int argc, char** argv)
 
     std::cout << "Adding skip edges" << std::endl;;
     for (i = 0; i < r / 4 - 1; ++i) {
-        Node *sumnode = new Node(nodes[i+1]->label + nodes[i+2]->label, nodes[i+1]->value, j);
+        unsigned int lab = nodes[i+1]->label + nodes[i+2]->label;
+        lab |= 0x1; // mark it as a nonbackbone "lowercase" node        
+        Node *sumnode = new Node(lab, nodes[i+1]->value, j);
         ++j;
         nodes.push_back(sumnode);
         Edge *e1 = new Edge(nodes[i], sumnode);
@@ -112,28 +127,29 @@ int main(int argc, char** argv)
         Edge *e2 = new Edge(sumnode, nodes[i+3]);
         edges.push_back(e2);
     }
-    printf("writing file\n");
-    int fd2 = open(argv[2], O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
-    if (fd2 == -1) printf("problem opening file to write ERROR!\n");
+    char *ofname = argv[2];
+    printf("writing file %s\n", ofname);
+    int ofd = open(ofname, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+    if (ofd == -1) printf("problem opening file to write ERROR!\n");
     unsigned int numnodes = nodes.size();
     unsigned int numedges = edges.size();
-    write(fd2, &numnodes, 4);
-    write(fd2, &numedges, 4);
+    write(ofd, &numnodes, 4);
+    write(ofd, &numedges, 4);
     for (std::vector<Node *>::iterator ni = nodes.begin(); ni != nodes.end(); ++ni) {
         unsigned int lab = ((*ni)->label);
         if (lab == 0) std::cout << "0 lab at node " << (*ni)->value <<  " pos " << (*ni)->pos << std::endl;
         lab = remap(lab);
         
         counts[lab] += 1;
-        write(fd2, &lab, 4);
-        write(fd2, &((*ni)->value), 4);
+        write(ofd, &lab, 4);
+        write(ofd, &((*ni)->value), 4);
     }
 
     std::cout << "Number of nodes: " << numnodes << std::endl;
     std::cout << "largest node pos: " << (*(nodes.end() - 1))->pos << std::endl;
     for (std::vector<Edge *>::iterator ei = edges.begin(); ei != edges.end(); ++ei) {
-        write(fd2, &((*ei)->from->pos), 4);
-        write(fd2, &((*ei)->to->pos), 4);
+        write(ofd, &((*ei)->from->pos), 4);
+        write(ofd, &((*ei)->to->pos), 4);
     }
 
     printf("size of active alphabet: %d\n", counts.size());
@@ -142,5 +158,5 @@ int main(int argc, char** argv)
     //     std::cout << "counts[" << ci->first << "] = " << ci->second << std::endl;
     // }
 
-    close(fd2);
+    close(ofd);
 }
