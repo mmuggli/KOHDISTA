@@ -68,6 +68,7 @@ namespace CSA
                 temp[i] = 1; //FIXME: hack to deal with "Error: File "@24135_0" contains zero symbol."
             }
         }
+
         sdsl::construct_im(fm_index, temp);
         std::cout << "WT size is " << fm_index.size() << std::endl;
 

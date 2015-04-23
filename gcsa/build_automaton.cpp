@@ -178,7 +178,7 @@ buildAutomaton(std::ifstream& input, const std::string& base_name, usint sequenc
       if(i == 0 || active[i]->key != active[i - 1]->key)
       {
         GCSA::GraphNode n = active[i]->getNode();
-        if(backbone && active[i]->seq > 0) { n.label = tolower(n.label); }
+        if(backbone && active[i]->seq > 0) { n.label = CSA::mytolower(n.label); }
         node_vector.push_back(n);
       }
       edge_buffer.push_back(pair_type(previous[active[i]->seq], node_vector.size() - 1));

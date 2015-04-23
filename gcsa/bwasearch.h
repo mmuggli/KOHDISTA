@@ -193,34 +193,41 @@ class BWASearch
     }
 
     pair_type find(const std::vector<usint>& pattern, bool reverse_complement, usint skip = 0) const
-    {
-        std::cout << "skip value is " << skip << std::endl;
-        std::vector<usint> pat, revpat;
-        for (usint i = skip; i < pattern.size(); ++i) {
-            pat.push_back(pattern[i]);
-        }//= pattern.substr(skip);
-        revpat = pat; //FIXME: do something more effient that copy the whole vector, change code to iterate in rev order
-        std::reverse(revpat.begin(), revpat.end());  
+        {
+            std::cout << "skip value is " << skip << std::endl;
+            std::vector<usint> pat, revpat;
+            for (usint i = skip; i < pattern.size(); ++i) {
+                pat.push_back(pattern[i]);
+            }//= pattern.substr(skip);
+            revpat = pat; //FIXME: do something more effient than copy the whole vector, change code to iterate in rev order
+            std::reverse(revpat.begin(), revpat.end());  
       
-      if(pat.size() == 0) { return this->index.getSARange(); }
+            if(pat.size() == 0) { return this->index.getSARange(); }
 
-      uchar c = (reverse_complement ? this->complement(pat[0]) : pat[pat.size() - 1]);
-      pair_type range = this->index.getCharRange(c);
-      if(CSA::isEmpty(range)) { return range; }
+            unsigned int myc = (reverse_complement ? this->complement(pat[0]) : pat[pat.size() - 1]);
+            pair_type myrange = /*this->index.getSARange()*/ this->index.getCharRange(myc);
+            //pair_type myrange = this->index.getSARange();// this->index.getCharRange(myc);
+            myrange.second += 1;
+            std::cout << "DEBUG: my forward search for pattern:" << std::endl;
+            this->mybackwardSearch(pat, pat.size() - 1 , myrange);
+            // //FIXME: reverse pattern here and rerun
+            std::cout << "DEBUG: my reverse search for pattern:" << std::endl;
+            this->mybackwardSearch(revpat, revpat.size() - 1 , myrange);
+            std::cout << "DEBUG: normal search for pattern:" << std::endl;
 
-      MatchInfo info(1, range, (reverse_complement ? MatchInfo::REVERSE_COMPLEMENT : 0));
-      std::cout << "DEBUG: my forward search for pattern:" << std::endl;
-      this->mybackwardSearch(pat, pat.size(), range);
-      //FIXME: reverse pattern here and rerun
-      std::cout << "DEBUG: my reverse search for pattern:" << std::endl;
-      this->mybackwardSearch(revpat, revpat.size(), range);
-      std::cout << "DEBUG: normal search for pattern:" << std::endl;
-      this->backwardSearch(pat, info);
-      std::cout << "Normal search interval is [" << info.range.first <<".."<<info.range.second<<"]" << std::endl;
-      this->index.convertToSARange(info.range);
 
-      return info.range;
-    }
+            unsigned int c = (reverse_complement ? this->complement(pat[0]) : pat[pat.size() - 1]);
+            pair_type range = /*this->index.getSARange()*/ this->index.getCharRange(c);
+            if(CSA::isEmpty(range)) { return range; }
+
+            MatchInfo info(1, range, (reverse_complement ? MatchInfo::REVERSE_COMPLEMENT : 0));
+            std::cout << "Normal search initial interval is [" << info.range.first <<".."<<info.range.second<<"]" << std::endl;
+            this->backwardSearch(pat, info);
+            std::cout << "Normal search final interval is [" << info.range.first <<".."<<info.range.second<<"]" << std::endl;
+
+            this->index.convertToSARange(info.range);
+            return info.range;
+        }
 
     /*
       Approximate search with at most k mismatches/errors for the pattern and its
@@ -451,28 +458,36 @@ class BWASearch
     //TODO: convert this to recursive call
     void mybackwardSearch(const std::vector<usint>& pattern,  unsigned int it, pair_type range) const
         {
+
             if (it == 0) { // match complete
+                for(int i=0; i < pattern.size() - it; ++i) std::cout << "\t";
                 std::cout << "Found match in interval [" << range.first << ".." << range.second << "]" << std::endl;
             } else {
-                int lookahead = 1;
-                //trim lookahead to max remaining
-                if ((int)it - 1 - lookahead < 0) {
-                    lookahead = it - 1;
-                }
-                std::cout << "max lookahead: " << lookahead << std::endl;
-                for (int i = 0; i <= lookahead; ++i) {
-                    std::cout << "active lookahead: " << i << std::endl;
-                    unsigned int c = 0;
-                    for (int j = 0; j <= i; ++j) {
-                        int index = it - 1 - j;
-                        assert(index >= 0);
-                        c += pattern[index];
-                    }
-                    
+                for(int i=0; i < pattern.size() - it; ++i) std::cout << "\t";
+                std::cout << "Backward search over interval <" <<range.first << "," << range.second << "> next sym: " <<pattern[it-1] << std::endl;
+                // int lookahead = 1;
+                // //trim lookahead to max remaining
+                // if ((int)it - 1 - lookahead < 0) {
+                //     lookahead = it - 1;
+                // }
+                // for (int actv_la = 0; actv_la <= lookahead; ++actv_la) {
+                //     for(int i=0; i < pattern.size() - it; ++i) std::cout << "\t";
+                //     std::cout << "active lookahead: " << actv_la << std::endl;
+
+                //     // compute the sum of the next lookahead fragments
+                //     unsigned int c = 0;
+                //     for (int j = 0; j <= actv_la; ++j) {
+                //         int index = it - 1 - j;
+                //         assert(index >= 0);
+                //         c += pattern[index];
+                //     }
+                int actv_la = 0;
+                int c = pattern[it - 1];
                     //wt stuff
-                    usint delta = 13;
-                    std::vector<long unsigned int> hits = this->index.restricted_unique_range_values(range.first, range.second, 
+                    usint delta = 450;
+                    std::vector<long unsigned int> hits = this->index.restricted_unique_range_values(0/*FIXME range.first*/, 10/*FIXME range.second*/, 
                                                                                                      c - delta, c + delta);
+                    for(int i=0; i < pattern.size() - it; ++i) std::cout << "\t";
                     std::cout << it << " DEBUGmybs - wavelet tree query in SA interval [" << range.first << ".."<< range.second 
                               << "] has the following symbols within " << delta << " alphabet symbols of " << c << ": " ;
                     for(std::vector<long unsigned int>::iterator itr = hits.begin(); itr != hits.end(); ++itr) {
@@ -481,13 +496,15 @@ class BWASearch
                     std::cout << std::endl;
                     // actual algo
                     for(std::vector<long unsigned int>::iterator itr = hits.begin(); itr != hits.end(); ++itr) {
-                        pair_type new_range = this->index.LF(range, *itr);
-                        std::cout << "LF(<" <<range.first << "," << range.second << ">, " << *itr <<") = <" << new_range.first <<  "," << new_range.second << ">" << std::endl;
+                        //pair_type new_range = this->index.LF(range, *itr); //FIXME: renenable WT later
+                        pair_type new_range = this->index.LF(range, c);
+                        for(int i=0; i < pattern.size() - it; ++i) std::cout << "\t";
+//                        std::cout << "LF(<" <<range.first << "," << range.second << ">, " << *itr <<") = <" << new_range.first <<  "," << new_range.second << ">" << std::endl;
                         if(!CSA::isEmpty(new_range)) {
-                            this->mybackwardSearch(pattern, it-1, new_range);
+                            this->mybackwardSearch(pattern, it - 1 - actv_la, new_range);
                         }
                     }
-                }
+              //}
             }
 
 
@@ -504,21 +521,22 @@ class BWASearch
         unsigned int c = (info.isReverseComplement() ? this->complement(pattern[pos]) : pattern[pos]);
 
         //wavelet tree stuff
-        usint delta = 13;
-        std::vector<long unsigned int> hits = this->index.restricted_unique_range_values(info.range.first, info.range.second, 
-                                                                                         c - delta, c + delta);
-        std::cout << "DEBUG - wavelet tree query in SA interval [" << info.range.first << ".."<< info.range.second 
-                  << "] has the following symbols within " << delta << " alphabet symbols of " << c << ": " ;
-        for(std::vector<long unsigned int>::iterator itr = hits.begin(); itr != hits.end(); ++itr) {
-            std::cout << *itr << " ";
-        }
-        std::cout << std::endl;
+        // usint delta = 13;
+        // std::vector<long unsigned int> hits = this->index.restricted_unique_range_values(info.range.first, info.range.second, 
+        //                                                                                  c - delta, c + delta);
+        // std::cout << "DEBUG - wavelet tree query in SA interval [" << info.range.first << ".."<< info.range.second 
+        //           << "] has the following symbols within " << delta << " alphabet symbols of " << c << ": " ;
+        // for(std::vector<long unsigned int>::iterator itr = hits.begin(); itr != hits.end(); ++itr) {
+        //     std::cout << *itr << " ";
+        // }
+        // std::cout << std::endl;
 
-        std::cout << "LF(<" <<info.range.first << "," << info.range.second << ">, " << c <<") = <" ;
+        //std::cout << "LF(<" <<info.range.first << "," << info.range.second << ">, " << c <<") = <" ;
         info.range = this->index.LF(info.range, c);
-        std::cout << info.range.first <<  "," << info.range.second << ">" << std::endl;
+        //std::cout << info.range.first <<  "," << info.range.second << ">" << std::endl;
         if(CSA::isEmpty(info.range)) { return; }
       }
+      std::cout << "Found standard backwardSearch match!" <<std::endl;
     }
 
     usint* errorBounds(const std::vector<usint>& pattern, usint k, bool complement) const

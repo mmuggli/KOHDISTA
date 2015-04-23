@@ -31,6 +31,14 @@ struct GenericTriple
 typedef GenericTriple<usint> Triple;
 
 
+    bool myislower(unsigned int c);
+
+    bool myisupper(unsigned int c) ;
+
+    unsigned int mytoupper(unsigned int c);
+
+    unsigned int mytolower(unsigned int c);
+
 //--------------------------------------------------------------------------
 
 std::streamoff fileSize(std::ifstream& file);

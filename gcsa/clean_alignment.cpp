@@ -37,7 +37,9 @@ readAlignment(std::ifstream& input, usint& lines, usint sequences, bool quality_
 
     for(usint i = 0; i < sequences; i++)
     {
-      char t = toupper(line[i * multi]);
+        //FIXME: not large alphabet capable!
+        //char t = CSA::mytoupper(line[i * multi]);
+        char t = 0x1 & line[i * multi] ? line[i*multi] - 1 : line[i*multi];
       if(gapChars.find(t) != std::string::npos) { t = '-'; }
       chars[(int)t]++;
       data[lines * (sequences + 1) + i] = t;

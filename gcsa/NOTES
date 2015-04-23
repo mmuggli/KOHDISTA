@@ -117,3 +117,9 @@ seems to be backbone related; when -b is on early commands but omitted for build
 mmap(NULL, 137438957568, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f0027166000
 mmap(NULL, 34359742464, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f2027f75000
 mmap(NULL, 34359742464, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f2828077000
+
+
+There are (at least) two internal graph formats: Graph and PathGraph
+A Graph Edges and Nodes are combined in PathGraph PathNode's.  The /from/ and /to/ fields come from the edge. 
+key.first gets the label of the edge's from node.
+

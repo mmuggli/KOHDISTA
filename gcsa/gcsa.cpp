@@ -44,8 +44,9 @@ GCSA::GCSA(const std::string& base_name) :
   {
       usint i = itr->first;
       if (i == 0) continue;
-      if (i % (CHARS/256) == 0) std::cout << "gcsa: processing symbol " << i << " -- (this->array[i] = new CSA::SDSLVector(input);)" << std::endl;
+      //if (i % (CHARS/256) == 0) std::cout << "gcsa: processing symbol " << i << " -- (this->array[i] = new CSA::SDSLVector(input);)" << std::endl;
       if(this->alphabet->hasChar(i)) { this->array.populate(i, new CSA::DeltaVector(input)); }
+
     //else { this->array[i] = 0; }
   }
   array.syncFMIndex();
@@ -62,6 +63,8 @@ GCSA::GCSA(const std::string& base_name) :
   }
 
   this->ok = true;
+
+
   input.close();
 }
 
@@ -100,10 +103,14 @@ GCSA::GCSA(PathGraph& graph, Graph& parent, bool print) :
     for(std::vector<PathNode>::iterator node = graph.nodes.begin(); node != graph.nodes.end(); ++node)
     {
         // Write BWT.
+        std::cout << "node->to: " << node->to << "\tnode->from: " << node->from 
+            //<< "\tnode->key.first: "<<node->key.first <<"\tnode->key.second: "<<node->key.second 
+                  <<  "\tL(bwt)[" << offset << "] = " ;
         pair_type edge_range = graph.getEdges(node - graph.nodes.begin(), false);
         for(usint i = edge_range.first; i <= edge_range.second; i++)
         {
             uint label = graph.edges[i].label;
+            std::cout <<"\tedge->label: " << label << "\tedge->from:" << graph.edges[i].from /*<< "\tedge->rank: " << graph.edges[i].rank*/;
             if (label == 257) std::cout << "found larger label "<<label <<  std::endl;
             counts[label]++;
             if (array_encoders.find(label) == array_encoders.end()) {
@@ -111,11 +118,19 @@ GCSA::GCSA(PathGraph& graph, Graph& parent, bool print) :
             }
             array_encoders[label]->setBit(offset);
         }
+
+
+
+
+        std::cout << "\t\t M = 1";
         offset++;
 
         // Write M
         outedges.addBit(edge_offset);
-        edge_offset += std::max((usint)1, (*node).outdegree());
+        unsigned addend = std::max((usint)1, (*node).outdegree());
+        for (unsigned ii = 0; ii < addend - 1; ++ii) std::cout <<"0";
+        std::cout << std::endl;
+        edge_offset += addend;
     }
     std::cout << "Done.   array_encoders has " << array_encoders.size() << " elements." << std::endl;
     counts[0] = graph.automata; //FIXME: figure out WTF is going on here, c++ static type checking doesn't catch this potential bug
@@ -415,6 +430,8 @@ GCSA::convertToSARange(std::vector<pair_type>& bwt_ranges) const
 pair_type
 GCSA::LF(pair_type range, usint c) const
 {
+    std::cout << "LF(<" <<range.first << "," << range.second << ">, " << c <<") = <";
+    
   if(!(this->alphabet->hasChar(c))) { return EMPTY_PAIR; }
 
   // Follow edges backward using BWT.
@@ -424,10 +441,12 @@ GCSA::LF(pair_type range, usint c) const
 
   range.second = this->alphabet->cumulative(c) + array_iter->rank(range.second) - 1;
 
+  std::cout << range.first <<  "," << range.second << ">" << std::endl;
   if(CSA::isEmpty(range)) { return EMPTY_PAIR; }
   delete array_iter;
-
-  return this->convertToNodeRange(range);
+  pair_type ret_range = this->convertToNodeRange(range);
+  std::cout << " --->  <" << ret_range.first <<  "," << ret_range.second << ">" << std::endl;
+  return ret_range;
 }
 
 std::vector<usint>*
@@ -574,33 +593,34 @@ Backbone::Backbone(const GCSA& _gcsa, PathGraph& graph, Graph& parent, bool prin
   }
 
 
+
   // Use a kind of backward searching to find the backbone in PathGraph.
   usint bb_nodes = 0;
-  for(usint j = 0; j < this->gcsa.getNumberOfAutomata(); j++)
-  {
-    usint curr = j;  // Final node of automaton j.
-    graph.nodes[curr].setBackbone(); bb_nodes++;
-    while(curr < this->gcsa.getSize() - this->gcsa.getNumberOfAutomata()) // Not the initial node.
-    {
-      bool found = false;
-      pair_type edge_range = graph.getEdges(curr, false);
-      for(usint i = edge_range.first; i <= edge_range.second; i++)
-      {
-        usint prev = graph.edges[i].from;
-        if(iter.isSet(graph.nodes[prev].from) &&
-           graph.nodes[prev].value() == graph.nodes[curr].value() - 1)
-       {
-          graph.nodes[prev].setBackbone(); bb_nodes++;
-          curr = prev;
-          found = true; break;
-        }
+  for(usint j = 0; j < this->gcsa.getNumberOfAutomata(); j++) {
+      std::cout << "processing automata " << j << " of " <<  this->gcsa.getNumberOfAutomata()  << std::endl;
+      usint curr_node = j;  // Final node of automaton j.
+      graph.nodes[curr_node].setBackbone(); 
+      bb_nodes++;
+      while(curr_node < this->gcsa.getSize() - this->gcsa.getNumberOfAutomata()) {// Not the initial node.
+          std::cout << "\tcurr_node: " << curr_node << " of " << this->gcsa.getSize() - this->gcsa.getNumberOfAutomata()<< std::endl;
+          bool found = false;
+          pair_type edge_range = graph.getEdges(curr_node, false);
+          for(usint i = edge_range.first; i <= edge_range.second; i++) {
+              usint prev = graph.edges[i].from;
+              std::cout << "\t\tedge " << i << " of " << edge_range.second << " (prev " << prev << ")" <<std::endl;
+              std::cout << "\t\tpredicate: " << iter.isSet(graph.nodes[prev].from) << " " << graph.nodes[prev].value() << " " <<  graph.nodes[curr_node].value() - 1 << std::endl;
+              if(iter.isSet(graph.nodes[prev].from) && graph.nodes[prev].value() == graph.nodes[curr_node].value() - 1) {
+                  graph.nodes[prev].setBackbone(); 
+                  bb_nodes++;
+                  curr_node = prev;
+                  found = true; break;
+              }
+          }
+          if(!found) {
+              std::cerr << "Error: Cannot find previous backbone node!" << std::endl;
+              return;
+          }
       }
-      if(!found)
-      {
-        std::cerr << "Error: Cannot find previous backbone node!" << std::endl;
-        return;
-      }
-    }
   }
   if(print)
   {

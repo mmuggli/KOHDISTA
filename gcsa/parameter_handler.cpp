@@ -88,6 +88,7 @@ GCSA::ParameterHandler::printUsage() const
   }
   std::cout << "  -v   Verbose output." << std::endl;
   std::cout << "  -w   Write found patterns into different files (does not work with -k)." << std::endl;
+  std::cout << "  -b   Expect pattern file in binary format." << std::endl;
   std::cout << std::endl;
 }
 

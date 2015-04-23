@@ -90,6 +90,7 @@ readRows(std::ifstream& file, std::vector<std::string>& rows, bool skip_empty_ro
     return chars;
 }
 
+
 usint
 readPatternRows(const std::string& filename, std::vector<std::vector<usint> >& rows, bool skip_empty_rows, bool expect_binary_patterns)
 {
@@ -525,5 +526,31 @@ mergeRanges(std::vector<pair_type>* vec, bool parallel)
 }
 
 //--------------------------------------------------------------------------
+
+
+     bool myislower(unsigned int c)
+    {
+        return  (0x1 & c);
+    }
+
+     bool myisupper(unsigned int c) 
+    {
+        return !myislower(c);
+    }
+
+     unsigned int mytoupper(unsigned int c)
+    {
+        if (myislower(c)) c -=1;
+        return c;
+    }
+
+     unsigned int mytolower(unsigned int c)
+    {
+        
+        c |= 0x1;
+        
+        return c;
+    }
+
 
 } // namespace CSA
