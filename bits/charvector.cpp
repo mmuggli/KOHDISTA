@@ -21,11 +21,13 @@ namespace CSA
     std::vector<usint> CharVector::restricted_unique_range_values(usint l, usint r, usint min, usint max) const //FIXME: don't copy vector in return
     {
         std::vector<long unsigned int> hits;
-        const sdsl::csa_wt<sdsl::wt_int<>, 64, 64, sdsl::sa_order_sa_sampling<>, 
-                           sdsl::int_vector<>, 
-                           sdsl::int_alphabet<>> * const 
-            fm = dynamic_cast<const sdsl::csa_wt<sdsl::wt_int<>, 64, 64, sdsl::sa_order_sa_sampling<>, sdsl::int_vector<>, sdsl::int_alphabet<>> * const>(&fm_index);
-        hits = sdsl::restricted_unique_range_values(fm->wavelet_tree, /*l, fm->wavelet_tree.size(),*/ l, r, min, max);
+        // const sdsl::csa_wt<sdsl::wt_int<>, 64, 64, sdsl::sa_order_sa_sampling<>, 
+        //                    sdsl::int_vector<>, 
+        //                    sdsl::int_alphabet<>> * const 
+        //     fm = dynamic_cast<const sdsl::csa_wt<sdsl::wt_int<>, 64, 64, sdsl::sa_order_sa_sampling<>, sdsl::int_vector<>, sdsl::int_alphabet<>> * const>(&fm_index);
+        usint mapped_l = incoming_itr->select(l), mapped_r = incoming_itr->select(r);
+        std::cout << "mapping " << l << "," << r << " to " << mapped_l <<"," << mapped_r <<std::endl;
+        hits = sdsl::restricted_unique_range_values(wt /*fm->wavelet_tree*/, /*l, fm->wavelet_tree.size(),*/ mapped_l, mapped_r, min, max);
         return hits;
 
     }
@@ -40,6 +42,18 @@ namespace CSA
     {
         array[c] = dv;
         std::cout << "populating element " << c << " with " << array.at(c)->reportSize() << " elements. Total: " << reportSize() << std::endl;
+    }
+
+    void CharVector::constructF(CSA::RLEEncoder &inedges, unsigned int incomingedge_offset)
+    {
+        incoming = new CSA::RLEVector(inedges, incomingedge_offset);
+        incoming_itr = incoming->newIterator();
+    }
+
+    void CharVector::setwt(sdsl::int_vector<32> &v)
+    {
+        sdsl::construct_im(wt, v);
+        //wt = new sdsl::wt_int<>(v);
     }
 
     void CharVector::syncFMIndex()
@@ -69,8 +83,8 @@ namespace CSA
             }
         }
 
-        sdsl::construct_im(fm_index, temp);
-        std::cout << "WT size is " << fm_index.size() << std::endl;
+//        sdsl::construct_im(fm_index, temp);
+        //      std::cout << "WT size is " << fm_index.size() << std::endl;
 
     }
     void CharVector::writeTo(std::ofstream& file) const
@@ -85,6 +99,15 @@ namespace CSA
 
         }
 
+        incoming->writeTo(file);
+        wt.serialize(file);
+
+    }
+    void CharVector::load(std::ifstream &file)
+    {
+        incoming = new CSA::RLEVector(file);
+        incoming_itr = incoming->newIterator();
+        wt.load(file);
     }
 
     void CharVector::writeTo(FILE* file) const
@@ -96,6 +119,10 @@ namespace CSA
             if (i == 0) continue;
             if(array.count(i)) { array.at(i)->writeTo(file); }
         }
+        incoming->writeTo(file);
+        assert(false);
+//        sdsl::store_to_file(wt, file);
+
     }
     usint CharVector::reportSize() const
     {

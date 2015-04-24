@@ -9,7 +9,7 @@
 #include <bits/sdslvector.h>
 #include <bits/charvector.h>
 #include <alphabet.h>
-
+#include <sdsl/wt_int.hpp>
 #include "graph.h"
 
 
@@ -118,6 +118,7 @@ class GCSA
 //    std::map<usint, CSA::BitVector*> array;  // BWT
     CSA::CharVector array;  // BWT
     CSA::BitVector* outgoing;        // M
+
 
     CSA::DeltaVector* sampled_positions;
     CSA::ReadBuffer* samples;

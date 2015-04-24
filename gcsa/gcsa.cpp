@@ -49,6 +49,7 @@ GCSA::GCSA(const std::string& base_name) :
 
     //else { this->array[i] = 0; }
   }
+  array.load(input);
   array.syncFMIndex();
   this->outgoing = new CSA::RLEVector(input);
   this->node_count = this->outgoing->getNumberOfItems();
@@ -81,6 +82,7 @@ GCSA::GCSA(PathGraph& graph, Graph& parent, bool print) :
     std::map<usint, CSA::DeltaEncoder*> array_encoders;
     //DeltaEncoder** array_encoders = (DeltaEncoder**)malloc(CHARS);
     CSA::RLEEncoder outedges(OUTGOING_BLOCK_SIZE);
+    CSA::RLEEncoder inedges(OUTGOING_BLOCK_SIZE);
     //usint *counts = (usint*)malloc(CHARS*sizeof(usint *));
     std::map<usint, usint> counts;
 //  usint counts[CHARS*CHARS];
@@ -98,8 +100,11 @@ GCSA::GCSA(PathGraph& graph, Graph& parent, bool print) :
     if(print) { std::cout << graph.edge_count << " edges." << std::endl; }
 
 
-    usint offset = 0, edge_offset = 0;
+    usint offset = 0, edge_offset = 0, incomingedge_offset = 0;
+    
     std::cout << "Writing BWT and M..." << std::endl;
+    sdsl::int_vector<32> wt_data;
+    wt_data.resize(graph.edges.size());
     for(std::vector<PathNode>::iterator node = graph.nodes.begin(); node != graph.nodes.end(); ++node)
     {
         // Write BWT.
@@ -109,6 +114,7 @@ GCSA::GCSA(PathGraph& graph, Graph& parent, bool print) :
         pair_type edge_range = graph.getEdges(node - graph.nodes.begin(), false);
         for(usint i = edge_range.first; i <= edge_range.second; i++)
         {
+            if (i == edge_range.first) inedges.addBit(incomingedge_offset);
             uint label = graph.edges[i].label;
             std::cout <<"\tedge->label: " << label << "\tedge->from:" << graph.edges[i].from /*<< "\tedge->rank: " << graph.edges[i].rank*/;
             if (label == 257) std::cout << "found larger label "<<label <<  std::endl;
@@ -117,9 +123,10 @@ GCSA::GCSA(PathGraph& graph, Graph& parent, bool print) :
                 array_encoders[label] = new CSA::DeltaEncoder(ARRAY_BLOCK_SIZE); // FIXME this uses a lot of memory
             }
             array_encoders[label]->setBit(offset);
+            wt_data[incomingedge_offset] = label;
+            std::cout << "setting wt[" << incomingedge_offset << "] = " << label <<std::endl;
+            incomingedge_offset++;
         }
-
-
 
 
         std::cout << "\t\t M = 1";
@@ -153,10 +160,20 @@ GCSA::GCSA(PathGraph& graph, Graph& parent, bool print) :
             array.populate(i, array_encoders[i], offset);
         }
     }
+
+    array.setwt(wt_data);
     outedges.flush();
     std::cout << "gcsa: Constructing outgoing" << std::endl;
     this->outgoing = new CSA::RLEVector(outedges, edge_offset);
+    this->array.constructF(inedges, incomingedge_offset);
     this->node_count = this->outgoing->getNumberOfItems();
+
+    std::vector<usint> test = array.restricted_unique_range_values(0,10,1,10000);
+    std::cout << "wt before ser/des: ";
+    for (std::vector<usint>::iterator it = test.begin(); it!=test.end(); ++it) {
+        std::cout << *it << " ";
+    }
+    std::cout << std::endl;
 
 
     // Create the backbone.
@@ -240,7 +257,7 @@ GCSA::writeTo(const std::string& base_name) const
   //     if(this->alphabet->hasChar(i)) { this->array.at(i)->writeTo(output); }
   // }
   this->outgoing->writeTo(output);
-
+  this->array.writeTo(output);
   this->sampled_positions->writeTo(output);
   usint sample_bits = (this->support_locate ? this->samples->getItemSize() : 0);
   output.write((char*)&sample_bits, sizeof(usint));
