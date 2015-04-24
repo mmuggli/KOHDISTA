@@ -25,10 +25,23 @@ namespace CSA
         //                    sdsl::int_vector<>, 
         //                    sdsl::int_alphabet<>> * const 
         //     fm = dynamic_cast<const sdsl::csa_wt<sdsl::wt_int<>, 64, 64, sdsl::sa_order_sa_sampling<>, sdsl::int_vector<>, sdsl::int_alphabet<>> * const>(&fm_index);
-        usint mapped_l = incoming_itr->select(l), mapped_r = incoming_itr->select(r);
-        std::cout << "mapping " << l << "," << r << " to " << mapped_l <<"," << mapped_r <<std::endl;
+        
 
+        sdsl::bit_vector::select_1_type b_sel(&inedgetest);
+        usint mapped_l = b_sel(l+1) ;//lincoming_itr->select(l)
+        usint mapped_r = b_sel(r+1); //lincoming_itr->select(r);
+
+
+//        std::cout << "mapping " << l << "," << r << " to " << mapped_l <<"," << mapped_r <<std::endl;
+        std::cout <<"-- wavelet tree query in SA interval [" << l << ".."<<r << "] (mapped to " << mapped_l <<"," << mapped_r << ") "
+                  << " has the following symbols within " << (max - min)/2 << " alphabet symbols of " << min + (max-min)/2 << ": " ;
         hits = sdsl::restricted_unique_range_values(*wt /*fm->wavelet_tree*/, /*l, fm->wavelet_tree.size(),*/ mapped_l, mapped_r, min, max);
+        for(std::vector<long unsigned int>::iterator itr = hits.begin(); itr != hits.end(); ++itr) {
+            std::cout << *itr << " ";
+        }
+        std::cout << std::endl;
+
+
         return hits;
 
     }
@@ -45,11 +58,12 @@ namespace CSA
         std::cout << "populating element " << c << " with " << array.at(c)->reportSize() << " elements. Total: " << reportSize() << std::endl;
     }
 
-    void CharVector::constructF(CSA::RLEEncoder &inedges, unsigned int incomingedge_offset)
+    void CharVector::constructF(    sdsl::int_vector<1u> &a_inedgetest)
     {
-        incoming = new CSA::RLEVector(inedges, incomingedge_offset);
-        incoming_itr = incoming->newIterator();
-    }
+     
+        inedgetest = a_inedgetest;
+
+        }
 
     void CharVector::setwt(sdsl::int_vector<> &v)
     {
@@ -100,15 +114,15 @@ namespace CSA
 
         }
 
-        incoming->writeTo(file);
+
+        inedgetest.serialize(file);
         wt->serialize(file);
 
     }
     void CharVector::load(std::ifstream &file)
     {
-        incoming = new CSA::RLEVector(file);
-        incoming_itr = incoming->newIterator();
         wt = new sdsl::wt_int<>;
+        inedgetest.load(file);
         wt->load(file);
     }
 
@@ -121,9 +135,12 @@ namespace CSA
             if (i == 0) continue;
             if(array.count(i)) { array.at(i)->writeTo(file); }
         }
-        incoming->writeTo(file);
-        assert(false);
-//        sdsl::store_to_file(wt, file);
+
+        assert(false); //assert till we find the right way to do this:
+     //sdsl::store_to_file(inedgetest, file);
+     //sdsl::store_to_file(wt, file);
+
+
 
     }
     usint CharVector::reportSize() const

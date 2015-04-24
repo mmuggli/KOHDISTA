@@ -4,6 +4,7 @@
 #include "../misc/definitions.h"
 #include "rlevector.h"
 #include "bitvector.h"
+#include "nibblevector.h"
 #include <map>
 #include "deltavector.h"
 #include <sdsl/suffix_arrays.hpp>
@@ -24,7 +25,7 @@ public:
 //    usint rank(usint c, usint num, bool at_least = false) const ;
     std::vector<usint> restricted_unique_range_values(usint l, usint r, usint min, usint max) const;//FIXME: don't copy vector in return  
     usint maxlength() const;
-    void constructF(CSA::RLEEncoder &inedges, unsigned int incomingedge_offset);
+    void constructF(   sdsl::int_vector<1u> &a_inedgetest);
     void setwt(sdsl::int_vector<> &v);
     inline std::map<usint, CSA::BitVector*>::const_iterator begin() const { return array.begin();}
     inline std::map<usint, CSA::BitVector*>::const_iterator end() const { return array.end();}
@@ -54,8 +55,8 @@ private:
     //              sdsl::int_alphabet<>
     //              > fm_index;
 
-    CSA::BitVector *incoming; // F?
-    CSA::BitVector::Iterator *incoming_itr;
+
+    sdsl::int_vector<1u> inedgetest;
 };
 
 } // namespace CSA

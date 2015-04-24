@@ -57,7 +57,7 @@ class NibbleVector : public BitVector
 {
   public:
     typedef NibbleEncoder Encoder;
-
+    BitVector::Iterator* newIterator();
     explicit NibbleVector(std::ifstream& file);
     explicit NibbleVector(FILE* file);
     NibbleVector(Encoder& encoder, usint universe_size);

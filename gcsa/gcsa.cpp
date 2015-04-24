@@ -82,7 +82,7 @@ GCSA::GCSA(PathGraph& graph, Graph& parent, bool print) :
     std::map<usint, CSA::DeltaEncoder*> array_encoders;
     //DeltaEncoder** array_encoders = (DeltaEncoder**)malloc(CHARS);
     CSA::RLEEncoder outedges(OUTGOING_BLOCK_SIZE);
-    CSA::RLEEncoder inedges(OUTGOING_BLOCK_SIZE);
+
     //usint *counts = (usint*)malloc(CHARS*sizeof(usint *));
     std::map<usint, usint> counts;
 //  usint counts[CHARS*CHARS];
@@ -104,8 +104,10 @@ GCSA::GCSA(PathGraph& graph, Graph& parent, bool print) :
     
     std::cout << "Writing BWT and M..." << std::endl;
     sdsl::int_vector<> wt_data;
-
+    sdsl::int_vector<1u> inedgetest; inedgetest.resize(graph.edges.size() + 1 /*for the last node?*/);
+//    sdsl::bit_vector  = sdsl::bit_vector(graph.edges.size(), 0);
     wt_data.resize(graph.edges.size());
+    std::string inedgebv;
     for(std::vector<PathNode>::iterator node = graph.nodes.begin(); node != graph.nodes.end(); ++node)
     {
         // Write BWT.
@@ -113,9 +115,17 @@ GCSA::GCSA(PathGraph& graph, Graph& parent, bool print) :
             //<< "\tnode->key.first: "<<node->key.first <<"\tnode->key.second: "<<node->key.second 
                   <<  "\tL(bwt)[" << offset << "] = " ;
         pair_type edge_range = graph.getEdges(node - graph.nodes.begin(), false);
+        inedgetest[incomingedge_offset] = 1;
+        inedgebv+="1";
         for(usint i = edge_range.first; i <= edge_range.second; i++)
         {
-            if (i == edge_range.first) inedges.addBit(incomingedge_offset);
+            if (i == edge_range.first) {
+
+  
+            } else {
+                incomingedge_offset++;
+                inedgebv+="0";
+            }
             uint label = graph.edges[i].label;
             std::cout <<"\tedge->label: " << label << "\tedge->from:" << graph.edges[i].from /*<< "\tedge->rank: " << graph.edges[i].rank*/;
             if (label == 257) std::cout << "found larger label "<<label <<  std::endl;
@@ -126,9 +136,9 @@ GCSA::GCSA(PathGraph& graph, Graph& parent, bool print) :
             array_encoders[label]->setBit(offset);
             wt_data[incomingedge_offset] = label;
             std::cout << "setting wt[" << incomingedge_offset << "] = " << label <<std::endl;
-            incomingedge_offset++;
-        }
 
+        }
+            incomingedge_offset++;
 
         std::cout << "\t\t M = 1";
         offset++;
@@ -137,7 +147,7 @@ GCSA::GCSA(PathGraph& graph, Graph& parent, bool print) :
         outedges.addBit(edge_offset);
         unsigned addend = std::max((usint)1, (*node).outdegree());
         for (unsigned ii = 0; ii < addend - 1; ++ii) std::cout <<"0";
-        std::cout << std::endl;
+        std::cout << " F = " << inedgebv << std::endl;
         edge_offset += addend;
     }
     std::cout << "Done.   array_encoders has " << array_encoders.size() << " elements." << std::endl;
@@ -166,15 +176,23 @@ GCSA::GCSA(PathGraph& graph, Graph& parent, bool print) :
     outedges.flush();
     std::cout << "gcsa: Constructing outgoing" << std::endl;
     this->outgoing = new CSA::RLEVector(outedges, edge_offset);
-    this->array.constructF(inedges, incomingedge_offset);
+    this->array.constructF(inedgetest);
     this->node_count = this->outgoing->getNumberOfItems();
 
-    std::vector<usint> test = array.restricted_unique_range_values(0,10,1,10000);
-    std::cout << "wt before ser/des: ";
-    for (std::vector<usint>::iterator it = test.begin(); it!=test.end(); ++it) {
-        std::cout << *it << " ";
-    }
-    std::cout << std::endl;
+//    size_t ones = sdsl::rank_support_v<1>(&inedgetest)(inedgetest.size());
+    //sdsl::bit_vector b = inedgetest;
+    std::cout << "inedgetset " <<inedgetest << std::endl;
+    sdsl::bit_vector::select_1_type b_sel(&inedgetest);
+    for (unsigned int i = 1; i <= graph.nodes.size(); ++i)
+        std::cout << "sdsl [" << i << "] = " << b_sel(i) << std::endl;
+
+
+//    std::vector<usint> test = array.restricted_unique_range_values(0,10,1,10000);
+    // std::cout << "wt before ser/des: ";
+    // for (std::vector<usint>::iterator it = test.begin(); it!=test.end(); ++it) {
+    //     std::cout << *it << " ";
+    // }
+    // std::cout << std::endl;
 
 
     // Create the backbone.

@@ -6,6 +6,10 @@
 
 namespace CSA
 {
+  BitVector::Iterator*  NibbleVector::newIterator()
+  {
+    return new NibbleVector::Iterator(*this);
+  }
 
 
 NibbleVector::NibbleVector(std::ifstream& file) :

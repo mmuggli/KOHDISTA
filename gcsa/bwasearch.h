@@ -194,7 +194,7 @@ class BWASearch
 
     pair_type find(const std::vector<usint>& pattern, bool reverse_complement, usint skip = 0) const
         {
-            std::cout << "skip value is " << skip << std::endl;
+            std::cout << "find(pattern, reverse_complement=" << reverse_complement << ", skip=" << skip << ")" << std::endl;
             std::vector<usint> pat, revpat;
             for (usint i = skip; i < pattern.size(); ++i) {
                 pat.push_back(pattern[i]);
@@ -204,29 +204,46 @@ class BWASearch
       
             if(pat.size() == 0) { return this->index.getSARange(); }
 
+
+
+
+
             unsigned int myc = (reverse_complement ? this->complement(pat[0]) : pat[pat.size() - 1]);
-            pair_type myrange = /*this->index.getSARange()*/ this->index.getCharRange(myc);
-            //pair_type myrange = this->index.getSARange();// this->index.getCharRange(myc);
-            myrange.second += 1;
-            std::cout << "DEBUG: my forward search for pattern:" << std::endl;
-            this->mybackwardSearch(pat, pat.size() - 1 , myrange);
-            // //FIXME: reverse pattern here and rerun
-            std::cout << "DEBUG: my reverse search for pattern:" << std::endl;
-            this->mybackwardSearch(revpat, revpat.size() - 1 , myrange);
-            std::cout << "DEBUG: normal search for pattern:" << std::endl;
+
+            usint delta = 450;
+            pair_type myinitrange = this->index.getSARange();
+            std::vector<long unsigned int> hits = this->index.restricted_unique_range_values(myinitrange.first, myinitrange.second, 
+                                                                                             myc - delta, myc + delta);
+
+            // actual algo
+            for(std::vector<long unsigned int>::iterator itr = hits.begin(); itr != hits.end(); ++itr) {
+                
 
 
-            unsigned int c = (reverse_complement ? this->complement(pat[0]) : pat[pat.size() - 1]);
-            pair_type range = /*this->index.getSARange()*/ this->index.getCharRange(c);
-            if(CSA::isEmpty(range)) { return range; }
 
-            MatchInfo info(1, range, (reverse_complement ? MatchInfo::REVERSE_COMPLEMENT : 0));
-            std::cout << "Normal search initial interval is [" << info.range.first <<".."<<info.range.second<<"]" << std::endl;
-            this->backwardSearch(pat, info);
-            std::cout << "Normal search final interval is [" << info.range.first <<".."<<info.range.second<<"]" << std::endl;
+                pair_type myrange = /*this->index.getSARange()*/ this->index.getCharRange(*itr);
+                //pair_type myrange = this->index.getSARange();// this->index.getCharRange(myc);
+                myrange.second += 1;
+                std::cout << "bootstrap range for initial query symbol candidate" <<*itr<< " is [" << myrange.first << ".." << myrange.second << "]" << std::endl;
+                this->mybackwardSearch(pat, pat.size() - 1 , myrange);
+                // //FIXME: reverse pattern here and rerun
+                //std::cout << "DEBUG: my reverse search for pattern:" << std::endl;
+                //this->mybackwardSearch(revpat, revpat.size() - 1 , myrange);
+                
+            }
+            // std::cout << "DEBUG: normal search for pattern:" << std::endl;
+            // unsigned int c = (reverse_complement ? this->complement(pat[0]) : pat[pat.size() - 1]);
+            // pair_type range = /*this->index.getSARange()*/ this->index.getCharRange(c);
+            // if(CSA::isEmpty(range)) { return range; }
 
-            this->index.convertToSARange(info.range);
-            return info.range;
+            // MatchInfo info(1, range, (reverse_complement ? MatchInfo::REVERSE_COMPLEMENT : 0));
+            // std::cout << "Normal search initial interval is [" << info.range.first <<".."<<info.range.second<<"]" << std::endl;
+            // this->backwardSearch(pat, info);
+            // std::cout << "Normal search final interval is [" << info.range.first <<".."<<info.range.second<<"]" << std::endl;
+
+            // this->index.convertToSARange(info.range);  
+            //return info.range;
+            return myinitrange;
         }
 
     /*
@@ -469,7 +486,7 @@ class BWASearch
                 std::cout << "Found match in interval [" << range.first << ".." << range.second << "]" << std::endl;
             } else {
                 for(int i=0; i < pattern.size() - it; ++i) std::cout << "\t";
-                std::cout << "Backward search over interval <" <<range.first << "," << range.second << "> next sym: " <<pattern[it-1] << std::endl;
+                std::cout << "mybackwardSsearch(pattern[" << it -1 << "] /* "<< pattern[it-1] << " */, range=<" <<range.first << "," << range.second << ">)" <<  std::endl;
                 // int lookahead = 1;
                 // //trim lookahead to max remaining
                 // if ((int)it - 1 - lookahead < 0) {
@@ -493,12 +510,6 @@ class BWASearch
                     std::vector<long unsigned int> hits = this->index.restricted_unique_range_values(range.first, range.second, 
                                                                                                      c - delta, c + delta);
                     for(int i=0; i < pattern.size() - it; ++i) std::cout << "\t";
-                    std::cout << it << " DEBUGmybs - wavelet tree query in SA interval [" << range.first << ".."<< range.second 
-                              << "] has the following symbols within " << delta << " alphabet symbols of " << c << ": " ;
-                    for(std::vector<long unsigned int>::iterator itr = hits.begin(); itr != hits.end(); ++itr) {
-                        std::cout << *itr << " ";
-                    }
-                    std::cout << std::endl;
                     // actual algo
                     for(std::vector<long unsigned int>::iterator itr = hits.begin(); itr != hits.end(); ++itr) {
                         pair_type new_range = this->index.LF(range, *itr); //FIXME: renenable WT later
