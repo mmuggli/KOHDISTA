@@ -25,7 +25,7 @@ public:
     std::vector<usint> restricted_unique_range_values(usint l, usint r, usint min, usint max) const;//FIXME: don't copy vector in return  
     usint maxlength() const;
     void constructF(CSA::RLEEncoder &inedges, unsigned int incomingedge_offset);
-    void setwt(sdsl::int_vector<32> &v);
+    void setwt(sdsl::int_vector<> &v);
     inline std::map<usint, CSA::BitVector*>::const_iterator begin() const { return array.begin();}
     inline std::map<usint, CSA::BitVector*>::const_iterator end() const { return array.end();}
     class Iterator {
@@ -44,7 +44,7 @@ public:
 
     Iterator *newIterator(usint c) const;
 private:
-    sdsl::wt_int<> wt;
+    sdsl::wt_int<> *wt;
     std::map<usint, CSA::BitVector*> array;
     // sdsl::csa_wt<sdsl::wt_int<>, 
     //              64, 

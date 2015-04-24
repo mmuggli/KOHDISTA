@@ -357,6 +357,11 @@ class BWASearch
         std::vector<usint>* occurrences = this->index.locateRange(range);
         if(occurrences != 0)
         {
+            std::cout << "Found match(s) located at: " ;
+            for (std::vector<usint>::iterator mi = occurrences->begin(); mi != occurrences->end(); ++mi) {
+                std::cout << *mi << " ";
+            }
+            std::cout << std::endl;
           temp = occurrences->size();
           delete occurrences;
         }
@@ -485,7 +490,7 @@ class BWASearch
                 int c = pattern[it - 1];
                     //wt stuff
                     usint delta = 450;
-                    std::vector<long unsigned int> hits = this->index.restricted_unique_range_values(0/*FIXME range.first*/, 10/*FIXME range.second*/, 
+                    std::vector<long unsigned int> hits = this->index.restricted_unique_range_values(range.first, range.second, 
                                                                                                      c - delta, c + delta);
                     for(int i=0; i < pattern.size() - it; ++i) std::cout << "\t";
                     std::cout << it << " DEBUGmybs - wavelet tree query in SA interval [" << range.first << ".."<< range.second 
@@ -496,8 +501,8 @@ class BWASearch
                     std::cout << std::endl;
                     // actual algo
                     for(std::vector<long unsigned int>::iterator itr = hits.begin(); itr != hits.end(); ++itr) {
-                        //pair_type new_range = this->index.LF(range, *itr); //FIXME: renenable WT later
-                        pair_type new_range = this->index.LF(range, c);
+                        pair_type new_range = this->index.LF(range, *itr); //FIXME: renenable WT later
+                        //pair_type new_range = this->index.LF(range, c);
                         for(int i=0; i < pattern.size() - it; ++i) std::cout << "\t";
 //                        std::cout << "LF(<" <<range.first << "," << range.second << ">, " << *itr <<") = <" << new_range.first <<  "," << new_range.second << ">" << std::endl;
                         if(!CSA::isEmpty(new_range)) {

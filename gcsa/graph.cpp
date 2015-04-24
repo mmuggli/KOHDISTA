@@ -63,11 +63,11 @@ Graph::Graph(const std::string& base_name, bool is_full_name) :
   infile.read((char*)&(this->edge_count), sizeof(this->edge_count));
   this->nodes = new GraphNode[this->node_count];
   infile.read((char*)(this->nodes), this->node_count * sizeof(GraphNode));
-  for (int ijk = 0; ijk < this->node_count; ++ijk) {
+  for (unsigned int ijk = 0; ijk < this->node_count; ++ijk) {
       std::cout << base_name << " GraphNode " << ijk << " = label:" << this->nodes[ijk].label << " value:" << this->nodes[ijk].value << std::endl;
   }
   this->edges = new GraphEdge[this->edge_count];
-  for (int ijk = 0; ijk < this->edge_count; ++ijk) {
+  for (unsigned int ijk = 0; ijk < this->edge_count; ++ijk) {
       std::cout << base_name << " GraphEdge " << ijk << " = from:" << this->edges[ijk].from << " to:" << this->edges[ijk].to << std::endl;
   }
   infile.read((char*)(this->edges), this->edge_count * sizeof(GraphEdge));

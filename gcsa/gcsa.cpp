@@ -103,7 +103,8 @@ GCSA::GCSA(PathGraph& graph, Graph& parent, bool print) :
     usint offset = 0, edge_offset = 0, incomingedge_offset = 0;
     
     std::cout << "Writing BWT and M..." << std::endl;
-    sdsl::int_vector<32> wt_data;
+    sdsl::int_vector<> wt_data;
+
     wt_data.resize(graph.edges.size());
     for(std::vector<PathNode>::iterator node = graph.nodes.begin(); node != graph.nodes.end(); ++node)
     {
