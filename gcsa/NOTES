@@ -123,3 +123,27 @@ There are (at least) two internal graph formats: Graph and PathGraph
 A Graph Edges and Nodes are combined in PathGraph PathNode's.  The /from/ and /to/ fields come from the edge. 
 key.first gets the label of the edge's from node.
 
+struct PathNode
+{
+  uint      from, to;
+  pair_type key;
+
+  void setSorted()      { this->to = this->from; }
+  bool isSorted() const { return (this->to == this->from); }
+
+  // These can be used only when PathGraph.status == ready.
+  // Backbone assumes that outdegree does not need the highest order bit in an usint.
+  // When backbone is set, outdegree cannot be used anymore.
+  uint  value() const         { return this->to; }
+  usint outdegree() const     { return this->key.first; }
+  bool  isBackbone() const    { return (this->key.first & (((usint)1) << (WORD_BITS - 1))); }
+  void  setBackbone()         { this->key.first |= ((usint)1) << (WORD_BITS - 1); }
+};
+
+struct PathEdge
+{
+  usint from, rank; // rank equals to.
+  uint label;       // Of from. /// these are the BWT values
+
+  PathEdge(usint _from, usint _rank, uint _label) : from(_from), rank(_rank), label(_label) {}
+};

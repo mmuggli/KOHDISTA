@@ -62,7 +62,7 @@ GCSA::GCSA(const std::string& base_name) :
     this->samples = new CSA::ReadBuffer(input, this->sampled_positions->getNumberOfItems(), sample_bits);
     this->support_locate = true;
   }
-
+  std::cout << "support_locate is " << this->support_locate << std::endl;
   this->ok = true;
 
 
@@ -108,15 +108,22 @@ GCSA::GCSA(PathGraph& graph, Graph& parent, bool print) :
 //    sdsl::bit_vector  = sdsl::bit_vector(graph.edges.size(), 0);
     wt_data.resize(graph.edges.size());
     std::string inedgebv;
+
+    //FIXME: build up a superflous map for debugging printing
+    std::map<int, int> num2lab;
+    for (std::vector<PathEdge>::iterator edge = graph.edges.begin(); edge != graph.edges.end(); ++edge)
+        num2lab[edge->from] = edge->label;
+
     for(std::vector<PathNode>::iterator node = graph.nodes.begin(); node != graph.nodes.end(); ++node)
     {
+        std::string inedgebvcontr;
         // Write BWT.
-        std::cout << "node->to: " << node->to << "\tnode->from: " << node->from 
-            //<< "\tnode->key.first: "<<node->key.first <<"\tnode->key.second: "<<node->key.second 
-                  <<  "\tL(bwt)[" << offset << "] = " ;
+        std::cout << "F[" << offset << "] = " << num2lab[offset] << " node->to: " << node->to << "\tnode->from: " << node->from 
+             << "\tnode->key.first: "<<node->key.first <<"\tnode->key.second: "<<node->key.second 
+                   <<  "\tL(bwt)[" << offset << "] = " ;
         pair_type edge_range = graph.getEdges(node - graph.nodes.begin(), false);
         inedgetest[incomingedge_offset] = 1;
-        inedgebv+="1";
+        inedgebvcontr+="1";
         for(usint i = edge_range.first; i <= edge_range.second; i++)
         {
             if (i == edge_range.first) {
@@ -124,21 +131,21 @@ GCSA::GCSA(PathGraph& graph, Graph& parent, bool print) :
   
             } else {
                 incomingedge_offset++;
-                inedgebv+="0";
+                inedgebvcontr+="0";
             }
             uint label = graph.edges[i].label;
-            std::cout <<"\tedge->label: " << label << "\tedge->from:" << graph.edges[i].from /*<< "\tedge->rank: " << graph.edges[i].rank*/;
-            if (label == 257) std::cout << "found larger label "<<label <<  std::endl;
+            std::cout <<"\tedge->label: " << label << "\tedge->from:" << graph.edges[i].from << "\tedge->rank: " << graph.edges[i].rank;
+            //if (label == 257) std::cout << "found larger label "<<label <<  std::endl;
             counts[label]++;
             if (array_encoders.find(label) == array_encoders.end()) {
                 array_encoders[label] = new CSA::DeltaEncoder(ARRAY_BLOCK_SIZE); // FIXME this uses a lot of memory
             }
             array_encoders[label]->setBit(offset);
             wt_data[incomingedge_offset] = label;
-            std::cout << "setting wt[" << incomingedge_offset << "] = " << label <<std::endl;
+            std::cout << " setting wt[" << incomingedge_offset << "] = " << label << " ";
 
         }
-            incomingedge_offset++;
+        incomingedge_offset++;
 
         std::cout << "\t\t M = 1";
         offset++;
@@ -147,9 +154,11 @@ GCSA::GCSA(PathGraph& graph, Graph& parent, bool print) :
         outedges.addBit(edge_offset);
         unsigned addend = std::max((usint)1, (*node).outdegree());
         for (unsigned ii = 0; ii < addend - 1; ++ii) std::cout <<"0";
-        std::cout << " F = " << inedgebv << std::endl;
+        std::cout <<" F = " << inedgebvcontr << std::endl;
         edge_offset += addend;
+        inedgebv += inedgebvcontr;
     }
+    std::cout << " F = " << inedgebv << std::endl;
     std::cout << "Done.   array_encoders has " << array_encoders.size() << " elements." << std::endl;
     counts[0] = graph.automata; //FIXME: figure out WTF is going on here, c++ static type checking doesn't catch this potential bug
     std::cout << "gcsa: Constructing Alphabet" << std::endl;
@@ -161,7 +170,7 @@ GCSA::GCSA(PathGraph& graph, Graph& parent, bool print) :
     {
         usint i = itr->first;
         if (i == 0) continue;
-      if (i % (CHARS/256) == 0) std::cout << "gcsa: processing symbol " << i << " -- (this->array[i] = new CSA::DeltaVector(*(array_encoders[i]), offset))" << std::endl;
+        //if (i % (CHARS/256) == 0) std::cout << "gcsa: processing symbol " << i << " -- (this->array[i] = new CSA::DeltaVector(*(array_encoders[i]), offset))" << std::endl;
         if(this->alphabet->hasChar(i)) {
             if (array_encoders.find(i) == array_encoders.end()) {
                 std::cout << "alphabet has " << i << " but array_encoders does not!" << std::endl;
@@ -596,6 +605,7 @@ GCSA::locateUnsafe(usint index) const
   usint temp = index, steps = 0;
 
   while(!(sample_iter.isSet(temp))) { temp = this->Psi(temp); steps++; }
+  std::cout <<"locateUnsafe(" << index << ") steps: " << steps << "rank: " << sample_iter.rank(temp) << std::endl;
   return this->samples->readItem(sample_iter.rank(temp) - 1) - steps;
 }
 

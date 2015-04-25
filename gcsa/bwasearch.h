@@ -225,7 +225,8 @@ class BWASearch
                 //pair_type myrange = this->index.getSARange();// this->index.getCharRange(myc);
                 myrange.second += 1;
                 std::cout << "bootstrap range for initial query symbol candidate" <<*itr<< " is [" << myrange.first << ".." << myrange.second << "]" << std::endl;
-                this->mybackwardSearch(pat, pat.size() - 1 , myrange);
+                pair_type retrange = this->mybackwardSearch(pat, pat.size() - 1 , myrange);
+                if (!CSA::isEmpty(retrange)) return retrange; //fixme
                 // //FIXME: reverse pattern here and rerun
                 //std::cout << "DEBUG: my reverse search for pattern:" << std::endl;
                 //this->mybackwardSearch(revpat, revpat.size() - 1 , myrange);
@@ -243,7 +244,7 @@ class BWASearch
 
             // this->index.convertToSARange(info.range);  
             //return info.range;
-            return myinitrange;
+            return pair_type(1,0);
         }
 
     /*
@@ -374,9 +375,10 @@ class BWASearch
         std::vector<usint>* occurrences = this->index.locateRange(range);
         if(occurrences != 0)
         {
-            std::cout << "Found match(s) located at: " ;
+            
+            std::cout << "Found " << occurrences->size() << " match(s) located at: " ;
             for (std::vector<usint>::iterator mi = occurrences->begin(); mi != occurrences->end(); ++mi) {
-                std::cout << *mi << " ";
+                std::cout << *mi << ", ";
             }
             std::cout << std::endl;
           temp = occurrences->size();
@@ -478,12 +480,13 @@ class BWASearch
     }
 
     //TODO: convert this to recursive call
-    void mybackwardSearch(const std::vector<usint>& pattern,  unsigned int it, pair_type range) const
+    pair_type mybackwardSearch(const std::vector<usint>& pattern,  unsigned int it, pair_type range) const
         {
 
             if (it == 0) { // match complete
                 for(int i=0; i < pattern.size() - it; ++i) std::cout << "\t";
                 std::cout << "Found match in interval [" << range.first << ".." << range.second << "]" << std::endl;
+                return range; //FIXME - returns only first match this way
             } else {
                 for(int i=0; i < pattern.size() - it; ++i) std::cout << "\t";
                 std::cout << "mybackwardSsearch(pattern[" << it -1 << "] /* "<< pattern[it-1] << " */, range=<" <<range.first << "," << range.second << ">)" <<  std::endl;
@@ -517,11 +520,13 @@ class BWASearch
                         for(int i=0; i < pattern.size() - it; ++i) std::cout << "\t";
 //                        std::cout << "LF(<" <<range.first << "," << range.second << ">, " << *itr <<") = <" << new_range.first <<  "," << new_range.second << ">" << std::endl;
                         if(!CSA::isEmpty(new_range)) {
-                            this->mybackwardSearch(pattern, it - 1 - actv_la, new_range);
+                            pair_type retrange = this->mybackwardSearch(pattern, it - 1 - actv_la, new_range);
+                            if(!CSA::isEmpty(retrange)) return retrange; //FIXME - returns only first match this way
                         }
                     }
               //}
             }
+            return pair_type(1,0);
 
 
         }
