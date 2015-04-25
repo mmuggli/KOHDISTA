@@ -104,9 +104,10 @@ GCSA::GCSA(PathGraph& graph, Graph& parent, bool print) :
     
     std::cout << "Writing BWT and M..." << std::endl;
     sdsl::int_vector<> wt_data;
-    sdsl::int_vector<1u> inedgetest; inedgetest.resize(graph.edges.size() + 1 /*for the last node?*/);
+    sdsl::int_vector<1u> inedgetest; 
+    inedgetest.resize(graph.edges.size() + 2 /*for the last node?*/);
 //    sdsl::bit_vector  = sdsl::bit_vector(graph.edges.size(), 0);
-    wt_data.resize(graph.edges.size());
+    wt_data.resize(graph.edges.size() + 2);
     std::string inedgebv;
 
     //FIXME: build up a superflous map for debugging printing
@@ -114,25 +115,20 @@ GCSA::GCSA(PathGraph& graph, Graph& parent, bool print) :
     for (std::vector<PathEdge>::iterator edge = graph.edges.begin(); edge != graph.edges.end(); ++edge)
         num2lab[edge->from] = edge->label;
 
+    
     for(std::vector<PathNode>::iterator node = graph.nodes.begin(); node != graph.nodes.end(); ++node)
     {
+
         std::string inedgebvcontr;
         // Write BWT.
         std::cout << "F[" << offset << "] = " << num2lab[offset] << " node->to: " << node->to << "\tnode->from: " << node->from 
              << "\tnode->key.first: "<<node->key.first <<"\tnode->key.second: "<<node->key.second 
                    <<  "\tL(bwt)[" << offset << "] = " ;
         pair_type edge_range = graph.getEdges(node - graph.nodes.begin(), false);
-        inedgetest[incomingedge_offset] = 1;
-        inedgebvcontr+="1";
+
+
         for(usint i = edge_range.first; i <= edge_range.second; i++)
         {
-            if (i == edge_range.first) {
-
-  
-            } else {
-                incomingedge_offset++;
-                inedgebvcontr+="0";
-            }
             uint label = graph.edges[i].label;
             std::cout <<"\tedge->label: " << label << "\tedge->from:" << graph.edges[i].from << "\tedge->rank: " << graph.edges[i].rank;
             //if (label == 257) std::cout << "found larger label "<<label <<  std::endl;
@@ -141,11 +137,32 @@ GCSA::GCSA(PathGraph& graph, Graph& parent, bool print) :
                 array_encoders[label] = new CSA::DeltaEncoder(ARRAY_BLOCK_SIZE); // FIXME this uses a lot of memory
             }
             array_encoders[label]->setBit(offset);
+
+
+            // add WT tracking stuff
+            if (i == edge_range.first) {
+                inedgebvcontr+="1";  
+                inedgetest[incomingedge_offset] = 1;
+            } else {
+
+                inedgebvcontr+="0";
+                inedgetest[incomingedge_offset] = 0;
+            }
             wt_data[incomingedge_offset] = label;
             std::cout << " setting wt[" << incomingedge_offset << "] = " << label << " ";
 
+            incomingedge_offset++;
         }
-        incomingedge_offset++;
+        //special case for initial symbol in automaton with no real incoming edges.  We actually add two nodes worth since we want to be able to query one past the final one and then back off one
+        if (edge_range.second < edge_range.first) {
+            for (int ijk = 0; ijk < 2; ++ijk) {
+                inedgebvcontr+="1";  
+                inedgetest[incomingedge_offset] = 1;
+                std::cout << " setting wt[" << incomingedge_offset << "] = " << 0 << " ";
+                wt_data[incomingedge_offset] = 0;
+                incomingedge_offset++;
+            }
+        }
 
         std::cout << "\t\t M = 1";
         offset++;

@@ -28,8 +28,10 @@ namespace CSA
         
 
         sdsl::bit_vector::select_1_type b_sel(&inedgetest);
+
+        //select is sometimes one based it seems, so the first is considered the 1st, not the 0th
         usint mapped_l = b_sel(l+1) ;//lincoming_itr->select(l)
-        usint mapped_r = b_sel(r+1); //lincoming_itr->select(r);
+        usint mapped_r = b_sel(r+2)-1; //we want the subsequent node's 1 and then pack off one wt position //lincoming_itr->select(r);
 
 
 //        std::cout << "mapping " << l << "," << r << " to " << mapped_l <<"," << mapped_r <<std::endl;

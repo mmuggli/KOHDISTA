@@ -224,7 +224,7 @@ class BWASearch
                 pair_type myrange = /*this->index.getSARange()*/ this->index.getCharRange(*itr);
                 //pair_type myrange = this->index.getSARange();// this->index.getCharRange(myc);
                 myrange.second += 1;
-                std::cout << "bootstrap range for initial query symbol candidate" <<*itr<< " is [" << myrange.first << ".." << myrange.second << "]" << std::endl;
+                std::cout << "bootstrap range for initial query symbol candidate " <<*itr<< " is [" << myrange.first << ".." << myrange.second << "]" << std::endl;
                 pair_type retrange = this->mybackwardSearch(pat, pat.size() - 1 , myrange);
                 if (!CSA::isEmpty(retrange)) return retrange; //fixme
                 // //FIXME: reverse pattern here and rerun
