@@ -37,9 +37,10 @@ GCSA::GCSA(const std::string& base_name) :
     std::cerr << "Error opening input file (" << index_name << ")!" << std::endl;
     return;
   }
-
+  std::cout << "Loading alphabet from " << index_name << std::endl;
   this->alphabet = new CSA::Alphabet(input);
 //  for(usint i = 1; i < 256 /*FIXME:CHARS*/; i++)
+  std::cout << "Loading BWT from " << index_name << std::endl;
   for( std::map<usint, pair_type>::const_iterator itr = this->alphabet->begin(); itr != this->alphabet->end(); ++itr)
   {
       usint i = itr->first;
@@ -49,21 +50,36 @@ GCSA::GCSA(const std::string& base_name) :
 
     //else { this->array[i] = 0; }
   }
+
   array.load(input);
   array.syncFMIndex();
+  std::cout << "Loading M from " << index_name << std::endl;
   this->outgoing = new CSA::RLEVector(input);
   this->node_count = this->outgoing->getNumberOfItems();
-
+  std::cout << "Loading sampled_positions for locate from " << index_name << std::endl;
   this->sampled_positions = new CSA::DeltaVector(input);
   usint sample_bits = 0;
+  std::cout << "Loading sample_bits for locate from " << index_name << std::endl;
   input.read((char*)&sample_bits, sizeof(usint));
   if(sample_bits > 0)
   {
+      std::cout << "Loading samples for locate from " << index_name << std::endl;
     this->samples = new CSA::ReadBuffer(input, this->sampled_positions->getNumberOfItems(), sample_bits);
     this->support_locate = true;
   }
   std::cout << "support_locate is " << this->support_locate << std::endl;
   this->ok = true;
+
+    if(true)
+    {
+        // std::cout << "Nodes:           " << graph.node_count << std::endl;
+        // std::cout << "Edges:           " << graph.edge_count << std::endl;
+        // std::cout << "Automata:        " << graph.automata << std::endl;
+        std::cout << "Samples:         " << this->sampled_positions->getNumberOfItems() << std::endl;
+        std::cout << std::endl;
+
+        this->reportSize(true);
+    }
 
 
   input.close();
@@ -236,6 +252,7 @@ GCSA::GCSA(PathGraph& graph, Graph& parent, bool print) :
     CSA::DeltaEncoder sample_encoder(SAMPLE_BLOCK_SIZE);
     CSA::WriteBuffer sample_values(sample_pairs->size(), CSA::length(max_sample));
     CSA::parallelSort(sample_pairs->begin(), sample_pairs->end());
+
     for(usint i = 0; i < sample_pairs->size(); i++)
     {
         sample_encoder.addBit(sample_pairs->at(i).first);
@@ -294,18 +311,22 @@ GCSA::writeTo(const std::string& base_name) const
     std::cerr << "Error opening output file (" << index_name << ")!" << std::endl;
     return;
   }
-
+  std::cout << "Writing alphabet to " << index_name << std::endl;
   this->alphabet->writeTo(output);
+  std::cout << "Writing BWT to " << index_name << std::endl;
   this->array.writeTo(output);
   // for(usint i = 1; i < 256/*FIXME:CHARS*/; i++)
   // {
   //     if(this->alphabet->hasChar(i)) { this->array.at(i)->writeTo(output); }
   // }
+  std::cout << "Writing M to " << index_name << std::endl;
   this->outgoing->writeTo(output);
-  this->array.writeTo(output);
+  std::cout << "Writing sampled_positions to " << index_name << std::endl;
   this->sampled_positions->writeTo(output);
   usint sample_bits = (this->support_locate ? this->samples->getItemSize() : 0);
+  std::cout << "Writing sample_bits to " << index_name << std::endl;
   output.write((char*)&sample_bits, sizeof(usint));
+  std::cout << "Writing samples to " << index_name << std::endl;
   if(this->support_locate) { this->samples->writeBuffer(output); }
 
   output.close();

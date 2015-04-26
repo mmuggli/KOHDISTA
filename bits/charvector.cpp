@@ -116,15 +116,19 @@ namespace CSA
 
         }
 
-
+        std::cout << "Writing F to file" << std::endl;
         inedgetest.serialize(file);
+        std::cout << "Writing wavelet tree to file"  << std::endl;
         wt->serialize(file);
 
     }
     void CharVector::load(std::ifstream &file)
     {
+
         wt = new sdsl::wt_int<>;
+        std::cout << "Loading F from file "  << std::endl;
         inedgetest.load(file);
+        std::cout << "Loading wavelet tree from file "  << std::endl;
         wt->load(file);
     }
 
