@@ -64,11 +64,11 @@ Graph::Graph(const std::string& base_name, bool is_full_name) :
   this->nodes = new GraphNode[this->node_count];
   infile.read((char*)(this->nodes), this->node_count * sizeof(GraphNode));
   for (unsigned int ijk = 0; ijk < this->node_count; ++ijk) {
-      std::cout << base_name << " GraphNode " << ijk << " = label:" << this->nodes[ijk].label << " value:" << this->nodes[ijk].value << std::endl;
+      //std::cout << base_name << " GraphNode " << ijk << " = label:" << this->nodes[ijk].label << " value:" << this->nodes[ijk].value << std::endl;
   }
   this->edges = new GraphEdge[this->edge_count];
   for (unsigned int ijk = 0; ijk < this->edge_count; ++ijk) {
-      std::cout << base_name << " GraphEdge " << ijk << " = from:" << this->edges[ijk].from << " to:" << this->edges[ijk].to << std::endl;
+      //std::cout << base_name << " GraphEdge " << ijk << " = from:" << this->edges[ijk].from << " to:" << this->edges[ijk].to << std::endl;
   }
   infile.read((char*)(this->edges), this->edge_count * sizeof(GraphEdge));
 
@@ -214,11 +214,11 @@ Graph::createBackbone()
   //disabled b/c upper/lower case doesn't make sense with large alphabet FIXME: do we need to encode this somehow?
   for(usint i = 0; i < this->node_count; i++)
   {
-      std::cout << "old label " << this->nodes[i].label;
+//      std::cout << "old label " << this->nodes[i].label;
       if(CSA::myislower(this->nodes[i].label)) { this->nodes[i].label = CSA::mytoupper(this->nodes[i].label); }
       //if(!(0x1 & this->nodes[i].label)) { this->nodes[i].label = 0x1 | this->nodes[i].label; }
     else { encoder.setBit(i); }
-      std::cout << " new label " << this->nodes[i].label <<std::endl;
+      //std::cout << " new label " << this->nodes[i].label <<std::endl;
   }
   this->backbone = new CSA::SuccinctVector(encoder, this->node_count);
 }
@@ -602,7 +602,7 @@ PathGraph::PathGraph(Graph& parent) :
   std::vector<uint> end_markers;
   for(uint i = 0; i < parent.node_count; i++)
   {
-      std::cout << "parent.nodes["<<i<<"].label = " << parent.nodes[i].label << std::endl;
+//      std::cout << "parent.nodes["<<i<<"].label = " << parent.nodes[i].label << std::endl;
     if(parent.nodes[i].label == 0) { this->automata++; end_markers.push_back(i); }
     this->max_label = std::max(this->max_label, parent.nodes[i].label);
   }

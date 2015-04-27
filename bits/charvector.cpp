@@ -51,13 +51,13 @@ namespace CSA
     {
 
         array[c] = new CSA::DeltaVector(*encoder, offset);
-        std::cout << "populating element " << c << " with " << array.at(c)->reportSize() << " elements. Total: " << reportSize() << std::endl;
+//        std::cout << "populating element " << c << " with " << array.at(c)->reportSize() << " elements. Total: " << reportSize() << std::endl;
     }
 
     void CharVector::populate(usint c, DeltaVector *dv)
     {
         array[c] = dv;
-        std::cout << "populating element " << c << " with " << array.at(c)->reportSize() << " elements. Total: " << reportSize() << std::endl;
+        //      std::cout << "populating element " << c << " with " << array.at(c)->reportSize() << " elements. Total: " << reportSize() << std::endl;
     }
 
     void CharVector::constructF(    sdsl::int_vector<1u> &a_inedgetest)
@@ -75,30 +75,30 @@ namespace CSA
 
     void CharVector::syncFMIndex()
     {
-        std::cout << "Syncing FMIndex/WT to charwise bit vectors..." << std::endl;
-        sdsl::int_vector<> temp;
-        usint m = maxlength();
-        temp.resize(m);
-        for(std::map<usint, CSA::BitVector*>::iterator itr = array.begin(); itr != array.end(); ++itr)
-//        for(usint c = 1; c < 256/*FIXME:CHARS*/; c++)
-        {
-            usint c = itr->first;
-            if (c == 0) continue;
-            if(array.count(c))  {  
-                Iterator *itr = newIterator(c);
-                for(usint i = 0; i < array.at(c)->getSize(); ++i) {
-                    if (itr->isSet(i)) {
-                        temp[i] = c;
-                    }
-                }
-            }
-        }
-        for (usint i = 0; i < m; ++i) {
-            if (temp[i] == 0) {
-                std::cout << "replacing 0 element at position " << i << std::endl;
-                temp[i] = 1; //FIXME: hack to deal with "Error: File "@24135_0" contains zero symbol."
-            }
-        }
+//        std::cout << "Syncing FMIndex/WT to charwise bit vectors..." << std::endl;
+//         sdsl::int_vector<> temp;
+//         usint m = maxlength();
+//         temp.resize(m);
+//         for(std::map<usint, CSA::BitVector*>::iterator itr = array.begin(); itr != array.end(); ++itr)
+// //        for(usint c = 1; c < 256/*FIXME:CHARS*/; c++)
+//         {
+//             usint c = itr->first;
+//             if (c == 0) continue;
+//             if(array.count(c))  {  
+//                 Iterator *itr = newIterator(c);
+//                 for(usint i = 0; i < array.at(c)->getSize(); ++i) {
+//                     if (itr->isSet(i)) {
+//                         temp[i] = c;
+//                     }
+//                 }
+//             }
+//         }
+//         for (usint i = 0; i < m; ++i) {
+//             if (temp[i] == 0) {
+//                 std::cout << "replacing 0 element at position " << i << std::endl;
+//                 temp[i] = 1; //FIXME: hack to deal with "Error: File "@24135_0" contains zero symbol."
+//             }
+//         }
 
 //        sdsl::construct_im(fm_index, temp);
         //      std::cout << "WT size is " << fm_index.size() << std::endl;
@@ -152,7 +152,7 @@ namespace CSA
     usint CharVector::reportSize() const
     {
 
-        std::cout << "maxxlength = " << maxlength() << std::endl;
+//        std::cout << "maxxlength = " << maxlength() << std::endl;
         usint array_size = 0;
 //        for(usint i = 1; i < 256/*FIXME:CHARS*/; i++)
         for(std::map<usint, CSA::BitVector*>::const_iterator itr = array.begin(); itr != array.end(); ++itr)

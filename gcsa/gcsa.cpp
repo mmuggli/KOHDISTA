@@ -137,16 +137,16 @@ GCSA::GCSA(PathGraph& graph, Graph& parent, bool print) :
 
         std::string inedgebvcontr;
         // Write BWT.
-        std::cout << "F[" << offset << "] = " << num2lab[offset] << " node->to: " << node->to << "\tnode->from: " << node->from 
-             << "\tnode->key.first: "<<node->key.first <<"\tnode->key.second: "<<node->key.second 
-                   <<  "\tL(bwt)[" << offset << "] = " ;
+        // std::cout << "F[" << offset << "] = " << num2lab[offset] << " node->to: " << node->to << "\tnode->from: " << node->from 
+        //      << "\tnode->key.first: "<<node->key.first <<"\tnode->key.second: "<<node->key.second 
+        //            <<  "\tL(bwt)[" << offset << "] = " ;
         pair_type edge_range = graph.getEdges(node - graph.nodes.begin(), false);
 
 
         for(usint i = edge_range.first; i <= edge_range.second; i++)
         {
             uint label = graph.edges[i].label;
-            std::cout <<"\tedge->label: " << label << "\tedge->from:" << graph.edges[i].from << "\tedge->rank: " << graph.edges[i].rank;
+            // std::cout <<"\tedge->label: " << label << "\tedge->from:" << graph.edges[i].from << "\tedge->rank: " << graph.edges[i].rank;
             //if (label == 257) std::cout << "found larger label "<<label <<  std::endl;
             counts[label]++;
             if (array_encoders.find(label) == array_encoders.end()) {
@@ -165,7 +165,7 @@ GCSA::GCSA(PathGraph& graph, Graph& parent, bool print) :
                 inedgetest[incomingedge_offset] = 0;
             }
             wt_data[incomingedge_offset] = label;
-            std::cout << " setting wt[" << incomingedge_offset << "] = " << label << " ";
+//            std::cout << " setting wt[" << incomingedge_offset << "] = " << label << " ";
 
             incomingedge_offset++;
         }
@@ -174,24 +174,24 @@ GCSA::GCSA(PathGraph& graph, Graph& parent, bool print) :
             for (int ijk = 0; ijk < 2; ++ijk) {
                 inedgebvcontr+="1";  
                 inedgetest[incomingedge_offset] = 1;
-                std::cout << " setting wt[" << incomingedge_offset << "] = " << 0 << " ";
+                //              std::cout << " setting wt[" << incomingedge_offset << "] = " << 0 << " ";
                 wt_data[incomingedge_offset] = 0;
                 incomingedge_offset++;
             }
         }
 
-        std::cout << "\t\t M = 1";
+//        std::cout << "\t\t M = 1";
         offset++;
 
         // Write M
         outedges.addBit(edge_offset);
         unsigned addend = std::max((usint)1, (*node).outdegree());
-        for (unsigned ii = 0; ii < addend - 1; ++ii) std::cout <<"0";
-        std::cout <<" F = " << inedgebvcontr << std::endl;
+        //for (unsigned ii = 0; ii < addend - 1; ++ii) std::cout <<"0";
+        //      std::cout <<" F = " << inedgebvcontr << std::endl;
         edge_offset += addend;
         inedgebv += inedgebvcontr;
     }
-    std::cout << " F = " << inedgebv << std::endl;
+//    std::cout << " F = " << inedgebv << std::endl;
     std::cout << "Done.   array_encoders has " << array_encoders.size() << " elements." << std::endl;
     counts[0] = graph.automata; //FIXME: figure out WTF is going on here, c++ static type checking doesn't catch this potential bug
     std::cout << "gcsa: Constructing Alphabet" << std::endl;
@@ -223,10 +223,10 @@ GCSA::GCSA(PathGraph& graph, Graph& parent, bool print) :
 
 //    size_t ones = sdsl::rank_support_v<1>(&inedgetest)(inedgetest.size());
     //sdsl::bit_vector b = inedgetest;
-    std::cout << "inedgetset " <<inedgetest << std::endl;
+    //std::cout << "inedgetset " <<inedgetest << std::endl;
     sdsl::bit_vector::select_1_type b_sel(&inedgetest);
-    for (unsigned int i = 1; i <= graph.nodes.size(); ++i)
-        std::cout << "sdsl [" << i << "] = " << b_sel(i) << std::endl;
+//    for (unsigned int i = 1; i <= graph.nodes.size(); ++i)
+//        std::cout << "sdsl [" << i << "] = " << b_sel(i) << std::endl;
 
 
 //    std::vector<usint> test = array.restricted_unique_range_values(0,10,1,10000);
@@ -686,13 +686,13 @@ Backbone::Backbone(const GCSA& _gcsa, PathGraph& graph, Graph& parent, bool prin
       graph.nodes[curr_node].setBackbone(); 
       bb_nodes++;
       while(curr_node < this->gcsa.getSize() - this->gcsa.getNumberOfAutomata()) {// Not the initial node.
-          std::cout << "\tcurr_node: " << curr_node << " of " << this->gcsa.getSize() - this->gcsa.getNumberOfAutomata()<< std::endl;
+          //std::cout << "\tcurr_node: " << curr_node << " of " << this->gcsa.getSize() - this->gcsa.getNumberOfAutomata()<< std::endl;
           bool found = false;
           pair_type edge_range = graph.getEdges(curr_node, false);
           for(usint i = edge_range.first; i <= edge_range.second; i++) {
               usint prev = graph.edges[i].from;
-              std::cout << "\t\tedge " << i << " of " << edge_range.second << " (prev " << prev << ")" <<std::endl;
-              std::cout << "\t\tpredicate: " << iter.isSet(graph.nodes[prev].from) << " " << graph.nodes[prev].value() << " " <<  graph.nodes[curr_node].value() - 1 << std::endl;
+              //std::cout << "\t\tedge " << i << " of " << edge_range.second << " (prev " << prev << ")" <<std::endl;
+              //std::cout << "\t\tpredicate: " << iter.isSet(graph.nodes[prev].from) << " " << graph.nodes[prev].value() << " " <<  graph.nodes[curr_node].value() - 1 << std::endl;
               if(iter.isSet(graph.nodes[prev].from) && graph.nodes[prev].value() == graph.nodes[curr_node].value() - 1) {
                   graph.nodes[prev].setBackbone(); 
                   bb_nodes++;
