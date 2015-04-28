@@ -19,7 +19,7 @@ namespace CSA
 class VectorEncoder
 {
   public:
-    const static usint SUPERBLOCK_SIZE = MEGABYTE;
+    const static usint SUPERBLOCK_SIZE = KILOBYTE;
 
     // We assume superblock size is divisible by block and sample size.
     VectorEncoder(usint block_bytes, usint superblock_size = SUPERBLOCK_SIZE, bool _use_small_blocks = true);

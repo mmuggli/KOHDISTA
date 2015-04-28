@@ -67,6 +67,7 @@ inline usint nextMultipleOf(usint multiplier, usint value)
 
 
 const usint CHARS = ((usint)1 << (4 * CHAR_BIT));
+const usint KILOBYTE = 1024;
 const usint MEGABYTE = 1048576;
 const usint MILLION  = 1000000;
 const usint WORD_BITS = CHAR_BIT * sizeof(usint);
