@@ -131,9 +131,11 @@ GCSA::GCSA(PathGraph& graph, Graph& parent, bool print) :
     for (std::vector<PathEdge>::iterator edge = graph.edges.begin(); edge != graph.edges.end(); ++edge)
         num2lab[edge->from] = edge->label;
 
-    
+    int nodecntr = 0;
     for(std::vector<PathNode>::iterator node = graph.nodes.begin(); node != graph.nodes.end(); ++node)
     {
+        nodecntr++;
+        if (nodecntr % 1000000 == 0) std::cout << "Processed " << nodecntr << " nodes." << std::endl;
 
         std::string inedgebvcontr;
         // Write BWT.
@@ -199,8 +201,11 @@ GCSA::GCSA(PathGraph& graph, Graph& parent, bool print) :
     this->alphabet = thealphabet;
     std::cout << "gcsa: Constructing array encoders and vectors" << std::endl;
 //    for(usint i = 1; i < 256/*FIXME:CHARS*/; i++) //     for(std::map<usint,  pair_type>::iterator mapiter = this->alphabet.begin(); mapiter != this->alphabet.end(); ++mapiter)     
+    int symnumcntr = 0;
     for( std::map<usint, pair_type>::const_iterator itr = this->alphabet->begin(); itr != this->alphabet->end(); ++itr)
     {
+        symnumcntr++;
+        if (symnumcntr % 1000 == 0) std::cout << "Constructed " << symnumcntr << " bit vectors for alphabet symbols." << std::endl;
         usint i = itr->first;
         if (i == 0) continue;
         //if (i % (CHARS/256) == 0) std::cout << "gcsa: processing symbol " << i << " -- (this->array[i] = new CSA::DeltaVector(*(array_encoders[i]), offset))" << std::endl;
@@ -213,7 +218,7 @@ GCSA::GCSA(PathGraph& graph, Graph& parent, bool print) :
             array.populate(i, array_encoders[i], offset);
         }
     }
-
+    std::cout << "gcsa: constructing wavelet tree" << std::endl;
     array.setwt(wt_data);
     outedges.flush();
     std::cout << "gcsa: Constructing outgoing" << std::endl;
