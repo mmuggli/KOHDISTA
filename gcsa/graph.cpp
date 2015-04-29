@@ -209,7 +209,7 @@ Graph::createBackbone()
 {
   if(!(this->ok) || this->backbone != 0) { return; }
 
-  CSA::SuccinctEncoder encoder(BACKBONE_BLOCK_SIZE, CSA::MEGABYTE);
+  CSA::SuccinctEncoder encoder(BACKBONE_BLOCK_SIZE);
 
   int nodecnt = 0;
   //disabled b/c upper/lower case doesn't make sense with large alphabet FIXME: do we need to encode this somehow?
@@ -722,16 +722,21 @@ PathGraph::generateEdges(Graph& parent)
   pair_type pn_range = this->getNextRange(EMPTY_PAIR);
   pair_type ge_range = parent.getNextEdgeRange(EMPTY_PAIR, false);
   this->edges.reserve(this->node_count + this->node_count / 4);
+  int nodecnt;
   while(!CSA::isEmpty(pn_range) && !CSA::isEmpty(ge_range))
   {
+
     if(this->nodes[pn_range.first].from == parent.edges[ge_range.first].to)
     {
       for(usint node = pn_range.first; node <= pn_range.second; node++)
       {
         for(usint edge = ge_range.first; edge <= ge_range.second; edge++)
         {
+
           uint from = parent.edges[edge].from;
           this->edges.push_back(PathEdge(from, this->nodes[node].key.first, parent.nodes[from].label));
+            nodecnt++;
+            if (nodecnt % 1000000 == 0) std::cout << "constructed " << nodecnt << " edges." << std::endl;
         }
       }
       pn_range = this->getNextRange(pn_range);
