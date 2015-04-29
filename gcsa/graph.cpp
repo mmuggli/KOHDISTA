@@ -211,10 +211,13 @@ Graph::createBackbone()
 
   CSA::SuccinctEncoder encoder(BACKBONE_BLOCK_SIZE);
 
+  int nodecnt = 0;
   //disabled b/c upper/lower case doesn't make sense with large alphabet FIXME: do we need to encode this somehow?
   for(usint i = 0; i < this->node_count; i++)
   {
 //      std::cout << "old label " << this->nodes[i].label;
+      nodecnt++;
+      if (nodecnt % 1000000 == 0) std::cout << "propagated backboniness for " << nodecnt << " nodes." << std::endl;
       if(CSA::myislower(this->nodes[i].label)) { this->nodes[i].label = CSA::mytoupper(this->nodes[i].label); }
       //if(!(0x1 & this->nodes[i].label)) { this->nodes[i].label = 0x1 | this->nodes[i].label; }
     else { encoder.setBit(i); }
@@ -650,11 +653,15 @@ PathGraph::PathGraph(PathGraph& previous) :
 
   // A heuristic to determine, whether the number of new nodes should be counted.
   usint new_nodes = previous.node_count + previous.node_count / 8;
+  int nodecnt = 0;
   if(previous.ranks >= previous.node_count / 2 && !(previous.has_stabilized))
   {
     new_nodes = 0;
     for(nvector::iterator left = previous.nodes.begin(); left != previous.nodes.end(); ++left)
     {
+      nodecnt++;
+      if (nodecnt % 1000000 == 0) std::cout << "counted " << nodecnt << " nodes." << std::endl;
+
       if(left->isSorted()) { new_nodes++; continue; }
       pair_type pn_range = previous.getNodesFrom(left->to);
       new_nodes += CSA::length(pn_range);
@@ -662,9 +669,13 @@ PathGraph::PathGraph(PathGraph& previous) :
     std::cout << "Trying to allocate space for " << new_nodes << " nodes." << std::endl;
   }
   this->nodes.reserve(new_nodes);
-
+  nodecnt = 0;
   for(nvector::iterator left = previous.nodes.begin(); left != previous.nodes.end(); ++left)
   {
+
+      nodecnt++;
+      if (nodecnt % 1000000 == 0) std::cout << "Copied/created new nodes for " << nodecnt << " nodes." << std::endl;
+
     if(left->isSorted()) { this->nodes.push_back(*left); continue; }
 
     pair_type pn_range = previous.getNodesFrom(left->to);
@@ -676,6 +687,7 @@ PathGraph::PathGraph(PathGraph& previous) :
   this->temp_nodes = this->node_count = this->nodes.size();
 
   this->status = ok;
+  std::cout << "Sorting" << std::endl;
   this->sort();
 
   if(previous.has_stabilized || (this->generation >= 11 && this->ranks >= 0.8 * new_nodes))

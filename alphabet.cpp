@@ -61,8 +61,12 @@ Alphabet::initialize(const std::map<usint, usint>& counts)
 
   this->size = 0; this->chars = 0;
   //for(usint c = 0; c < CHARS; c++)
+  int symcnt;
   for(std::map<usint, usint>::const_iterator mapiter = counts.begin(); mapiter != counts.end(); ++mapiter)
   {
+      symcnt++;
+      if (symcnt % 1000 == 0) std::cout << "alpha::init-1'd " << symcnt << " symbols." << std::endl;
+
     this->index_ranges[mapiter->first] = ((mapiter->second > 0 || this->size > 0) ?
                              pair_type(this->size, this->size + mapiter->second - 1) :
                              EMPTY_PAIR);
@@ -76,9 +80,11 @@ Alphabet::initialize(const std::map<usint, usint>& counts)
 
   this->index_rate = std::max((this->size + CHARS - 1) / CHARS, (usint)1);
   usint current = 0;
-
+  symcnt = 0;
   for(usint c = 0, i = 0; c < this->chars; c++)
   {
+      symcnt++;
+      if (symcnt % 1000 == 0) std::cout << "alpha::init-2'd " << symcnt << " symbols." << std::endl;
     pair_type range = this->index_ranges[this->text_chars[c]];
     while(current <= range.second)
     {
