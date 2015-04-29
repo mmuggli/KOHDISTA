@@ -209,7 +209,7 @@ Graph::createBackbone()
 {
   if(!(this->ok) || this->backbone != 0) { return; }
 
-  CSA::SuccinctEncoder encoder(BACKBONE_BLOCK_SIZE);
+  CSA::SuccinctEncoder encoder(BACKBONE_BLOCK_SIZE, CSA::MEGABYTE);
 
   //disabled b/c upper/lower case doesn't make sense with large alphabet FIXME: do we need to encode this somehow?
   for(usint i = 0; i < this->node_count; i++)
