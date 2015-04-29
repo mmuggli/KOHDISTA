@@ -97,7 +97,7 @@ GCSA::GCSA(PathGraph& graph, Graph& parent, bool print) :
 //  DeltaEncoder* array_encoders[CHARS];
     std::map<usint, CSA::DeltaEncoder*> array_encoders;
     //DeltaEncoder** array_encoders = (DeltaEncoder**)malloc(CHARS);
-    CSA::RLEEncoder outedges(OUTGOING_BLOCK_SIZE);
+    CSA::RLEEncoder outedges(OUTGOING_BLOCK_SIZE, CSA::MEGABYTE);
 
     //usint *counts = (usint*)malloc(CHARS*sizeof(usint *));
     std::map<usint, usint> counts;
@@ -667,7 +667,7 @@ Backbone::Backbone(const GCSA& _gcsa, PathGraph& graph, Graph& parent, bool prin
     std::cout << "Compressing backbone... "; std::cout.flush();
   }
 
-  CSA::SuccinctEncoder original_encoder(NODE_BLOCK_SIZE);
+  CSA::SuccinctEncoder original_encoder(NODE_BLOCK_SIZE, CSA::MEGABYTE);
   CSA::SuccinctVector::Iterator iter(*(parent.backbone));
   for(usint i = 0; i < graph.node_count; i++)
   {
@@ -685,13 +685,14 @@ Backbone::Backbone(const GCSA& _gcsa, PathGraph& graph, Graph& parent, bool prin
 
   // Use a kind of backward searching to find the backbone in PathGraph.
   usint bb_nodes = 0;
-  for(usint j = 0; j < this->gcsa.getNumberOfAutomata(); j++) {
-      std::cout << "processing automata " << j << " of " <<  this->gcsa.getNumberOfAutomata()  << std::endl;
+  const unsigned int num_automata = this->gcsa.getNumberOfAutomata();
+  for(usint j = 0; j < num_automata; j++) {
+      std::cout << "processing automata " << j << " of " <<  num_automata  << std::endl;
       usint curr_node = j;  // Final node of automaton j.
       graph.nodes[curr_node].setBackbone(); 
       bb_nodes++;
-      while(curr_node < this->gcsa.getSize() - this->gcsa.getNumberOfAutomata()) {// Not the initial node.
-          //std::cout << "\tcurr_node: " << curr_node << " of " << this->gcsa.getSize() - this->gcsa.getNumberOfAutomata()<< std::endl;
+      while(curr_node < this->gcsa.getSize() - num_automata) {// Not the initial node.
+          //std::cout << "\tcurr_node: " << curr_node << " of " << this->gcsa.getSize() - num_automata<< std::endl;
           bool found = false;
           pair_type edge_range = graph.getEdges(curr_node, false);
           for(usint i = edge_range.first; i <= edge_range.second; i++) {
@@ -718,8 +719,8 @@ Backbone::Backbone(const GCSA& _gcsa, PathGraph& graph, Graph& parent, bool prin
 
 
   // Scan the graph forward and build backbone information.
-  CSA::SuccinctEncoder node_encoder(NODE_BLOCK_SIZE);
-  CSA::RLEEncoder edge_encoder(EDGE_BLOCK_SIZE);
+  CSA::SuccinctEncoder node_encoder(NODE_BLOCK_SIZE, CSA::MEGABYTE);
+  CSA::RLEEncoder edge_encoder(EDGE_BLOCK_SIZE, CSA::MEGABYTE);
   CSA::BitVector::Iterator* edge_iter = this->gcsa.outgoing->newIterator();
   usint offset = edge_iter->select(0);
 
@@ -729,7 +730,7 @@ Backbone::Backbone(const GCSA& _gcsa, PathGraph& graph, Graph& parent, bool prin
     if(graph.nodes[i].isBackbone())
     {
       node_encoder.addBit(i); this->size++;
-      if(i >= this->gcsa.getNumberOfAutomata())
+      if(i >= num_automata)
       {
         bool found = false;
         pair_type successors = graph.getEdges(i, true);

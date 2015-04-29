@@ -209,7 +209,7 @@ Graph::createBackbone()
 {
   if(!(this->ok) || this->backbone != 0) { return; }
 
-  CSA::SuccinctEncoder encoder(BACKBONE_BLOCK_SIZE);
+  CSA::SuccinctEncoder encoder(BACKBONE_BLOCK_SIZE, CSA::MEGABYTE);
 
   int nodecnt = 0;
   //disabled b/c upper/lower case doesn't make sense with large alphabet FIXME: do we need to encode this somehow?
@@ -722,7 +722,7 @@ PathGraph::generateEdges(Graph& parent)
   pair_type pn_range = this->getNextRange(EMPTY_PAIR);
   pair_type ge_range = parent.getNextEdgeRange(EMPTY_PAIR, false);
   this->edges.reserve(this->node_count + this->node_count / 4);
-  int nodecnt;
+  int nodecnt = 0;
   while(!CSA::isEmpty(pn_range) && !CSA::isEmpty(ge_range))
   {
 

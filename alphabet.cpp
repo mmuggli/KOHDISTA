@@ -61,7 +61,7 @@ Alphabet::initialize(const std::map<usint, usint>& counts)
 
   this->size = 0; this->chars = 0;
   //for(usint c = 0; c < CHARS; c++)
-  int symcnt;
+  int symcnt = 0;
   for(std::map<usint, usint>::const_iterator mapiter = counts.begin(); mapiter != counts.end(); ++mapiter)
   {
       symcnt++;
