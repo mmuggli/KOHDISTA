@@ -17,6 +17,8 @@ typedef CSA::pair_type pair_type;
 
 int main(int argc, char** argv)
 {
+  double appstart = CSA::readTimer();
+
   std::cout << "GCSA test" << std::endl;
   std::cout << std::endl;
 
@@ -52,6 +54,8 @@ int main(int argc, char** argv)
   for(usint i = 0; i < n; i++) { match_counts[i] = 0; }
 
   double start = CSA::readTimer();
+  std::cout << "Data load time:         " <<  start - appstart  << " seconds" << std::endl;
+
   for(usint i = 0; i < n; i++)
   {
     total += rows[i].size();
