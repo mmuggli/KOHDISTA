@@ -54,6 +54,30 @@ unsigned int remap(unsigned int l)
 
 }
 
+unsigned int mytoupper(unsigned int lab)
+{
+        if (lab == 0) return lab;
+        if (lab & 0x1) lab -= 1; // mark it as a backbone "uppercase" node
+        return lab;
+}
+
+unsigned int mytolower(unsigned int lab)
+{
+        lab |= 0x1; // mark it as a nonbackbone "lowercase" node        
+        return lab;
+}
+const int BIN_SIZE = 100;
+unsigned int quantize(unsigned int val)
+{
+    unsigned int new_val = 0;
+    if (val % BIN_SIZE < BIN_SIZE / 2.0)
+        new_val = val - val % BIN_SIZE;
+    else
+        new_val = val - val % BIN_SIZE + BIN_SIZE;
+    return new_val;
+}
+
+
 int main(int argc, char** argv)
 {
     if (argc < 3) {
@@ -91,9 +115,7 @@ int main(int argc, char** argv)
 
     for (i = 0; i < r / 4; ++i) {
 
-        unsigned int lab = ((unsigned int *)addr)[i];
-        if (lab == 0) continue;
-        if (lab & 0x1) lab -= 1; // mark it as a backbone "uppercase" node
+        unsigned int lab = mytoupper(quantize(((unsigned int *)addr)[i]));
 
         Node *n = new Node(lab, j, j);
         ++j;
@@ -117,8 +139,9 @@ int main(int argc, char** argv)
 
     std::cout << "Adding skip edges" << std::endl;;
     for (i = 0; i < r / 4 - 1; ++i) {
-        unsigned int lab = nodes[i+1]->label + nodes[i+2]->label;
-        lab |= 0x1; // mark it as a nonbackbone "lowercase" node        
+        // add order 1 skip nodes
+        unsigned int lab = mytolower(nodes[i+1]->label + nodes[i+2]->label);
+
         Node *sumnode = new Node(lab, nodes[i+1]->value, j);
         ++j;
         nodes.push_back(sumnode);
@@ -126,6 +149,21 @@ int main(int argc, char** argv)
         edges.push_back(e1);
         Edge *e2 = new Edge(sumnode, nodes[i+3]);
         edges.push_back(e2);
+
+
+        //add order 2 skip nodes
+        if (i  < r / 4 - 4) {
+            unsigned int lab = mytolower(nodes[i+1]->label + nodes[i+2]->label + nodes[i+3]->label);
+
+            Node *sumnode = new Node(lab, nodes[i+1]->value, j);
+            ++j;
+            nodes.push_back(sumnode);
+            Edge *e1 = new Edge(nodes[i], sumnode);
+            edges.push_back(e1);
+            Edge *e2 = new Edge(sumnode, nodes[i+4]);
+            edges.push_back(e2);
+        }
+
     }
     char *ofname = argv[2];
     printf("writing file %s\n", ofname);
