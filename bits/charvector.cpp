@@ -35,14 +35,16 @@ namespace CSA
 
 
 //        std::cout << "mapping " << l << "," << r << " to " << mapped_l <<"," << mapped_r <<std::endl;
-        std::cout <<"-- wavelet tree query in SA interval [" << l << ".."<<r << "] (mapped to " << mapped_l <<"," << mapped_r << ") "
-                  << " has the following symbols within " << (max - min)/2 << " alphabet symbols of " << min + (max-min)/2 << ": " ;
         hits = sdsl::restricted_unique_range_values(*wt /*fm->wavelet_tree*/, /*l, fm->wavelet_tree.size(),*/ mapped_l, mapped_r, min, max);
-        for(std::vector<long unsigned int>::iterator itr = hits.begin(); itr != hits.end(); ++itr) {
-            std::cout << *itr << " ";
-        }
-        std::cout << std::endl;
+        if (VERBOSE >= 2) {
+            std::cout <<"-- wavelet tree query in SA interval [" << l << ".."<<r << "] (mapped to " << mapped_l <<"," << mapped_r << ") "
+                      << " has the following symbols within " << (max - min)/2 << " alphabet symbols of " << min + (max-min)/2 << ": " ;
 
+            for(std::vector<long unsigned int>::iterator itr = hits.begin(); itr != hits.end(); ++itr) {
+                std::cout << *itr << " ";
+            }
+            std::cout << std::endl;
+        }
 
         return hits;
 

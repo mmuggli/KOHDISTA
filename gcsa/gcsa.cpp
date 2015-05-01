@@ -518,23 +518,23 @@ GCSA::convertToSARange(std::vector<pair_type>& bwt_ranges) const
 pair_type
 GCSA::LF(pair_type range, usint c) const
 {
-    std::cout << "LF(<" <<range.first << "," << range.second << ">, " << c <<") = <";
+    if (VERBOSE >= 2) std::cout << "LF(<" <<range.first << "," << range.second << ">, " << c <<") = <";
     
-  if(!(this->alphabet->hasChar(c))) { return EMPTY_PAIR; }
+    if(!(this->alphabet->hasChar(c))) { return EMPTY_PAIR; }
 
-  // Follow edges backward using BWT.
-  CSA::CharVector::Iterator* array_iter = this->array.newIterator(c);
+    // Follow edges backward using BWT.
+    CSA::CharVector::Iterator* array_iter = this->array.newIterator(c);
   
-  range.first = this->alphabet->cumulative(c) + array_iter->rank(range.first, true) - 1;
+    range.first = this->alphabet->cumulative(c) + array_iter->rank(range.first, true) - 1;
 
-  range.second = this->alphabet->cumulative(c) + array_iter->rank(range.second) - 1;
+    range.second = this->alphabet->cumulative(c) + array_iter->rank(range.second) - 1;
 
-  std::cout << range.first <<  "," << range.second << ">" << std::endl;
-  if(CSA::isEmpty(range)) { return EMPTY_PAIR; }
-  delete array_iter;
-  pair_type ret_range = this->convertToNodeRange(range);
-  std::cout << " --->  <" << ret_range.first <<  "," << ret_range.second << ">" << std::endl;
-  return ret_range;
+    if (VERBOSE >= 2)   std::cout << range.first <<  "," << range.second << ">" << std::endl;
+    if(CSA::isEmpty(range)) { return EMPTY_PAIR; }
+    delete array_iter;
+    pair_type ret_range = this->convertToNodeRange(range);
+    if (VERBOSE >= 2)   std::cout << " --->  <" << ret_range.first <<  "," << ret_range.second << ">" << std::endl;
+    return ret_range;
 }
 
 std::vector<usint>*
@@ -648,7 +648,7 @@ GCSA::locateUnsafe(usint index) const
   usint temp = index, steps = 0;
 
   while(!(sample_iter.isSet(temp))) { temp = this->Psi(temp); steps++; }
-  std::cout <<"locateUnsafe(" << index << ") steps: " << steps << "rank: " << sample_iter.rank(temp) << std::endl;
+  if (VERBOSE >= 3) std::cout <<"locateUnsafe(" << index << ") steps: " << steps << "rank: " << sample_iter.rank(temp) << std::endl;
   return this->samples->readItem(sample_iter.rank(temp) - 1) - steps;
 }
 

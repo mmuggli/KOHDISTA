@@ -7,7 +7,7 @@
 
 // #define MULTITHREAD_SUPPORT   // Try to parallelize things using OpenMP.
 // #define MASSIVE_DATA_RLCSA    // usint and sint become 64-bit in a 64-bit environment.
-
+#define VERBOSE 0
 
 namespace CSA
 {

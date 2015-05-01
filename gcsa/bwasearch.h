@@ -6,7 +6,7 @@
 #include <vector>
 #include <assert.h>
 #include <misc/utils.h>
-
+#include <boost/math/distributions/chi_squared.hpp>
 
 namespace GCSA
 {
@@ -14,6 +14,10 @@ namespace GCSA
 	typedef CSA::uchar uchar;
 	typedef CSA::sint sint;
 	typedef CSA::usint usint;
+//const float OM_STDDEV = 2.45884783995 * 1000.0; // based on ~23k valuev paired cutsite alignments 
+const float OM_STDDEV = 2.28463258304 * 1000.0; // based on ~16k valuev 1:1 frag alignment
+    const uint DELTA = OM_STDDEV * 1000.0 * 3.0;
+
 /*
   This uses the RANGES part of external module interface.
 */
@@ -194,7 +198,7 @@ class BWASearch
 
     pair_type find(const std::vector<usint>& pattern, bool reverse_complement, usint skip = 0) const
         {
-            std::cout << "find(pattern, reverse_complement=" << reverse_complement << ", skip=" << skip << ")" << std::endl;
+            if (VERBOSE) std::cout << "find(pattern, reverse_complement=" << reverse_complement << ", skip=" << skip << ")" << std::endl;
             std::vector<usint> pat, revpat;
             for (usint i = skip; i < pattern.size(); ++i) {
                 pat.push_back(pattern[i]);
@@ -210,10 +214,11 @@ class BWASearch
 
             unsigned int myc = (reverse_complement ? this->complement(pat[0]) : pat[pat.size() - 1]);
 
-            usint delta = 450;
+
             pair_type myinitrange = this->index.getSARange();
             std::vector<long unsigned int> hits = this->index.restricted_unique_range_values(myinitrange.first, myinitrange.second, 
-                                                                                             myc - delta, myc + delta);
+                                                                                             myc <= DELTA ? 1 : myc - DELTA, // if subtracting results in less than 1, use 1
+                                                                                             myc + DELTA);
 
             // actual algo
             for(std::vector<long unsigned int>::iterator itr = hits.begin(); itr != hits.end(); ++itr) {
@@ -224,9 +229,12 @@ class BWASearch
                 pair_type myrange = /*this->index.getSARange()*/ this->index.getCharRange(*itr);
                 //pair_type myrange = this->index.getSARange();// this->index.getCharRange(myc);
                 myrange.second += 1;
-                std::cout << "bootstrap range for initial query symbol candidate " <<*itr<< " is [" << myrange.first << ".." << myrange.second << "]" << std::endl;
+                if (VERBOSE >= 2) std::cout << "bootstrap range for initial query symbol candidate " <<*itr<< " is [" << myrange.first << ".." << myrange.second << "]" << std::endl;
                 //pair_type retrange = 
-                this->mybackwardSearch(pat, pat.size() - 1 , myrange);
+                int deviation = abs(*itr - myc);
+                float chi_squared = std::pow((float)deviation / (float)OM_STDDEV, 2);
+
+                this->mybackwardSearch(pat, pat.size() - 1 , myrange, chi_squared);
                 //if (!CSA::isEmpty(retrange)) return retrange; //fixme
                 // //FIXME: reverse pattern here and rerun
                 //std::cout << "DEBUG: my reverse search for pattern:" << std::endl;
@@ -481,16 +489,21 @@ class BWASearch
     }
 
     //TODO: convert this to recursive call
-    void mybackwardSearch(const std::vector<usint>& pattern,  unsigned int it, pair_type range) const
+    void mybackwardSearch(const std::vector<usint>& pattern,  unsigned int it, pair_type range, double chi_squared_sum) const
         {
 
             if (it == 0) { // match complete
-                for(int i=0; i < pattern.size() - it; ++i) std::cout << "\t";
-                //std::cout << "Found match in interval [" << range.first << ".." << range.second << "]" << std::endl;
+                //for(int i=0; i < pattern.size() - it; ++i) std::cout << "\t";
                 std::vector<usint>* occurrences = this->index.locateRange(range);
                 if(occurrences != 0)
                 {
-            
+                    double chisqcdf = 0.0;
+                    boost::math::chi_squared cs(/*opt_depth*/ pattern.size());
+                    chisqcdf = boost::math::cdf(cs, chi_squared_sum);
+                    const double max_chisquared_cdf = .85;
+                    if (chisqcdf > max_chisquared_cdf) return;
+                    
+                    std::cout << "'chi_squared_cdf' : " << chisqcdf << "}" << std::endl;
                     std::cout << "Found " << occurrences->size() << " match(s) located at: " ;
                     for (std::vector<usint>::iterator mi = occurrences->begin(); mi != occurrences->end(); ++mi) {
                         std::cout << *mi << ", ";
@@ -502,8 +515,10 @@ class BWASearch
 
                 //return range; //FIXME - returns only first match this way
             } else {
-                for(int i=0; i < pattern.size() - it; ++i) std::cout << "\t";
-                std::cout << "mybackwardSsearch(pattern[" << it -1 << "] /* "<< pattern[it-1] << " */, range=<" <<range.first << "," << range.second << ">)" <<  std::endl;
+                if (VERBOSE >= 2) {
+                    for(int i=0; i < pattern.size() - it; ++i) std::cout << "\t";
+                    std::cout << "mybackwardSsearch(pattern[" << it -1 << "] /* "<< pattern[it-1] << " */, range=<" <<range.first << "," << range.second << ">)" <<  std::endl;
+                }
                 // int lookahead = 1;
                 // //trim lookahead to max remaining
                 // if ((int)it - 1 - lookahead < 0) {
@@ -523,19 +538,22 @@ class BWASearch
                 int actv_la = 0;
                 int c = pattern[it - 1];
                     //wt stuff
-                    usint delta = 450;
+
                     std::vector<long unsigned int> hits = this->index.restricted_unique_range_values(range.first, range.second, 
-                                                                                                     c - delta, c + delta);
-                    for(int i=0; i < pattern.size() - it; ++i) std::cout << "\t";
+                                                                                                     c <= DELTA ? 1 : c - DELTA,  // if subtracting results in less than 1, use 1
+                                                                                                     c + DELTA);
+
                     // actual algo
                     for(std::vector<long unsigned int>::iterator itr = hits.begin(); itr != hits.end(); ++itr) {
                         pair_type new_range = this->index.LF(range, *itr); //FIXME: renenable WT later
                         //pair_type new_range = this->index.LF(range, c);
                         //for(int i=0; i < pattern.size() - it; ++i) std::cout << "\t";
-//                        std::cout << "LF(<" <<range.first << "," << range.second << ">, " << *itr <<") = <" << new_range.first <<  "," << new_range.second << ">" << std::endl;
+                        int deviation = abs(*itr - c);
+                        float chi_squared = std::pow((float)deviation / (float)OM_STDDEV, 2);
+
                         if(!CSA::isEmpty(new_range)) {
                             //pair_type retrange = 
-                            this->mybackwardSearch(pattern, it - 1 - actv_la, new_range);
+                            this->mybackwardSearch(pattern, it - 1 - actv_la, new_range, chi_squared_sum + chi_squared);
                             // if(!CSA::isEmpty(retrange)) {
 
                             //     //return retrange; //FIXME - returns only first match this way
@@ -560,11 +578,11 @@ class BWASearch
         unsigned int c = (info.isReverseComplement() ? this->complement(pattern[pos]) : pattern[pos]);
 
         //wavelet tree stuff
-        // usint delta = 13;
+
         // std::vector<long unsigned int> hits = this->index.restricted_unique_range_values(info.range.first, info.range.second, 
-        //                                                                                  c - delta, c + delta);
+        //                                                                                  c - DELTA, c + DELTA);
         // std::cout << "DEBUG - wavelet tree query in SA interval [" << info.range.first << ".."<< info.range.second 
-        //           << "] has the following symbols within " << delta << " alphabet symbols of " << c << ": " ;
+        //           << "] has the following symbols within " << DELTA << " alphabet symbols of " << c << ": " ;
         // for(std::vector<long unsigned int>::iterator itr = hits.begin(); itr != hits.end(); ++itr) {
         //     std::cout << *itr << " ";
         // }
