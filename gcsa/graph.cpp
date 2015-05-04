@@ -429,7 +429,7 @@ Graph::determinize()
   // Topological sort. Create new nodes in sorted order.
   delete[] this->nodes; this->nodes = new GraphNode[new_nodes.size()]; this->node_count = 0;
   CSA::SuccinctEncoder* encoder = 0;
-  if(create_backbone) { encoder = new CSA::SuccinctEncoder(BACKBONE_BLOCK_SIZE); }
+  if(create_backbone) { encoder = new CSA::SuccinctEncoder(BACKBONE_BLOCK_SIZE,  CSA::MEGABYTE); }
   CSA::parallelSort(new_edges.begin(), new_edges.end(), tef_comparator);
   for(std::map<std::basic_string<uint>, TempNode*>::iterator iter = new_nodes.begin(); iter != new_nodes.end(); ++iter)
   {
@@ -672,7 +672,7 @@ PathGraph::PathGraph(PathGraph& previous) :
     std::cout << "Trying to allocate space for " << new_nodes << " nodes." << std::endl;
   }
   this->nodes.reserve(new_nodes);
-  nodecnt = 0;
+  nodecnt = 0; unsigned int pncnt = 0;
   for(nvector::iterator left = previous.nodes.begin(); left != previous.nodes.end(); ++left)
   {
 
@@ -683,7 +683,7 @@ PathGraph::PathGraph(PathGraph& previous) :
 
     pair_type pn_range = previous.getNodesFrom(left->to);
     for(usint pn = pn_range.first; pn <= pn_range.second; pn++)
-    {
+    {if ((++pncnt) % 1000000 == 0) std::cout << "created pathnodes :" << pncnt  << std::endl;
       this->createPathNode(*left, previous.nodes[pn]);
     }
   }
@@ -870,11 +870,13 @@ PathGraph::createPathNode(const PathNode& left, const PathNode& right)
 void
 PathGraph::sort()
 {
+    std::cout << "sorting by key" << std::endl;
   this->sortByKey();
 
   // Update ranks.
   usint rank = 0;
   pair_type key = this->nodes[0].key;
+  std::cout << "Updating ranks" << std::endl;
   for(nvector::iterator iter = this->nodes.begin(); iter != this->nodes.end(); ++iter)
   {
     if(iter->key != key) { rank++; key = iter->key; }
@@ -882,6 +884,7 @@ PathGraph::sort()
   }
 
   // Merge equivalent nodes.
+  std::cout << "Merging equivalent nodes" << std::endl;
   usint top = 0;
   pair_type node_range = EMPTY_PAIR;
   while(true)
@@ -893,6 +896,7 @@ PathGraph::sort()
   this->node_count = top; this->nodes.resize(this->node_count);
 
   // Check if sorted.
+  std::cout << "Checking if sorted" << std::endl;
   bool is_sorted = true;
   PathNode* candidate = &(this->nodes[0]);
   key = candidate->key; this->ranks = 1;
@@ -910,6 +914,7 @@ PathGraph::sort()
 
   // Replace the ranks of a sorted graph so that rank(i) = i.
   // Merges may otherwise leave gaps in the ranks.
+  std::cout << "Replacing the ranks of a sorted graph so that rank(i) = i." << std::endl;
   if(is_sorted)
   {
     for(usint i = 0; i < this->node_count; i++)

@@ -57,6 +57,7 @@ private:
 
 
     sdsl::int_vector<1u> inedgetest;
+    sdsl::bit_vector::select_1_type *b_sel;
 };
 
 } // namespace CSA

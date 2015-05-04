@@ -14,9 +14,10 @@ namespace GCSA
 	typedef CSA::uchar uchar;
 	typedef CSA::sint sint;
 	typedef CSA::usint usint;
-//const float OM_STDDEV = 2.45884783995 * 1000.0; // based on ~23k valuev paired cutsite alignments 
-const float OM_STDDEV = 2.28463258304 * 1000.0; // based on ~16k valuev 1:1 frag alignment
-    const uint DELTA = OM_STDDEV * 1000.0 * 3.0;
+const float OM_STDDEV = 2.45884783995 * 1000.0; // based on ~23k valuev paired cutsite alignments 
+//const float OM_STDDEV = 2.28463258304 * 1000.0; // based on ~16k valuev 1:1 frag alignment
+//const float OM_STDDEV = 0.150 * 1000.0; // based on ~16k valuev 1:1 frag alignment
+    const uint DELTA = OM_STDDEV *  3.0;
 
 /*
   This uses the RANGES part of external module interface.
@@ -221,8 +222,10 @@ class BWASearch
                                                                                              myc + DELTA);
 
             // actual algo
+            int hitcount = 0;
             for(std::vector<long unsigned int>::iterator itr = hits.begin(); itr != hits.end(); ++itr) {
-                
+                hitcount++;
+                std::cout << "Trying initial symbol substitute " << hitcount << ". " << *itr << " for " << myc << std::endl; 
 
 
 
@@ -515,28 +518,37 @@ class BWASearch
 
                 //return range; //FIXME - returns only first match this way
             } else {
+                // try skipping this node if it's too small to account for inconsistent desorption
+                const int MAYBEFRAGMAX = 800;
+                if (pattern[it -1] < MAYBEFRAGMAX) {
+                    this->mybackwardSearch(pattern, it - 1, range, chi_squared_sum );
+                }
+
+
                 if (VERBOSE >= 2) {
                     for(int i=0; i < pattern.size() - it; ++i) std::cout << "\t";
                     std::cout << "mybackwardSsearch(pattern[" << it -1 << "] /* "<< pattern[it-1] << " */, range=<" <<range.first << "," << range.second << ">)" <<  std::endl;
                 }
-                // int lookahead = 1;
-                // //trim lookahead to max remaining
-                // if ((int)it - 1 - lookahead < 0) {
-                //     lookahead = it - 1;
-                // }
-                // for (int actv_la = 0; actv_la <= lookahead; ++actv_la) {
-                //     for(int i=0; i < pattern.size() - it; ++i) std::cout << "\t";
-                //     std::cout << "active lookahead: " << actv_la << std::endl;
+                int lookahead = 2;
+                //trim lookahead to max remaining
+                if ((int)it - 1 - lookahead < 0) {
+                    lookahead = it - 1;
+                }
+                for (int actv_la = 0; actv_la <= lookahead; ++actv_la) {
+                    if (VERBOSE >= 2) {
+                        for(int i=0; i < pattern.size() - it; ++i) std::cout << "\t";
+                        std::cout << "active lookahead: " << actv_la << std::endl;
+                    }
 
-                //     // compute the sum of the next lookahead fragments
-                //     unsigned int c = 0;
-                //     for (int j = 0; j <= actv_la; ++j) {
-                //         int index = it - 1 - j;
-                //         assert(index >= 0);
-                //         c += pattern[index];
-                //     }
-                int actv_la = 0;
-                int c = pattern[it - 1];
+                    // compute the sum of the next lookahead fragments
+                    unsigned int c = 0;
+                    for (int j = 0; j <= actv_la; ++j) {
+                        int index = it - 1 - j;
+                        assert(index >= 0);
+                        c += pattern[index];
+                    }
+                // int actv_la = 0;
+                // int c = pattern[it - 1];
                     //wt stuff
 
                     std::vector<long unsigned int> hits = this->index.restricted_unique_range_values(range.first, range.second, 
@@ -553,14 +565,21 @@ class BWASearch
 
                         if(!CSA::isEmpty(new_range)) {
                             //pair_type retrange = 
-                            this->mybackwardSearch(pattern, it - 1 - actv_la, new_range, chi_squared_sum + chi_squared);
+                            double chisqcdf = 0.0;
+                            boost::math::chi_squared cs(/*opt_depth*/ pattern.size() - it);
+                            chisqcdf = boost::math::cdf(cs, chi_squared_sum + chi_squared);
+                            const double max_chisquared_cdf = .85;
+                            if (chisqcdf <  max_chisquared_cdf) {
+
+                                this->mybackwardSearch(pattern, it - 1 - actv_la, new_range, chi_squared_sum + chi_squared);
+                            }
                             // if(!CSA::isEmpty(retrange)) {
 
                             //     //return retrange; //FIXME - returns only first match this way
                             // }
                         }
                     }
-              //}
+                }
             }
             //return pair_type(1,0);
 

@@ -39,16 +39,23 @@ main(int argc, char** argv)
     double start = CSA::readTimer();
 
     GCSA::Graph* graph = new GCSA::Graph(base_name);
+    double loaded_time = CSA::readTimer();
+    std::cout << "Graph loaded in " << loaded_time - start << " seconds." << std::endl;
     if(!graph->ok) { return 2; }
+    double backboned_time = loaded_time;
     if(backbone)
     {
         std::cout << "Generating backbone... "; std::cout.flush();
         graph->createBackbone();
-		std::cout << "done." << std::endl << std::endl;
+        backboned_time = CSA::readTimer();
+		std::cout << "done in " << backboned_time - loaded_time << " seconds." << std::endl << std::endl;
 	}
     graph->printInfo();
 
+    std::cout << "Constructing pathgraph..."  ;
     GCSA::PathGraph* pg = new GCSA::PathGraph(*graph);
+    double pg_time = CSA::readTimer();
+    std::cout << "done in " << pg_time - backboned_time  << " seconds." << std::endl << std::endl;
     delete graph; graph = 0;
     pg->printInfo();
     while(pg->status != GCSA::PathGraph::sorted)

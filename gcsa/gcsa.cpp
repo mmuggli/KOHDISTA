@@ -254,7 +254,7 @@ GCSA::GCSA(PathGraph& graph, Graph& parent, bool print) :
     if(print) { std::cout << "Sampling the graph... "; std::cout.flush();  }
     usint max_sample = 0;
     std::vector<pair_type>* sample_pairs = graph.getSamples(SAMPLE_RATE, max_sample, parent);
-    CSA::DeltaEncoder sample_encoder(SAMPLE_BLOCK_SIZE);
+    CSA::DeltaEncoder sample_encoder(SAMPLE_BLOCK_SIZE,  CSA::MEGABYTE);
     CSA::WriteBuffer sample_values(sample_pairs->size(), CSA::length(max_sample));
     CSA::parallelSort(sample_pairs->begin(), sample_pairs->end());
 

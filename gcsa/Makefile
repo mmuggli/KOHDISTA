@@ -20,7 +20,7 @@ RLCSA_ROOT =..
 RLCSA = $(RLCSA_ROOT)/rlcsa.a
 
 # DEBUG_FLAGS = -DDEBUG
-SDSL_PREFIX = /home/muggli/local
+SDSL_PREFIX = /s/chopin/l/grad/muggli/local
 SDSL_STUFF =  -I/usr/include/boost/ -I$(SDSL_PREFIX)/include -L /usr/lib64 -L$(SDSL_PREFIX)/lib  -lsdsl -ldivsufsort -ldivsufsort64 
 
 CXXFLAGS = -Wall -O3 -march=native $(DEBUG_FLAGS) $(SIZE_FLAGS) $(PARALLEL_FLAGS) $(VECTOR_FLAGS) -I$(RLCSA_ROOT) $(SDSL_STUFF) -std=c++11

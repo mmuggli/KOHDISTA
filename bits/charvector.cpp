@@ -27,9 +27,10 @@ namespace CSA
         //     fm = dynamic_cast<const sdsl::csa_wt<sdsl::wt_int<>, 64, 64, sdsl::sa_order_sa_sampling<>, sdsl::int_vector<>, sdsl::int_alphabet<>> * const>(&fm_index);
         
 
-        sdsl::bit_vector::select_1_type b_sel(&inedgetest);
+
 
         //select is sometimes one based it seems, so the first is considered the 1st, not the 0th
+        sdsl::bit_vector::select_1_type b_sel(&inedgetest);
         usint mapped_l = b_sel(l+1) ;//lincoming_itr->select(l)
         usint mapped_r = b_sel(r+2)-1; //we want the subsequent node's 1 and then pack off one wt position //lincoming_itr->select(r);
 
@@ -132,6 +133,9 @@ namespace CSA
         inedgetest.load(file);
         std::cout << "Loading wavelet tree from file "  << std::endl;
         wt->load(file);
+        std::cout << "Adding select support..." ;
+
+        std::cout << "done.";
     }
 
     void CharVector::writeTo(FILE* file) const
