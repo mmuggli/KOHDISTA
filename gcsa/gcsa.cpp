@@ -117,8 +117,10 @@ GCSA::GCSA(PathGraph& graph, Graph& parent, bool print) :
 
 
     usint offset = 0, edge_offset = 0, incomingedge_offset = 0;
-    
+        
     std::cout << "Writing BWT and M..." << std::endl;
+    std::cout << "Elapsed time: " << CSA::readTimer() - CSA::start_time  << std::endl;
+
     sdsl::int_vector<> wt_data;
     sdsl::int_vector<1u> inedgetest; 
     inedgetest.resize(graph.edges.size() + 2 /*for the last node?*/);
@@ -219,11 +221,19 @@ GCSA::GCSA(PathGraph& graph, Graph& parent, bool print) :
         }
     }
     std::cout << "gcsa: constructing wavelet tree" << std::endl;
+    std::cout << "Elapsed time: " << CSA::readTimer() - CSA::start_time  << std::endl;
     array.setwt(wt_data);
+    std::cout << "flushing outedges" << std::endl;
+    std::cout << "Elapsed time: " << CSA::readTimer() - CSA::start_time  << std::endl;
     outedges.flush();
     std::cout << "gcsa: Constructing outgoing" << std::endl;
+    std::cout << "Elapsed time: " << CSA::readTimer() - CSA::start_time  << std::endl;
     this->outgoing = new CSA::RLEVector(outedges, edge_offset);
+    std::cout << "gcsa: Constructing F" << std::endl;
+    std::cout << "Elapsed time: " << CSA::readTimer() - CSA::start_time  << std::endl;
     this->array.constructF(inedgetest);
+    std::cout << "gcsa: done Constructing F" << std::endl;
+    std::cout << "Elapsed time: " << CSA::readTimer() - CSA::start_time  << std::endl;
     this->node_count = this->outgoing->getNumberOfItems();
 
 //    size_t ones = sdsl::rank_support_v<1>(&inedgetest)(inedgetest.size());

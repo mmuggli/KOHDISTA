@@ -490,22 +490,16 @@ class BWASearch
         delete temp;
       }
     }
-
+    const double MAX_CHISQUARED_CDF = .85;
+    const int MAX_LOOKAHEAD = 2;
     //TODO: convert this to recursive call
-    void mybackwardSearch(const std::vector<usint>& pattern,  unsigned int it, pair_type range, double chi_squared_sum) const
-        {
-
+    void mybackwardSearch(const std::vector<usint>& pattern,  unsigned int it, pair_type range, double chi_squared_sum) const {
             if (it == 0) { // match complete
-                //for(int i=0; i < pattern.size() - it; ++i) std::cout << "\t";
                 std::vector<usint>* occurrences = this->index.locateRange(range);
-                if(occurrences != 0)
-                {
-                    double chisqcdf = 0.0;
-                    boost::math::chi_squared cs(/*opt_depth*/ pattern.size());
-                    chisqcdf = boost::math::cdf(cs, chi_squared_sum);
-                    const double max_chisquared_cdf = .85;
-                    if (chisqcdf > max_chisquared_cdf) return;
-                    
+                if(occurrences != 0) {
+                    boost::math::chi_squared cs(/*DF = opt_depth*/ pattern.size());
+                    double chisqcdf = boost::math::cdf(cs, chi_squared_sum);
+
                     std::cout << "'chi_squared_cdf' : " << chisqcdf << "}" << std::endl;
                     std::cout << "Found " << occurrences->size() << " match(s) located at: " ;
                     for (std::vector<usint>::iterator mi = occurrences->begin(); mi != occurrences->end(); ++mi) {
@@ -516,20 +510,13 @@ class BWASearch
                     delete occurrences;
                 }
 
-                //return range; //FIXME - returns only first match this way
             } else {
-                // try skipping this node if it's too small to account for inconsistent desorption
-                const int MAYBEFRAGMAX = 800;
-                if (pattern[it -1] < MAYBEFRAGMAX) {
-                    this->mybackwardSearch(pattern, it - 1, range, chi_squared_sum );
-                }
-
 
                 if (VERBOSE >= 2) {
                     for(int i=0; i < pattern.size() - it; ++i) std::cout << "\t";
                     std::cout << "mybackwardSsearch(pattern[" << it -1 << "] /* "<< pattern[it-1] << " */, range=<" <<range.first << "," << range.second << ">)" <<  std::endl;
                 }
-                int lookahead = 2;
+                int lookahead = MAX_LOOKAHEAD;
                 //trim lookahead to max remaining
                 if ((int)it - 1 - lookahead < 0) {
                     lookahead = it - 1;
@@ -547,43 +534,27 @@ class BWASearch
                         assert(index >= 0);
                         c += pattern[index];
                     }
-                // int actv_la = 0;
-                // int c = pattern[it - 1];
-                    //wt stuff
 
+                    //wt stuff
                     std::vector<long unsigned int> hits = this->index.restricted_unique_range_values(range.first, range.second, 
                                                                                                      c <= DELTA ? 1 : c - DELTA,  // if subtracting results in less than 1, use 1
                                                                                                      c + DELTA);
 
                     // actual algo
                     for(std::vector<long unsigned int>::iterator itr = hits.begin(); itr != hits.end(); ++itr) {
-                        pair_type new_range = this->index.LF(range, *itr); //FIXME: renenable WT later
-                        //pair_type new_range = this->index.LF(range, c);
-                        //for(int i=0; i < pattern.size() - it; ++i) std::cout << "\t";
+                        pair_type new_range = this->index.LF(range, *itr); 
                         int deviation = abs(*itr - c);
                         float chi_squared = std::pow((float)deviation / (float)OM_STDDEV, 2);
-
                         if(!CSA::isEmpty(new_range)) {
-                            //pair_type retrange = 
-                            double chisqcdf = 0.0;
                             boost::math::chi_squared cs(/*opt_depth*/ pattern.size() - it);
-                            chisqcdf = boost::math::cdf(cs, chi_squared_sum + chi_squared);
-                            const double max_chisquared_cdf = .85;
-                            if (chisqcdf <  max_chisquared_cdf) {
-
+                            double chisqcdf = boost::math::cdf(cs, chi_squared_sum + chi_squared);
+                            if (chisqcdf <  MAX_CHISQUARED_CDF) {
                                 this->mybackwardSearch(pattern, it - 1 - actv_la, new_range, chi_squared_sum + chi_squared);
                             }
-                            // if(!CSA::isEmpty(retrange)) {
-
-                            //     //return retrange; //FIXME - returns only first match this way
-                            // }
                         }
                     }
                 }
             }
-            //return pair_type(1,0);
-
-
         }
 
     void backwardSearch(const std::vector<usint>& pattern, MatchInfo& info) const
