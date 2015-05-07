@@ -5,7 +5,7 @@
 SIZE_FLAGS = -DMASSIVE_DATA_RLCSA
 
 # Parallelism is supported by either libstdc++ Parallel Mode or MCSTL.
-PARALLEL_FLAGS = -DMULTITHREAD_SUPPORT -D_GLIBCXX_PARALLEL -fopenmp
+PARALLEL_FLAGS = #-DMULTITHREAD_SUPPORT -D_GLIBCXX_PARALLEL -fopenmp
 # MCSTL_ROOT = /fs-3/d/jltsiren/suds/mcstl
 # PARALLEL_FLAGS = -DMULTITHREAD_SUPPORT -I$(MCSTL_ROOT)/c++ -fopenmp
 
@@ -18,7 +18,7 @@ VECTOR_FLAGS = $(PSI_FLAGS) $(LCP_FLAGS) $(SA_FLAGS)
 SDSL_PREFIX = /s/chopin/l/grad/muggli/local
 SDSL_STUFF =  -I/usr/include/boost/ -I$(SDSL_PREFIX)/include -L /usr/lib64 -L$(SDSL_PREFIX)/lib  -lsdsl -ldivsufsort -ldivsufsort64
 
-CXXFLAGS = -Wall -O3 -march=native -std=c++11 $(SIZE_FLAGS) $(PARALLEL_FLAGS) $(VECTOR_FLAGS) $(SDSL_STUFF)
+CXXFLAGS = -Wall  -O3 -march=native -std=c++11 $(SIZE_FLAGS) $(PARALLEL_FLAGS) $(VECTOR_FLAGS) $(SDSL_STUFF)
 OBJS = rlcsa.o rlcsa_builder.o sasamples.o alphabet.o \
 lcpsamples.o sampler.o suffixarray.o adaptive_samples.o docarray.o \
 bits/array.o bits/bitbuffer.o bits/multiarray.o bits/bitvector.o bits/charvector.o bits/deltavector.o \
@@ -31,6 +31,7 @@ utils/sort_wikipedia utils/genpatterns
 
 VPATH = bits:misc:utils
 
+LFLAGS =  #-pie
 all: default
 	$(MAKE) -C gcsa
 
@@ -50,7 +51,7 @@ lcp_test: lcp_test.o rlcsa.a
 	$(CXX) $(CXXFLAGS) -o lcp_test lcp_test.o rlcsa.a
 
 parallel_build: parallel_build.o rlcsa.a
-	$(CXX) $(CXXFLAGS) -o parallel_build parallel_build.o rlcsa.a
+	$(CXX) $(CXXFLAGS) $(LFLAGS) -o parallel_build parallel_build.o rlcsa.a
 
 build_rlcsa: build_rlcsa.o rlcsa.a
 	$(CXX) $(CXXFLAGS) -o build_rlcsa build_rlcsa.o rlcsa.a

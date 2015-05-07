@@ -77,6 +77,7 @@ Graph::Graph(const std::string& base_name, bool is_full_name) :
   infile.close();
   std::cout << "Sorting edges." << std::endl;
   this->sortEdges(true);  // FIXME unnecessary, as the edges are already sorted?
+  std::cout << "done Sorting edges." << std::endl;
   this->ok = true;
 }
 
@@ -135,6 +136,7 @@ struct GraphEdgeToComparator
 void
 Graph::sortEdges(bool from)
 {
+    std::cout << "Graph::sortEdges(bool from)" << std::endl;
   if(from)
   {
 	  CSA::parallelSort(this->edges, this->edges + this->edge_count, ge_from_comparator);
@@ -143,6 +145,7 @@ Graph::sortEdges(bool from)
   {
 	  CSA::parallelSort(this->edges, this->edges + this->edge_count, ge_to_comparator);
   }
+    std::cout << "Graph::sortEdges(bool from)" << std::endl;
 }
 
 pair_type
@@ -870,6 +873,7 @@ PathGraph::createPathNode(const PathNode& left, const PathNode& right)
 void
 PathGraph::sort()
 {
+  std::cout << "start PathGraph::sort()" << std::endl;
     std::cout << "sorting by key" << std::endl;
   this->sortByKey();
 
@@ -923,6 +927,7 @@ PathGraph::sort()
     }
     this->status = sorted;
   }
+  std::cout << "done PathGraph::sort()" << std::endl;
 }
 
 // Returns the next maximal mergeable set of PathNodes.
@@ -964,7 +969,9 @@ struct PathNodeComparator
 void
 PathGraph::sortByKey()
 {
+    std::cout << "PathGraph::sortByKey()" << std::endl;
 	CSA::parallelSort(this->nodes.begin(), this->nodes.end(), pn_comparator);
+    std::cout << "done PathGraph::sortByKey()" << std::endl;
 }
 
 struct PathEdgeComparator
@@ -979,7 +986,9 @@ struct PathEdgeComparator
 void
 PathGraph::sortEdges()
 {
+    std::cout << "PathGraph::sortEdges()" << std::endl;
 	CSA::parallelSort(this->edges.begin(), this->edges.end(), pe_comparator);
+    std::cout << "done PathGraph::sortEdges()" << std::endl;
 }
 
 //--------------------------------------------------------------------------
@@ -1003,6 +1012,7 @@ struct PathEdgeToComparator
 void
 PathGraph::sortEdges(bool by_from, bool create_index)
 {
+    std::cout << "PathGraph::sortEdges(bool by_from, bool create_index)" << std::endl;
   if(by_from)
   {
     if(this->status != edges_sorted)
@@ -1043,6 +1053,7 @@ PathGraph::sortEdges(bool by_from, bool create_index)
       this->nodes[i].key.second += this->nodes[i - 1].key.second;
     }
   }
+    std::cout << "done PathGraph::sortEdges(bool by_from, bool create_index)" << std::endl;
 }
 
 pair_type

@@ -95,6 +95,7 @@ short_pair* simpleSuffixSort(const uchar* sequence, uint n, uint sequences, uint
 template <class Iterator>
 void parallelSort(Iterator first, Iterator last)
 {
+    std::cout << "parallelSort" << std::endl;
   #ifdef MULTITHREAD_SUPPORT
     #ifdef _GLIBCXX_PARALLEL
       std::sort(first, last, __gnu_parallel::balanced_quicksort_tag());
@@ -104,6 +105,7 @@ void parallelSort(Iterator first, Iterator last)
   #else
     std::sort(first, last);
   #endif
+    std::cout << "done parallelSort" << std::endl;
 }
 
 template <class Iterator, class Compare>
