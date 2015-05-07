@@ -12,7 +12,7 @@
 #include <vector>
 #include <map>
 #include <iostream>
-
+#include <fstream>
 class Node {
 public:
     Node(unsigned int _label, unsigned int _value, unsigned int _pos) { 
@@ -66,9 +66,10 @@ unsigned int mytolower(unsigned int lab)
         lab |= 0x1; // mark it as a nonbackbone "lowercase" node        
         return lab;
 }
-const int BIN_SIZE = 100;
+const int BIN_SIZE = 25;
 unsigned int quantize(unsigned int val)
 {
+    return val;
     unsigned int new_val = 0;
     if (val % BIN_SIZE < BIN_SIZE / 2.0)
         new_val = val - val % BIN_SIZE;
@@ -139,6 +140,7 @@ int main(int argc, char** argv)
 
     std::cout << "Adding skip edges" << std::endl;;
     for (i = 0; i < r / 4 - 1; ++i) {
+
         // add order 1 skip nodes
         unsigned int lab = mytolower(nodes[i+1]->label + nodes[i+2]->label);
 
@@ -167,34 +169,35 @@ int main(int argc, char** argv)
     }
     char *ofname = argv[2];
     printf("writing file %s\n", ofname);
-    int ofd = open(ofname, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
-    if (ofd == -1) printf("problem opening file to write ERROR!\n");
+    //int ofd = open(ofname, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+    std::ofstream ofd(ofname, std::ofstream::binary);
+    //if (ofd == -1) printf("problem opening file to write ERROR!\n");
     unsigned int numnodes = nodes.size();
     unsigned int numedges = edges.size();
-    write(ofd, &numnodes, 4);
-    write(ofd, &numedges, 4);
+    ofd.write((char*)&numnodes, 4);
+    ofd.write((char*)&numedges, 4);
     for (std::vector<Node *>::iterator ni = nodes.begin(); ni != nodes.end(); ++ni) {
         unsigned int lab = ((*ni)->label);
         if (lab == 0) std::cout << "0 lab at node " << (*ni)->value <<  " pos " << (*ni)->pos << std::endl;
         lab = remap(lab);
         
-        counts[lab] += 1;
-        write(ofd, &lab, 4);
-        write(ofd, &((*ni)->value), 4);
+//        counts[lab] += 1;
+        ofd.write((char*)&lab, 4);
+        ofd.write((char*)&((*ni)->value), 4);
     }
 
     std::cout << "Number of nodes: " << numnodes << std::endl;
     std::cout << "largest node pos: " << (*(nodes.end() - 1))->pos << std::endl;
     for (std::vector<Edge *>::iterator ei = edges.begin(); ei != edges.end(); ++ei) {
-        write(ofd, &((*ei)->from->pos), 4);
-        write(ofd, &((*ei)->to->pos), 4);
+        ofd.write((char*)&((*ei)->from->pos), 4);
+        ofd.write((char*)&((*ei)->to->pos), 4);
     }
 
     printf("size of active alphabet: %d\n", counts.size());
 
-    // for(std::map<unsigned int, unsigned int>::iterator ci = counts.begin(); ci != counts.end(); ++ci) {
-    //     std::cout << "counts[" << ci->first << "] = " << ci->second << std::endl;
-    // }
+     // for(std::map<unsigned int, unsigned int>::iterator ci = counts.begin(); ci != counts.end(); ++ci) {
+     //     std::cout << "counts[" << ci->first << "] = " << ci->second << std::endl;
+     // }
 
-    close(ofd);
+    ofd.close();
 }

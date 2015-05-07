@@ -2,4 +2,4 @@
 
 
 om2automaton: om2automaton.cpp
-	g++ om2automaton.cpp -o om2automaton
+	g++ -O3 -march=native om2automaton.cpp -o om2automaton
