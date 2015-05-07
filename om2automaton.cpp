@@ -67,6 +67,7 @@ unsigned int mytolower(unsigned int lab)
         return lab;
 }
 const int BIN_SIZE = 25;
+const int DESORPTION_THRESH = 1000;
 unsigned int quantize(unsigned int val)
 {
     return val;
@@ -138,7 +139,7 @@ int main(int argc, char** argv)
     std::vector<Edge *> skip_edges;
 
 
-    std::cout << "Adding skip edges" << std::endl;;
+    std::cout << "Adding skip edges and nodes" << std::endl;;
     for (i = 0; i < r / 4 - 1; ++i) {
 
         // add order 1 skip nodes
@@ -165,6 +166,19 @@ int main(int argc, char** argv)
             Edge *e2 = new Edge(sumnode, nodes[i+4]);
             edges.push_back(e2);
         }
+
+        // add skip edges
+        if (nodes[i+1]->value < DESORPTION_THRESH) {
+            Edge *eskip = new Edge(nodes[i], nodes[i+2]);
+            edges.push_back(eskip);
+        }
+
+        // add double skip edges
+        if (nodes[i+1]->value < DESORPTION_THRESH && nodes[i+2]->value < DESORPTION_THRESH) {
+            Edge *eskip = new Edge(nodes[i], nodes[i+3]);
+            edges.push_back(eskip);
+        }
+
 
     }
     char *ofname = argv[2];
