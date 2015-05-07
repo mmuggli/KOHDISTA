@@ -137,6 +137,7 @@ void
 Graph::sortEdges(bool from)
 {
     std::cout << "Graph::sortEdges(bool from)" << std::endl;
+    std::cout << "Elapsed time: " << CSA::readTimer() - CSA::start_time << std::endl;
   if(from)
   {
 	  CSA::parallelSort(this->edges, this->edges + this->edge_count, ge_from_comparator);
@@ -146,6 +147,7 @@ Graph::sortEdges(bool from)
 	  CSA::parallelSort(this->edges, this->edges + this->edge_count, ge_to_comparator);
   }
     std::cout << "Graph::sortEdges(bool from)" << std::endl;
+    std::cout << "Elapsed time: " << CSA::readTimer() - CSA::start_time  << std::endl;
 }
 
 pair_type
@@ -875,12 +877,14 @@ PathGraph::sort()
 {
   std::cout << "start PathGraph::sort()" << std::endl;
     std::cout << "sorting by key" << std::endl;
+    std::cout << "Elapsed time: " << CSA::readTimer() - CSA::start_time  << std::endl;
   this->sortByKey();
 
   // Update ranks.
   usint rank = 0;
   pair_type key = this->nodes[0].key;
   std::cout << "Updating ranks" << std::endl;
+    std::cout << "Elapsed time: " << CSA::readTimer() - CSA::start_time  << std::endl;
   for(nvector::iterator iter = this->nodes.begin(); iter != this->nodes.end(); ++iter)
   {
     if(iter->key != key) { rank++; key = iter->key; }
@@ -889,6 +893,7 @@ PathGraph::sort()
 
   // Merge equivalent nodes.
   std::cout << "Merging equivalent nodes" << std::endl;
+    std::cout << "Elapsed time: " << CSA::readTimer() - CSA::start_time  << std::endl;
   usint top = 0;
   pair_type node_range = EMPTY_PAIR;
   while(true)
@@ -901,6 +906,7 @@ PathGraph::sort()
 
   // Check if sorted.
   std::cout << "Checking if sorted" << std::endl;
+    std::cout << "Elapsed time: " << CSA::readTimer() - CSA::start_time  << std::endl;
   bool is_sorted = true;
   PathNode* candidate = &(this->nodes[0]);
   key = candidate->key; this->ranks = 1;
@@ -919,6 +925,7 @@ PathGraph::sort()
   // Replace the ranks of a sorted graph so that rank(i) = i.
   // Merges may otherwise leave gaps in the ranks.
   std::cout << "Replacing the ranks of a sorted graph so that rank(i) = i." << std::endl;
+    std::cout << "Elapsed time: " << CSA::readTimer() - CSA::start_time  << std::endl;
   if(is_sorted)
   {
     for(usint i = 0; i < this->node_count; i++)
@@ -928,6 +935,7 @@ PathGraph::sort()
     this->status = sorted;
   }
   std::cout << "done PathGraph::sort()" << std::endl;
+    std::cout << "Elapsed time: " << CSA::readTimer() - CSA::start_time  << std::endl;
 }
 
 // Returns the next maximal mergeable set of PathNodes.
@@ -970,8 +978,10 @@ void
 PathGraph::sortByKey()
 {
     std::cout << "PathGraph::sortByKey()" << std::endl;
+    std::cout << "Elapsed time: " << CSA::readTimer() - CSA::start_time  << std::endl;
 	CSA::parallelSort(this->nodes.begin(), this->nodes.end(), pn_comparator);
     std::cout << "done PathGraph::sortByKey()" << std::endl;
+    std::cout << "Elapsed time: " << CSA::readTimer() - CSA::start_time  << std::endl;
 }
 
 struct PathEdgeComparator
@@ -987,8 +997,10 @@ void
 PathGraph::sortEdges()
 {
     std::cout << "PathGraph::sortEdges()" << std::endl;
+    std::cout << "Elapsed time: " << CSA::readTimer() - CSA::start_time  << std::endl;
 	CSA::parallelSort(this->edges.begin(), this->edges.end(), pe_comparator);
     std::cout << "done PathGraph::sortEdges()" << std::endl;
+    std::cout << "Elapsed time: " << CSA::readTimer() - CSA::start_time  << std::endl;
 }
 
 //--------------------------------------------------------------------------
@@ -1013,6 +1025,7 @@ void
 PathGraph::sortEdges(bool by_from, bool create_index)
 {
     std::cout << "PathGraph::sortEdges(bool by_from, bool create_index)" << std::endl;
+    std::cout << "Elapsed time: " << CSA::readTimer() - CSA::start_time  << std::endl;
   if(by_from)
   {
     if(this->status != edges_sorted)
@@ -1054,6 +1067,7 @@ PathGraph::sortEdges(bool by_from, bool create_index)
     }
   }
     std::cout << "done PathGraph::sortEdges(bool by_from, bool create_index)" << std::endl;
+    std::cout << "Elapsed time: " << CSA::readTimer() - CSA::start_time  << std::endl;
 }
 
 pair_type
@@ -1081,6 +1095,8 @@ struct PathNodeFromComparator
 void
 PathGraph::sortByFrom(bool create_index)
 {
+    std::cout << "PathGraph::sortByFrom(bool create_index)" << std::endl;
+    std::cout << "Elapsed time: " << CSA::readTimer() - CSA::start_time  << std::endl;
 	CSA::parallelSort(this->nodes.begin(), this->nodes.end(), pn_from_comparator);
   this->status = error;
 
@@ -1101,6 +1117,8 @@ PathGraph::sortByFrom(bool create_index)
       this->nodes[current].key.second = this->nodes.size();
     }
   }
+    std::cout << "done PathGraph::sortByFrom(bool create_index)" << std::endl;
+    std::cout << "Elapsed time: " << CSA::readTimer() - CSA::start_time  << std::endl;
 }
 
 pair_type

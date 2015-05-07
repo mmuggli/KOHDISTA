@@ -16,7 +16,7 @@
 namespace CSA
 {
 
-
+    extern double start_time;
 
 template<class T>
 struct GenericTriple

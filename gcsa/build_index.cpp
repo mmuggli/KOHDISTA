@@ -37,10 +37,12 @@ main(int argc, char** argv)
     std::cout << std::endl;
 
     double start = CSA::readTimer();
+    CSA::start_time = start;
 
     GCSA::Graph* graph = new GCSA::Graph(base_name);
     double loaded_time = CSA::readTimer();
     std::cout << "Graph loaded in " << loaded_time - start << " seconds." << std::endl;
+    std::cout << "Elapsed time: " << CSA::readTimer() - CSA::start_time  << std::endl;
     if(!graph->ok) { return 2; }
     double backboned_time = loaded_time;
     if(backbone)
@@ -49,6 +51,7 @@ main(int argc, char** argv)
         graph->createBackbone();
         backboned_time = CSA::readTimer();
 		std::cout << "done in " << backboned_time - loaded_time << " seconds." << std::endl << std::endl;
+        std::cout << "Elapsed time: " << CSA::readTimer() - CSA::start_time  << std::endl;
 	}
     graph->printInfo();
 
@@ -56,10 +59,13 @@ main(int argc, char** argv)
     GCSA::PathGraph* pg = new GCSA::PathGraph(*graph);
     double pg_time = CSA::readTimer();
     std::cout << "done in " << pg_time - backboned_time  << " seconds." << std::endl << std::endl;
+    std::cout << "Elapsed time: " << CSA::readTimer() - CSA::start_time  << std::endl;
     delete graph; graph = 0;
     pg->printInfo();
     while(pg->status != GCSA::PathGraph::sorted)
     {
+        std::cout << "Starting next generation of pathgraph" << std::endl;
+        std::cout << "Elapsed time: " << CSA::readTimer() - CSA::start_time  << std::endl;
         if(pg->status != GCSA::PathGraph::ok)
         {
             std::cerr << "Error: Invalid PathGraph!" << std::endl;
@@ -69,12 +75,25 @@ main(int argc, char** argv)
         GCSA::PathGraph* next = new GCSA::PathGraph(*pg);
         delete pg; pg = next;
         pg->printInfo();
+        std::cout << "done with construction generation" << std::endl;
+        std::cout << "Elapsed time: " << CSA::readTimer() - CSA::start_time  << std::endl;
     }
     std::cout << std::endl;
-
+    std::cout << "constructing new graph" << std::endl;
+    std::cout << "Elapsed time: " << CSA::readTimer() - CSA::start_time  << std::endl;
     graph = new GCSA::Graph(base_name);
-    if(backbone) { graph->createBackbone(); }
+    if(backbone) { 
+        std::cout << "constructing backbone" << std::endl;
+        std::cout << "Elapsed time: " << CSA::readTimer() - CSA::start_time  << std::endl;
+        graph->createBackbone(); 
+        std::cout << "done constructing backbone" << std::endl;
+        std::cout << "Elapsed time: " << CSA::readTimer() - CSA::start_time  << std::endl;
+    }
+    std::cout << "constructing gcsa" << std::endl;
+    std::cout << "Elapsed time: " << CSA::readTimer() - CSA::start_time  << std::endl;
     GCSA::GCSA gcsa(*pg, *graph, true);
+    std::cout << "writing gcsa" << std::endl;
+    std::cout << "Elapsed time: " << CSA::readTimer() - CSA::start_time  << std::endl;
     gcsa.writeTo(base_name);
     //delete graph; graph = 0;
     //delete pg; pg = 0;
