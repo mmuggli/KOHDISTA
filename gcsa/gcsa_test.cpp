@@ -66,47 +66,48 @@ int main(int argc, char** argv)
     std::cout << "Finding row " << i << std::endl;
     pair_type result = bwasearch.find(rows[i], false, handler.skip);
     std::cout << "Find completed in " <<   CSA::readTimer() - row_start << " seconds." << std::endl;
-    usint temp = bwasearch.handleOccurrences(result, handler.locate, handler.max_matches);
-    if(temp > 0)
-    {
-      forward_occurrences += temp; match_counts[i] += temp;
-      found++; forward++; match = true;
-      edit_distances[0]++;
-      if(handler.write) { classifier.forward(rows[i]); }
-    }
-    if(handler.reverse_complement)
-    {
-      pair_type reverse_result = bwasearch.find(rows[i], true, handler.skip);
-      temp = bwasearch.handleOccurrences(reverse_result, handler.locate, handler.max_matches);
-      if(temp > 0)
-      {
-        if(!match)         { found++; edit_distances[0]++; }
-        if(handler.k == 0) { reverse_occurrences += temp; }
-        else               { forward_occurrences += temp; }
-        match_counts[i] += temp;
-        if(handler.max_matches > 0 && match_counts[i] > handler.max_matches)
-        {
-          match_counts[i] = handler.max_matches + 1;
-        }
-        reverse++; match = true;
-        if(handler.write)  { classifier.reverse(rows[i]); }
-      }
-    }
-    if(handler.write && !match) { classifier.notfound(rows[i]); }
+    //disabled as we now run find in backward search
+    //    usint temp = bwasearch.handleOccurrences(result, handler.locate, handler.max_matches);
+  //   if(temp > 0)
+  //   {
+  //     forward_occurrences += temp; match_counts[i] += temp;
+  //     found++; forward++; match = true;
+  //     edit_distances[0]++;
+  //     if(handler.write) { classifier.forward(rows[i]); }
+  //   }
+  //   if(handler.reverse_complement)
+  //   {
+  //     pair_type reverse_result = bwasearch.find(rows[i], true, handler.skip);
+  //     temp = bwasearch.handleOccurrences(reverse_result, handler.locate, handler.max_matches);
+  //     if(temp > 0)
+  //     {
+  //       if(!match)         { found++; edit_distances[0]++; }
+  //       if(handler.k == 0) { reverse_occurrences += temp; }
+  //       else               { forward_occurrences += temp; }
+  //       match_counts[i] += temp;
+  //       if(handler.max_matches > 0 && match_counts[i] > handler.max_matches)
+  //       {
+  //         match_counts[i] = handler.max_matches + 1;
+  //       }
+  //       reverse++; match = true;
+  //       if(handler.write)  { classifier.reverse(rows[i]); }
+  //     }
+  //   }
+  //   if(handler.write && !match) { classifier.notfound(rows[i]); }
 
-    // Do approximate matching only if there are no exact matches.
-    if(handler.k > 0 && !match)
-    {
-      std::vector<GCSA::MatchInfo*>* results = bwasearch.find(rows[i], handler.k, handler.indels, handler.penalties);
-      temp = bwasearch.handleOccurrences(results, handler.locate, handler.max_matches);
-      if(temp > 0)
-      {
-        forward_occurrences += temp; match_counts[i] += temp;
-        found++;
-        edit_distances[(*(results->begin()))->errors]++;
-      }
-      bwasearch.deleteResults(results);
-    }
+  //   // Do approximate matching only if there are no exact matches.
+  //   if(handler.k > 0 && !match)
+  //   {
+  //     std::vector<GCSA::MatchInfo*>* results = bwasearch.find(rows[i], handler.k, handler.indels, handler.penalties);
+  //     temp = bwasearch.handleOccurrences(results, handler.locate, handler.max_matches);
+  //     if(temp > 0)
+  //     {
+  //       forward_occurrences += temp; match_counts[i] += temp;
+  //       found++;
+  //       edit_distances[(*(results->begin()))->errors]++;
+  //     }
+  //     bwasearch.deleteResults(results);
+  //   }
   }
   double time = CSA::readTimer() - start;
   double megabases = total / (double)CSA::MILLION;

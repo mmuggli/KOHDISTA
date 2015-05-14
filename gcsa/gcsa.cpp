@@ -129,9 +129,9 @@ GCSA::GCSA(PathGraph& graph, Graph& parent, bool print) :
     std::string inedgebv;
 
     //FIXME: build up a superflous map for debugging printing
-    std::map<int, int> num2lab;
-    for (std::vector<PathEdge>::iterator edge = graph.edges.begin(); edge != graph.edges.end(); ++edge)
-        num2lab[edge->from] = edge->label;
+    // std::map<int, int> num2lab;
+    // for (std::vector<PathEdge>::iterator edge = graph.edges.begin(); edge != graph.edges.end(); ++edge)
+    //     num2lab[edge->from] = edge->label;
 
     int nodecntr = 0;
     for(std::vector<PathNode>::iterator node = graph.nodes.begin(); node != graph.nodes.end(); ++node)
@@ -475,10 +475,10 @@ usint
 GCSA::labelOf(usint index) const
 {
   if(index >= this->getSize()) { return 0; }
-
-  CSA::BitVector::Iterator* outgoing_iter = this->outgoing->newIterator();
+  char iterbuf[this->outgoing->iterSize()];
+  CSA::BitVector::Iterator* outgoing_iter = this->outgoing->newIterator(iterbuf);
   index = outgoing_iter->select(index);
-  delete outgoing_iter;
+  outgoing_iter->~Iterator();
   return this->alphabet->charAt(index);
 }
 
@@ -533,7 +533,8 @@ GCSA::LF(pair_type range, usint c) const
     if(!(this->alphabet->hasChar(c))) { return EMPTY_PAIR; }
 
     // Follow edges backward using BWT.
-    CSA::CharVector::Iterator* array_iter = this->array.newIterator(c);
+    char iterbufc[this->array.iterSize(c)];
+    CSA::CharVector::Iterator* array_iter = this->array.newIterator(c, iterbufc);
   
     range.first = this->alphabet->cumulative(c) + array_iter->rank(range.first, true) - 1;
 
@@ -541,7 +542,7 @@ GCSA::LF(pair_type range, usint c) const
 
     if (VERBOSE >= 2)   std::cout << range.first <<  "," << range.second << ">" << std::endl;
     if(CSA::isEmpty(range)) { return EMPTY_PAIR; }
-    delete array_iter;
+    array_iter->~Iterator();
     pair_type ret_range = this->convertToNodeRange(range);
     if (VERBOSE >= 2)   std::cout << " --->  <" << ret_range.first <<  "," << ret_range.second << ">" << std::endl;
     return ret_range;
@@ -568,43 +569,50 @@ GCSA::getSuccessors(usint index) const
 
   std::vector<usint>* result = new std::vector<usint>;
   if(index == 0) { return result; } // Final node.
-
-  CSA::BitVector::Iterator* outgoing_iter = this->outgoing->newIterator();
+  char iterbuf[this->outgoing->iterSize()];
+  CSA::BitVector::Iterator* outgoing_iter = this->outgoing->newIterator(iterbuf);
   index = outgoing_iter->select(index);
   usint successors = outgoing_iter->selectNext() - index;
   usint c = this->alphabet->charAt(index);
 
   // Find the corresponding incoming edges using BWT.
-  CSA::CharVector::Iterator* array_iter = this->array.newIterator(c);
+  char iterbufc[this->array.iterSize(c)];
+  CSA::CharVector::Iterator* array_iter = this->array.newIterator(c, iterbufc);
   result->push_back(array_iter->select(index - this->alphabet->cumulative(c)));
   for(usint i = 1; i < successors; i++) { result->push_back(array_iter->selectNext()); }
-  delete outgoing_iter;
-  delete array_iter;
+  outgoing_iter->~Iterator();
+  array_iter->~Iterator();
   return result;
 }
 
 CSA::CharVector::Iterator*
-GCSA::getIterator(usint c) const
+GCSA::getIterator(usint c, char* placement) const
 {
-  if(c < CHARS && c > 0 && this->alphabet->hasChar(c)) { return this->array.newIterator(c); }
+  if(c < CHARS && c > 0 && this->alphabet->hasChar(c)) { return this->array.newIterator(c, placement); }
   return 0;
 }
 
 CSA::BitVector::Iterator*
-GCSA::getEdgeIterator() const
+GCSA::getEdgeIterator(char *placement) const
 {
-    return this->outgoing->newIterator();
+    return this->outgoing->newIterator(placement);
 }
+
+ size_t GCSA::edgeIterSize() const
+ {
+     return this->outgoing->iterSize();
+ }
 
 //--------------------------------------------------------------------------
 
 pair_type
 GCSA::convertToNodeRange(pair_type edge_range) const
 {
-  CSA::BitVector::Iterator* outgoing_iter = this->outgoing->newIterator();
+  char iterbuf[this->outgoing->iterSize()];
+  CSA::BitVector::Iterator* outgoing_iter = this->outgoing->newIterator(iterbuf);
   edge_range.first = outgoing_iter->rank(edge_range.first) - 1;
   edge_range.second = outgoing_iter->rank(edge_range.second) - 1;
-  delete outgoing_iter;
+  outgoing_iter->~Iterator();
   return edge_range;
 }
 
@@ -613,27 +621,31 @@ GCSA::Psi(usint index) const
 {
   if(index == 0) { return this->getSize() - 1; } // Final node.
 
-  CSA::BitVector::Iterator* outgoing_iter = this->outgoing->newIterator();
+  char iterbuf[this->outgoing->iterSize()];
+  CSA::BitVector::Iterator* outgoing_iter = this->outgoing->newIterator(iterbuf);
   index = outgoing_iter->select(index);
   usint c = this->alphabet->charAt(index);
 
   // Find the corresponding incoming edge using BWT.
-  CSA::CharVector::Iterator* array_iter = this->array.newIterator(c);
+  char iterbufc[this->array.iterSize(c)];
+  CSA::CharVector::Iterator* array_iter = this->array.newIterator(c, iterbufc);
   index = array_iter->select(index - this->alphabet->cumulative(c));
-  delete outgoing_iter;
-  delete array_iter;
+  outgoing_iter->~Iterator();
+  array_iter->~Iterator();
   return index;
 }
 
 usint
 GCSA::LF(usint index, usint c) const
 {
-	CSA::CharVector::Iterator* array_iter = this->array.newIterator(c);
+  char iterbufc[this->array.iterSize(c)];
+	CSA::CharVector::Iterator* array_iter = this->array.newIterator(c, iterbufc);
   index = this->alphabet->cumulative(c) + array_iter->rank(index) - 1;
-  delete array_iter;
-  CSA::BitVector::Iterator* edge_iter = this->outgoing->newIterator();
+  array_iter->~Iterator();
+  char iterbuf[this->outgoing->iterSize()];
+  CSA::BitVector::Iterator* edge_iter = this->outgoing->newIterator(iterbuf);
   index = edge_iter->rank(index) - 1;
-  delete edge_iter;
+  edge_iter->~Iterator();
   return index;
 }
 
@@ -731,7 +743,9 @@ Backbone::Backbone(const GCSA& _gcsa, PathGraph& graph, Graph& parent, bool prin
   // Scan the graph forward and build backbone information.
   CSA::SuccinctEncoder node_encoder(NODE_BLOCK_SIZE, CSA::MEGABYTE);
   CSA::RLEEncoder edge_encoder(EDGE_BLOCK_SIZE, CSA::MEGABYTE);
-  CSA::BitVector::Iterator* edge_iter = this->gcsa.outgoing->newIterator();
+  char iterbuf[this->gcsa.outgoing->iterSize()];
+  std::cout << "edge iter buffer size is " << this->gcsa.outgoing->iterSize() << std::endl;
+  CSA::BitVector::Iterator* edge_iter = this->gcsa.outgoing->newIterator(iterbuf);
   usint offset = edge_iter->select(0);
 
   graph.sortEdges(true, true);
@@ -776,7 +790,8 @@ Backbone::Backbone(const GCSA& _gcsa, PathGraph& graph, Graph& parent, bool prin
     std::cout << "done." << std::endl;
   }
   this->ok = true;
-  delete edge_iter;
+  std::cout << "edge_iter addr " << edge_iter << std::endl;
+  edge_iter->~Iterator(); //FIXME: leak, but avoid crash
 }
 
 Backbone::Backbone(const std::string& base_name, const GCSA& _gcsa) :
@@ -888,9 +903,10 @@ Backbone::next(usint index) const
   usint c = this->gcsa.alphabet->charAt(index);
 
   // Find the corresponding incoming edge using BWT.
-  CSA::CharVector::Iterator* array_iter = this->gcsa.array.newIterator(c);
+  char iterbufc[this->gcsa.array.iterSize(c)];
+  CSA::CharVector::Iterator* array_iter = this->gcsa.array.newIterator(c, iterbufc);
   index = array_iter->select(index - this->gcsa.alphabet->cumulative(c));
-  delete array_iter;
+  array_iter->~Iterator();
   return index;
 }
 
@@ -908,14 +924,15 @@ Backbone::previous(usint index) const
     usint c = alpha->getTextChar(i);
 
     // If BWT[index] contains c, follow the corresponding edge backward.
-    CSA::CharVector::Iterator* array_iter = this->gcsa.array.newIterator(c);
+  char iterbufc[this->gcsa.array.iterSize(c)];
+    CSA::CharVector::Iterator* array_iter = this->gcsa.array.newIterator(c, iterbufc);
     if(!(array_iter->isSet(index))) { continue; }
     index = array_iter->rank(index) - 1;
 
     // If we followed a backbone edge, return the node we ended up in.
     CSA::RLEVector::Iterator edge_iter(*(this->edges));
     if(!(edge_iter.isSet(index))) { continue; }
-    delete array_iter;
+    array_iter->~Iterator();
     return edge_iter.rank(index) - 1;
   }
 

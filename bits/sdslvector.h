@@ -38,7 +38,8 @@ class SDSLVector : public BitVector
 {
   public:
     typedef VectorEncoder Encoder;
-    BitVector::Iterator* newIterator();
+    BitVector::Iterator* newIterator(char *);
+    size_t iterSize();
     explicit SDSLVector(std::ifstream& file);
     explicit SDSLVector(FILE* file);
     SDSLVector(Encoder& encoder, usint universe_size);

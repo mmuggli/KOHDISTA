@@ -43,7 +43,9 @@ public:
         BitVector::Iterator *itr;
     };
 
-    Iterator *newIterator(usint c) const;
+    Iterator *newIterator(usint c, char *) const;
+
+    size_t iterSize(usint c) const;
 private:
     sdsl::wt_int<> *wt;
     std::map<usint, CSA::BitVector*> array;

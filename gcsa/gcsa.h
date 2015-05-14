@@ -103,8 +103,9 @@ class GCSA
     // This will not work correctly for an initial node, if there are multiple automata.
     std::vector<usint>* getSuccessors(usint index) const;
 
-    CSA::CharVector::Iterator* getIterator(usint c) const;
-    CSA::BitVector::Iterator* getEdgeIterator() const;
+    CSA::CharVector::Iterator* getIterator(usint c, char *) const;
+    CSA::BitVector::Iterator* getEdgeIterator(char *) const;
+    size_t edgeIterSize() const;
 
 //--------------------------------------------------------------------------
 //  INTERNAL VARIABLES

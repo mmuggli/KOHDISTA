@@ -41,7 +41,8 @@ int main(int argc, char** argv)
       assert(!"next line commented out, needs fixing");
       //array_iters[i] = gcsa.getIterator(i);
   }
-  CSA::BitVector::Iterator* edge_iter = gcsa.getEdgeIterator();
+  char iterbuf[gcsa.edgeIterSize()];
+  CSA::BitVector::Iterator* edge_iter = gcsa.getEdgeIterator(iterbuf);
 
   std::cout << "Starting verification..." << std::endl;
   usint lines = 0, prev = edge_iter->select(0);

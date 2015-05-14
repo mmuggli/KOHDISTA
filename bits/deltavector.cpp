@@ -2,6 +2,7 @@
 
 #include "deltavector.h"
 
+static char iterspace[sizeof(CSA::DeltaVector::Iterator)];
 
 namespace CSA
 {
@@ -37,10 +38,14 @@ DeltaVector::reportSize() const
 }
 
 //--------------------------------------------------------------------------
-  BitVector::Iterator*  DeltaVector::newIterator()
+  BitVector::Iterator*  DeltaVector::newIterator(char *placement)
   {
-    return new DeltaVector::Iterator(*this);
+      return new ((DeltaVector::Iterator*)placement) DeltaVector::Iterator(*this);
   }
+    size_t DeltaVector::iterSize()
+    {
+        return sizeof(DeltaVector::Iterator);
+    }
 
   DeltaVector::Iterator::Iterator(const DeltaVector& par) :
   BitVector::Iterator(par)

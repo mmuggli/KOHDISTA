@@ -3,14 +3,19 @@
 #include "rlevector.h"
 #include "../misc/utils.h"
 
-
+static char iterspace[sizeof(CSA::RLEVector::Iterator)];
 namespace CSA
 {
-  BitVector::Iterator*  RLEVector::newIterator()
+  BitVector::Iterator*  RLEVector::newIterator(char *placement)
   {
-    return new RLEVector::Iterator(*this);
+      //FIXME: this is unsafe, we're assuming that iterators are always cleaned up before reallocated somehwere else
+      RLEVector::Iterator* retval= new ((RLEVector::Iterator*)placement) RLEVector::Iterator(*this);
+      return retval;
   }
-
+    size_t RLEVector::iterSize()
+    {
+        return sizeof(RLEVector::Iterator);
+    }
 
 RLEVector::RLEVector(std::ifstream& file) :
   BitVector(file)

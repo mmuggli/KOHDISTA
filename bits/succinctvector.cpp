@@ -6,10 +6,16 @@
 
 namespace CSA
 {
-  BitVector::Iterator*  SuccinctVector::newIterator()
+  BitVector::Iterator*  SuccinctVector::newIterator(char *placement)
   {
-    return new SuccinctVector::Iterator(*this);
+      return new ((SuccinctVector::Iterator *) placement) SuccinctVector::Iterator(*this);
   }
+
+    size_t SuccinctVector::iterSize()
+    {
+        return sizeof(SuccinctVector::Iterator);
+    }
+
 
 
 SuccinctVector::SuccinctVector(std::ifstream& file) :

@@ -19,7 +19,8 @@ class NibbleEncoder : public VectorEncoder
   public:
     NibbleEncoder(usint block_bytes, usint superblock_size = VectorEncoder::SUPERBLOCK_SIZE);
     ~NibbleEncoder();
-    BitVector::Iterator* newIterator();
+    BitVector::Iterator* newIterator(char *);
+
     void setBit(usint value);
     void setRun(usint start, usint len);
 
@@ -57,7 +58,8 @@ class NibbleVector : public BitVector
 {
   public:
     typedef NibbleEncoder Encoder;
-    BitVector::Iterator* newIterator();
+    BitVector::Iterator* newIterator(char *);
+    size_t iterSize();
     explicit NibbleVector(std::ifstream& file);
     explicit NibbleVector(FILE* file);
     NibbleVector(Encoder& encoder, usint universe_size);

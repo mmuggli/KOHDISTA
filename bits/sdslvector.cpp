@@ -6,10 +6,14 @@
 
 namespace CSA
 {
-  BitVector::Iterator*  SDSLVector::newIterator()
+  BitVector::Iterator*  SDSLVector::newIterator(char *placement)
   {
-    return new SDSLVector::Iterator(*this);
+      return new ((SDSLVector::Iterator *)placement) SDSLVector::Iterator(*this);
   }
+    size_t SDSLVector::iterSize()
+    {
+        return sizeof(SDSLVector::Iterator);
+    }
 
 
 SDSLVector::SDSLVector(std::ifstream& file) :

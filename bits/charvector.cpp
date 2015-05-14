@@ -185,14 +185,19 @@ namespace CSA
     bool  CharVector::Iterator::isSet(usint i){return itr->isSet(i);}
 
 
-    CharVector::Iterator *CharVector::newIterator(usint c) const{return new Iterator(array.at(c)->newIterator());}
+    CharVector::Iterator *CharVector::newIterator(usint c, char *placement) const{return new Iterator(array.at(c)->newIterator(placement));}
+    size_t CharVector::iterSize(usint c) const
+    {
+        return array.at(c)->iterSize();
+    }
 
     CharVector::Iterator::Iterator(BitVector::Iterator *itr) : itr(itr)
     {
     }
     CharVector::Iterator::~Iterator() 
     {
-        delete itr;
+        //delete itr; // commented out b/c we expect these to now be placement new'd on the stack
+        itr->~Iterator();
     }
         
 } //namespace CSA

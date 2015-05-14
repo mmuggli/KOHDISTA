@@ -6,10 +6,14 @@
 
 namespace CSA
 {
-  BitVector::Iterator*  NibbleVector::newIterator()
+  BitVector::Iterator*  NibbleVector::newIterator(char *placement)
   {
-    return new NibbleVector::Iterator(*this);
+      return new ((NibbleVector::Iterator*) placement) NibbleVector::Iterator(*this);
   }
+    size_t NibbleVector::iterSize()
+    {
+        return sizeof(NibbleVector::Iterator);
+    }
 
 
 NibbleVector::NibbleVector(std::ifstream& file) :

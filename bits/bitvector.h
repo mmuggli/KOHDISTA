@@ -162,7 +162,8 @@ class BitVector
         Iterator& operator = (const Iterator&);
     };
     
-    virtual Iterator* newIterator() = 0;
+    virtual Iterator* newIterator(char *placement) = 0;
+    virtual size_t iterSize() = 0;
 
 
 /*

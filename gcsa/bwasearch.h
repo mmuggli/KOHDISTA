@@ -210,23 +210,10 @@ class BWASearch
     }
 
 
-    pair_type find(const std::vector<usint>& pattern, bool reverse_complement, usint skip = 0) const
-        {
-            if (VERBOSE) std::cout << "find(pattern, reverse_complement=" << reverse_complement << ", skip=" << skip << ")" << std::endl;
-            std::vector<usint> pat, revpat;
-            for (usint i = skip; i < pattern.size(); ++i) {
-                pat.push_back(pattern[i]);
-            }//= pattern.substr(skip);
-            revpat = pat; //FIXME: do something more effient than copy the whole vector, change code to iterate in rev order
-            std::reverse(revpat.begin(), revpat.end());  
-      
-            if(pat.size() == 0) { return this->index.getSARange(); }
 
+    pair_type find_one_dir(const std::vector<usint>& pat) const {
 
-
-
-
-            unsigned int myc = (reverse_complement ? this->complement(pat[0]) : pat[pat.size() - 1]);
+        unsigned int myc = (this->complement(pat[0]) );
 
 
             pair_type myinitrange = this->index.getSARange();
@@ -241,7 +228,7 @@ class BWASearch
                 
             for(std::vector<long unsigned int>::iterator itr = hits.begin(); itr != hits.end(); ++itr) {
                 hitcount++;
-                std::cout << "Trying initial symbol substitute " << hitcount << ". " << *itr << " for " << myc << std::endl; 
+                //std::cout << "Trying initial symbol substitute " << hitcount << ". " << *itr << " for " << myc << std::endl; 
 
 
 
@@ -273,6 +260,21 @@ class BWASearch
             //return info.range;
             return pair_type(1,0);
         }
+
+    pair_type find(const std::vector<usint>& pattern, bool reverse_complement, usint skip = 0) const {
+        if (VERBOSE) std::cout << "find(pattern, reverse_complement=" << reverse_complement << ", skip=" << skip << ")" << std::endl;
+        std::vector<usint> pat, revpat;
+        for (usint i = skip; i < pattern.size(); ++i) {
+            pat.push_back(pattern[i]);
+        }//= pattern.substr(skip);
+        revpat = pat; //FIXME: do something more effient than copy the whole vector, change code to iterate in rev order
+        std::reverse(revpat.begin(), revpat.end());  
+        
+        if(pat.size() == 0) { return this->index.getSARange(); }
+        find_one_dir(pat);
+        find_one_dir(revpat);
+        return pair_type(1,0);;
+    }
 
     /*
       Approximate search with at most k mismatches/errors for the pattern and its

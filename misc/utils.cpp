@@ -116,14 +116,14 @@ readPatternRows(std::ifstream& file, std::vector<std::vector<usint> >& rows, boo
         file.read((char*)&numsyms, sizeof(numsyms));
         while(numsyms) {
             std::vector<usint> row;
-            std::cout << "reading binary pattern: ";
+            //std::cout << "reading binary pattern: ";
             for(usint i = 0; i < numsyms; ++i) {
                 unsigned int elem = 0;
                 file.read((char*)&elem, sizeof(elem));
-                std::cout << elem << ",";
+                //  std::cout << elem << ",";
                 row.push_back(elem);
             }
-            std::cout <<std::endl;
+//            std::cout <<std::endl;
             rows.push_back(row);
             chars += numsyms;
             file.read((char*)&numsyms, sizeof(numsyms));
