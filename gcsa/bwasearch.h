@@ -512,7 +512,7 @@ class BWASearch
     //TODO: convert this to recursive call
     //TODO: use sigma*length as stddev
     bool mybackwardSearch(const std::vector<usint>& pattern,  const unsigned int &it, const pair_type &range, const double &chi_squared_sum, std::set<work_t > &exhausted_nodes, const unsigned int &matched_count) const {
-        if (it == 0 /*|| matched_count == 15 --- allow local alignments*/) { // match complete
+        if (it == 0 || matched_count == 15 /*--- allow local alignments*/) { // match complete
             std::vector<usint>* occurrences = this->index.locateRange(range);
             assert(occurrences != 0);
             boost::math::chi_squared cs(/*DF = opt_depth*/ /*pattern.size()*/matched_count);

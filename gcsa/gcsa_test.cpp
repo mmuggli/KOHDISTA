@@ -63,9 +63,17 @@ int main(int argc, char** argv)
 
     // Always start with exact matching.
     double row_start = CSA::readTimer();
-    std::cout << "Finding row " << i << std::endl;
-    pair_type result = bwasearch.find(rows[i], false, handler.skip);
-    std::cout << "Find completed in " <<   CSA::readTimer() - row_start << " seconds." << std::endl;
+
+    std::cout << "Finding row " << i << ":" <<std::endl;
+    for (std::vector<usint>::iterator ri = rows[i].begin(); ri != rows[i].end(); ++ri) {
+        std::cout << *ri << ", ";
+    }
+    std::cout << std::endl;
+    for (unsigned int skip = 0; skip < 3; ++skip) {
+        
+        pair_type result = bwasearch.find(rows[i], false, handler.skip);
+        std::cout << "Find (with skip = " << skip << ") completed in " <<   CSA::readTimer() - row_start << " seconds." << std::endl;
+    }
     //disabled as we now run find in backward search
     //    usint temp = bwasearch.handleOccurrences(result, handler.locate, handler.max_matches);
   //   if(temp > 0)
