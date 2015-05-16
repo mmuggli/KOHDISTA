@@ -239,7 +239,7 @@ WeightedSampler::minimumWeightPath(bool shortest, uint force)
     partial_results.push_back(pair_type(0, 0));
   }
 
-  #pragma omp parallel for schedule(static)
+//  #pragma omp parallel for schedule(static)
   for(uint part = 0; part < parts; part++)
   {
     std::deque<node_type> active_nodes;

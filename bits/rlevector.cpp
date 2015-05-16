@@ -3,7 +3,7 @@
 #include "rlevector.h"
 #include "../misc/utils.h"
 
-static char iterspace[sizeof(CSA::RLEVector::Iterator)];
+//static char iterspace[sizeof(CSA::RLEVector::Iterator)];
 namespace CSA
 {
   BitVector::Iterator*  RLEVector::newIterator(char *placement)

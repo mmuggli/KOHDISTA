@@ -9,7 +9,7 @@
 #include "bwasearch.h"
 #include "parameter_handler.h"
 #include "pattern_classifier.h"
-
+#include <bits/deltavector.h>
 
 //using namespace CSA;
 typedef CSA::usint usint;
@@ -26,11 +26,35 @@ int main(int argc, char** argv)
   if(!(handler.ok)) { handler.printUsage(); return 1; }
   handler.printOptions();
 
+
+  CSA::DeltaEncoder *rmap_startse = new CSA::DeltaEncoder(1024);
+  unsigned int pos = 0;
+  // read the frag2rmap file
+  std::vector<std::pair<unsigned int, std::string> > frag2rmap;
+  std::string f2rm_fname;
+  f2rm_fname += handler.index_name; 
+  f2rm_fname +=  ".frag2rmap";
+  std::ifstream f2rm_file(f2rm_fname.c_str());
+  unsigned int rmapnum, fragnum;
+  std::string rmapname;
+  while(f2rm_file >> rmapnum >> fragnum >> rmapname) {
+      std::pair<unsigned int, std::string> t;
+      t.first = fragnum;
+      t.second = rmapname;
+      frag2rmap.push_back(t);
+      rmap_startse->setBit(pos);
+      pos += fragnum;
+  }
+  f2rm_file.close();
+  CSA::DeltaVector* rmap_starts = new CSA::DeltaVector(*rmap_startse, pos);  
+
   const GCSA::GCSA gcsa(handler.index_name);
   if(!gcsa.isOk()) { return 2; }
   gcsa.reportSize(true);
+
+
   if(handler.patterns_name == 0) { return 0; }
-  GCSA::BWASearch<GCSA::GCSA> bwasearch(gcsa);
+  GCSA::BWASearch<GCSA::GCSA> bwasearch(gcsa, *rmap_starts, frag2rmap);
 
   std::ifstream patterns(handler.patterns_name, std::ios_base::binary);
   std::cout << "Reading patterns from file: " << handler.patterns_name << std::endl;
@@ -59,7 +83,7 @@ int main(int argc, char** argv)
   for(usint i = 0; i < n; i++)
   {
     total += rows[i].size();
-    bool match = false;
+    //bool match = false;
 
     // Always start with exact matching.
     double row_start = CSA::readTimer();

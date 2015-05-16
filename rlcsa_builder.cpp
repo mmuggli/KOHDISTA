@@ -128,21 +128,21 @@ RLCSABuilder::insertCollection(const std::string& base_name)
   usint* ranks = this->getRanks(data, data_size, end_markers);
 
   double start = readTimer();
-  #pragma omp parallel for schedule(static)
+//  #pragma omp parallel for schedule(static)
   for(usint i = 0; i < data_size; i++) { ranks[i] += end_markers.size() + 1 + data[i]; }
   for(usint i = 0; i < end_markers.size(); i++)
   {
     ranks[end_markers[i]] = this->index->getNumberOfSequences() + i;
   }
   RLCSA* increment = new RLCSA(data, ranks, data_size, this->block_size, this->sample_rate, this->threads, false);
-  #pragma omp parallel for schedule(static)
+//  #pragma omp parallel for schedule(static)
   for(usint i = 0; i < data_size; i++) { ranks[i] -= data[i]; }
   delete[] data;
   double mark = readTimer();
   this->build_time += mark - start;
 
   parallelSort(ranks, ranks + data_size);
-  #pragma omp parallel for schedule(static)
+//  #pragma omp parallel for schedule(static)
   for(usint i = end_markers.size(); i < data_size; i++) { ranks[i] += i - end_markers.size(); }
   this->sort_time += readTimer() - mark;
 
@@ -256,7 +256,7 @@ RLCSABuilder::addRLCSA(RLCSA* increment, uchar* sequence, usint length, bool del
 
   double mark = readTimer();
   parallelSort(ranks, ranks + length);
-  #pragma omp parallel for schedule(static)
+//  #pragma omp parallel for schedule(static)
   for(usint i = 0; i < length; i++) { ranks[i] += i + 1; }
   this->sort_time += readTimer() - mark;
 
@@ -303,7 +303,7 @@ RLCSABuilder::getRanks(uchar* sequence, usint length, std::vector<usint>& end_ma
   #ifdef MULTITHREAD_SUPPORT
   usint chunk = std::max((usint)1, sequences / (8 * this->threads));
   #endif
-  #pragma omp parallel for schedule(dynamic, chunk)
+//  #pragma omp parallel for schedule(dynamic, chunk)
   for(usint i = 0; i < sequences; i++)
   {
     usint begin = (i > 0 ? end_markers[i - 1] + 1 : 0);

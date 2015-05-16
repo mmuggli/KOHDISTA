@@ -83,6 +83,7 @@ GCSA::GCSA(const std::string& base_name) :
 
 
   input.close();
+  this->backbone = new Backbone(base_name, *this);
 }
 
 GCSA::GCSA(PathGraph& graph, Graph& parent, bool print) :
@@ -671,7 +672,10 @@ GCSA::locateUnsafe(usint index) const
 
   while(!(sample_iter.isSet(temp))) { temp = this->Psi(temp); steps++; }
   if (VERBOSE >= 3) std::cout <<"locateUnsafe(" << index << ") steps: " << steps << "rank: " << sample_iter.rank(temp) << std::endl;
-  return this->samples->readItem(sample_iter.rank(temp) - 1) - steps;
+  usint retval = this->samples->readItem(sample_iter.rank(temp) - 1) - steps;
+//  std::cout << "backbone->contains(" << retval << ") = " << backbone->contains(retval) << std::endl;
+  //std::cout << "backbone->originalcontains(" << retval << ") = " << backbone->originalContains(retval) << std::endl;
+  return retval;
 }
 
 //--------------------------------------------------------------------------

@@ -245,7 +245,7 @@ setRanks(T* pairs, uint* keys, uint n, std::vector<ss_range>& unsorted, uint thr
   std::vector<ss_range> next_unsorted;
   #endif
 
-  #pragma omp parallel for schedule(dynamic, chunk)
+//  #pragma omp parallel for schedule(dynamic, chunk)
   for(uint i = 0; i < unsorted.size(); i++)
   {
     #ifdef MULTITHREAD_SUPPORT
@@ -326,7 +326,7 @@ prefixDoubling(short_pair* pairs, uint* keys, std::vector<ss_range>& unsorted, u
   while(total > 0)
   {
     uint chunk = std::max((size_t)1, unsorted.size() / (threads * threads));
-    #pragma omp parallel for schedule(dynamic, chunk)
+//    #pragma omp parallel for schedule(dynamic, chunk)
     for(uint i = 0; i < unsorted.size(); i++)
     {
       // Set sort keys for the current range.
@@ -342,7 +342,7 @@ prefixDoubling(short_pair* pairs, uint* keys, std::vector<ss_range>& unsorted, u
 //    std::cout << "Sorted with h = " << h << ", unsorted total = " << total << " (" << unsorted.size() << " ranges)" << std::endl;
   }
 
-  #pragma omp parallel for schedule(static)
+//  #pragma omp parallel for schedule(static)
   for(uint i = 0; i < n; i++) { pairs[i].second = keys[i]; }
   delete[] keys; keys = 0;
   return pairs;
@@ -357,7 +357,7 @@ prefixTripling(skew_pair* pairs, uint* keys, std::vector<ss_range>& unsorted, ui
   while(total > 0)
   {
     uint chunk = std::max((size_t)1, unsorted.size() / (threads * threads));
-    #pragma omp parallel for schedule(dynamic, chunk)
+//    #pragma omp parallel for schedule(dynamic, chunk)
     for(uint i = 0; i < unsorted.size(); i++)
     {
       // Set sort keys for the current range.
@@ -374,7 +374,7 @@ prefixTripling(skew_pair* pairs, uint* keys, std::vector<ss_range>& unsorted, ui
 //    std::cout << "Sorted with h = " << h << ", unsorted total = " << total << " (" << unsorted.size() << " ranges)" << std::endl;
   }
 
-  #pragma omp parallel for schedule(static)
+//  #pragma omp parallel for schedule(static)
   for(uint i = 0; i < n; i++) { pairs[i].second = keys[i]; }
   delete[] keys; keys = 0;
   return packPairs(pairs, n);
@@ -394,7 +394,7 @@ simpleSuffixSort(const usint* sequence, uint n, uint threads)
   #endif
 
   // Initialize pairs.
-  #pragma omp parallel for schedule(static)
+//  #pragma omp parallel for schedule(static)
   for(uint i = 0; i < n; i++) { pairs[i].first = i; pairs[i].second = sequence[i]; }
 
   // Sort according to first character.
@@ -425,7 +425,7 @@ simpleSuffixSort(short_pair* pairs, uint n, uint threads)
   #endif
 
   // Initialize pairs.
-  #pragma omp parallel for schedule(static)
+//  #pragma omp parallel for schedule(static)
   for(uint i = 0; i < n; i++) { pairs[i].first = i; }
 
   uint total = initialSort(pairs, keys, unsorted, n, threads, 1);

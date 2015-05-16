@@ -2,7 +2,7 @@
 
 #include "deltavector.h"
 
-static char iterspace[sizeof(CSA::DeltaVector::Iterator)];
+//static char iterspace[sizeof(CSA::DeltaVector::Iterator)];
 
 namespace CSA
 {

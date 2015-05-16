@@ -106,6 +106,9 @@ class GCSA
     CSA::CharVector::Iterator* getIterator(usint c, char *) const;
     CSA::BitVector::Iterator* getEdgeIterator(char *) const;
     size_t edgeIterSize() const;
+    Backbone* getBackbone() const { return backbone;} //fixme add const correctness
+
+    CSA::DeltaVector* rmap_starts;
 
 //--------------------------------------------------------------------------
 //  INTERNAL VARIABLES
