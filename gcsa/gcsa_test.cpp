@@ -42,12 +42,11 @@ int main(int argc, char** argv)
       t.first = fragnum;
       t.second = rmapname;
       frag2rmap.push_back(t);
-      rmap_startse->setBit(pos);
+      rmap_startse->setBit(fragnum);
       pos += fragnum;
   }
   f2rm_file.close();
   CSA::DeltaVector* rmap_starts = new CSA::DeltaVector(*rmap_startse, pos);  
-
   const GCSA::GCSA gcsa(handler.index_name);
   if(!gcsa.isOk()) { return 2; }
   gcsa.reportSize(true);
@@ -98,6 +97,7 @@ int main(int argc, char** argv)
         pair_type result = bwasearch.find(rows[i], false, handler.skip);
         std::cout << "Find (with skip = " << skip << ") completed in " <<   CSA::readTimer() - row_start << " seconds." << std::endl;
     }
+        std::cout << "Find (row = " << i << ") completed in " <<   CSA::readTimer() - row_start << " seconds." << std::endl;
     //disabled as we now run find in backward search
     //    usint temp = bwasearch.handleOccurrences(result, handler.locate, handler.max_matches);
   //   if(temp > 0)

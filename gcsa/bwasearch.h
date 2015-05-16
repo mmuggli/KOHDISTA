@@ -203,7 +203,7 @@ class BWASearch
         double sigma_kbp = .58;
         double frag_kbp = (double)frag_bp / 1000.0;
         double variance_kbp = powf(sigma_kbp, 2);
-        double expect_var_kbp =  variance_kbp * frag_kbp; // FIXME: do we need to double this? or does valuev .58 already account for noise in both frags
+        double expect_var_kbp = 2* variance_kbp * frag_kbp; // FIXME: do we need to double this? or does valuev .58 already account for noise in both frags
         double expect_stddev_kbp = sqrt(expect_var_kbp);
         double expect_stddev_bp = expect_stddev_kbp * 1000.0;
 //        return OM_STDDEV;
@@ -243,7 +243,7 @@ class BWASearch
                 if (VERBOSE >= 2) std::cout << "bootstrap range for initial query symbol candidate " <<*itr<< " is [" << myrange.first << ".." << myrange.second << "]" << std::endl;
                 //pair_type retrange = 
                 int deviation = abs(*itr - myc);
-                float chi_squared = std::pow((float)deviation / (float)get_stddev(myc), 2);
+                float chi_squared = std::pow((float)deviation / (float)get_stddev(myc < *itr ? myc : *itr), 2);
                 std::vector<long unsigned int> hitvec;
                 std::vector<std::pair<long unsigned int, int> > qvec;
                 std::vector<pair_type> ranges;
@@ -252,7 +252,10 @@ class BWASearch
                 q.second = 0;
                 qvec.push_back(q);
                 hitvec.push_back(*itr);
-                this->mybackwardSearch(pat, pat.size() - 1 , myrange, chi_squared, exhausted_nodes, 1, hitvec, qvec, ranges);
+                double targsum = *itr;
+                double qsum = myc;
+                double varsum = std::pow( (float)get_stddev((myc < *itr ? myc : *itr) + abs(myc - *itr)/2) , 2);
+                this->mybackwardSearch(pat, pat.size() - 1 , myrange, chi_squared, exhausted_nodes, 1, hitvec, qvec, ranges, targsum, qsum, varsum);
                 //if (!CSA::isEmpty(retrange)) return retrange; //fixme
                 // //FIXME: reverse pattern here and rerun
                 //std::cout << "DEBUG: my reverse search for pattern:" << std::endl;
@@ -527,16 +530,16 @@ class BWASearch
         delete temp;
       }
     }
-    const double MAX_CHISQUARED_CDF = .85;
+    const double MAX_CHISQUARED_CDF = .9;
     const int MAX_LOOKAHEAD = 2;
     //TODO: convert this to recursive call
     //TODO: use sigma*length as stddev
-    bool mybackwardSearch(const std::vector<usint>& pattern,  const unsigned int &it, const pair_type &range, const double &chi_squared_sum, std::set<work_t > &exhausted_nodes, const unsigned int &matched_count, std::vector<long unsigned int> &hitvec, std::vector<std::pair<long unsigned int, int> > &qvec, std::vector<pair_type> &ranges) const {
+    bool mybackwardSearch(const std::vector<usint>& pattern,  const unsigned int &it, const pair_type &range, const double &chi_squared_sum, std::set<work_t > &exhausted_nodes, const unsigned int &matched_count, std::vector<long unsigned int> &hitvec, std::vector<std::pair<long unsigned int, int> > &qvec, std::vector<pair_type> &ranges, double targsum, double qsum, double varsum) const {
         // handle it=0 to prevent underrun in the other branch
         if (it == 0  || matched_count >= 15) { // stop the recurrsion
 
             // now check if our stopping point is good enough
-            if ( matched_count >= 15 /*--- allow local alignments*/) { // match complete
+            if ( /*matched_count == pattern.size()*/ matched_count >= 15 /*--- allow local alignments*/) { // match complete
                 boost::math::chi_squared cs(/*DF = opt_depth*/ /*pattern.size()*/matched_count);
                 double chisqcdf = boost::math::cdf(cs, chi_squared_sum);
             
@@ -639,12 +642,19 @@ class BWASearch
                     pair_type new_range = this->index.LF(range, *itr); 
                     ranges.push_back(new_range);
                     int deviation = abs(*itr - c);
-                    float chi_squared = std::pow((float)deviation / (float)get_stddev(c), 2);
+                    float chi_squared = std::pow((float)deviation / (float)get_stddev(c < *itr ? c : *itr), 2);
                     if(!CSA::isEmpty(new_range)) {
                         boost::math::chi_squared cs(/*opt_depth*/ matched_count + 1 /*pattern.size() - it*/);
                         double chisqcdf = boost::math::cdf(cs, chi_squared_sum + chi_squared);
-                        //if (chisqcdf <=   MAX_CHISQUARED_CDF) {
-                        if ((float)(chi_squared_sum + chi_squared) / (float)(matched_count + 1) < 3.0) {
+
+                        double _targsum = *itr + targsum;
+                        double _qsum = c + qsum;
+                        double _varsum = std::pow( (double)get_stddev((c < *itr ? c : *itr) + abs(c - *itr)/2) , 2) + varsum;
+
+                        //std::cout << abs(_targsum - _qsum) << " lte " << 4.0 * sqrt(_varsum) << " is " << (abs(_targsum - _qsum) <= 4.0 * sqrt(_varsum)) << std::endl;
+                        //if (abs(_targsum - _qsum) <= 4.0 * sqrt(_varsum)) {
+                        if (chisqcdf <=   MAX_CHISQUARED_CDF) {
+                        //if ((float)(chi_squared_sum + chi_squared) / (float)(matched_count + 1) < 3.0) {
                             unsigned int next_search_index = it - 1 - actv_la;
                             work_t work(next_search_index, new_range);
                             if(exhausted_nodes.count(work) == 0) {
@@ -653,12 +663,16 @@ class BWASearch
                                 q.first = c;
                                 q.second = actv_la;
                                 qvec.push_back(q);
-                                bool found = this->mybackwardSearch(pattern, next_search_index, new_range, chi_squared_sum + chi_squared, exhausted_nodes, matched_count + 1, hitvec, qvec, ranges);
+
+
+
+
+                                bool found = this->mybackwardSearch(pattern, next_search_index, new_range, chi_squared_sum + chi_squared, exhausted_nodes, matched_count + 1, hitvec, qvec, ranges, _targsum, _qsum, _varsum);
                                 qvec.pop_back();
                                 hitvec.pop_back();
 
                                 
-                                exhausted_nodes.insert(work);
+                                //exhausted_nodes.insert(work);
                                 if (found && range.second - range.first == 0) {
                                     ranges.pop_back();
                                     return true;
