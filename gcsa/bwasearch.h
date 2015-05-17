@@ -276,10 +276,8 @@ class BWASearch
                                        pat.size() - 1 , // index of next symbol to search for
                                        myrange, // SA interval
                                        chi_squared, // chi**2 sum
-                                       1, // matched count
-                                       hitvec, // fragment sizes (or combined fragment sizes) in the target posited for a match so far
-                                       qvec, // fragment sizes (or combined fragment sizess) in the query used so far as well as how many extra were combined
-                                       ranges); // sequence of SA ranges (we can call locate on an SA node and if it's index exceeds the original sequence, it's nonbackbone)
+                                       1); // matched count
+                
                 
             }
             return pair_type(1,0);
@@ -292,7 +290,7 @@ class BWASearch
     //TODO: convert this to recursive call
     //TODO: use sigma*length as stddev
 
-    void report_occurance(unsigned int val) {
+    void report_occurance(unsigned int val) const {
      
         bool backbone = true;
         if (val > this->index.getBackbone()->getSize()-1) {
@@ -311,27 +309,20 @@ class BWASearch
         
     }
 
-    bool mybackwardSearch(const std::vector<usint>& pattern,  const unsigned int &it, const pair_type &range, const double &chi_squared_sum, const unsigned int &matched_count, std::vector<long unsigned int> &hitvec, std::vector<std::pair<long unsigned int, int> > &qvec, std::vector<pair_type> &ranges) const {
+    bool mybackwardSearch(const std::vector<usint>& pattern,  const unsigned int &it, const pair_type &range, const double &chi_squared_sum, const unsigned int &matched_count) const {
         // handle it=0 to prevent underrun in the other branch
         if (it == 0  || matched_count >= 15) { // stop the recurrsion
+            boost::math::chi_squared cs(matched_count);
+            double chisqcdf = boost::math::cdf(cs, chi_squared_sum);
+            std::cout << "'chi_squared_cdf' : " << chisqcdf << std::endl;
 
-            // now check if our stopping point is good enough
-            if ( /*matched_count == pattern.size()*/ matched_count >= 15 /*--- allow local alignments*/) { // match complete
-                boost::math::chi_squared cs(/*DF = opt_depth*/ /*pattern.size()*/matched_count);
-                double chisqcdf = boost::math::cdf(cs, chi_squared_sum);
-            
-                std::cout << "'chi_squared_cdf' : " << chisqcdf << "}" << std::endl;
-                std::vector<usint>* occurrences = this->index.locateRange(range);
-                assert(occurrences != 0);
-                std::cout << "Found " << occurrences->size() << " match(s) (BWT range " << range.first << ".." << range.second << ") located at: " ;
-                for (std::vector<usint>::iterator mi = occurrences->begin(); mi != occurrences->end(); ++mi) {
-                    report_occurance(*mi);
-                }
-                
-                delete occurrences;
+            std::vector<usint>* occurrences = this->index.locateRange(range);
+            std::cout << "Found " << occurrences->size() << " match(s) (BWT range " << range.first << ".." << range.second << ") located at: " ;
+            assert(occurrences != 0);
+            for (std::vector<usint>::iterator mi = occurrences->begin(); mi != occurrences->end(); ++mi) {
+                report_occurance(*mi);
             }
-            return true;
-
+            delete occurrences;
         } else {
 
             int lookahead = MAX_LOOKAHEAD;

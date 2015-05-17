@@ -99,7 +99,7 @@ int main(int argc, char** argv)
     std::cout << std::endl;
     for (unsigned int skip = 0; skip < 3; ++skip) {
         
-        pair_type result = bwasearch.find(rows[i], false, handler.skip);
+        bwasearch.find(rows[i], false, handler.skip);
         std::cout << "Find (with skip = " << skip << ") completed in " <<   CSA::readTimer() - row_start << " seconds." << std::endl;
     }
         std::cout << "Find (row = " << i << ") completed in " <<   CSA::readTimer() - row_start << " seconds." << std::endl;
