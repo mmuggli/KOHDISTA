@@ -546,8 +546,8 @@ class BWASearch
                 std::cout << "'chi_squared_cdf' : " << chisqcdf << "}" << std::endl;
 
 
-//                for (std::vector<pair_type>::iterator ri = ranges.begin(); ri != ranges.end(); ++ri) {
-                    {std::vector<pair_type>::reverse_iterator ri = ranges.rbegin();
+                for (std::vector<pair_type>::iterator ri = ranges.begin(); ri != ranges.end(); ++ri) {
+                //{std::vector<pair_type>::reverse_iterator ri = ranges.rbegin();
                     std::vector<usint>* occurrences = this->index.locateRange(*ri);
                     assert(occurrences != 0);
                     std::cout << "Found " << occurrences->size() << " match(s) (BWT range " << ri->first << ".." << ri->second << ") located at: " ;
@@ -588,7 +588,8 @@ class BWASearch
                 // }
 
 
-                if (VERBOSE >= 2) {
+                //if (VERBOSE >= 2) {
+                {
                     std::cout << "query frags: ";
                     for (std::vector<std::pair<long unsigned int, int> >::iterator hi = qvec.begin(); hi != qvec.end(); ++hi)
                         std::cout << hi->first << "-" << hi->second << ", ";

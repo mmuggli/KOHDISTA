@@ -47,6 +47,11 @@ int main(int argc, char** argv)
   }
   f2rm_file.close();
   CSA::DeltaVector* rmap_starts = new CSA::DeltaVector(*rmap_startse, pos);  
+  CSA::DeltaVector::Iterator itr(*rmap_starts);
+// for(int jk = 0; jk < pos; ++jk) {
+// if (itr.isSet(jk))  std::cout << "rmap_starts[" << jk << "] is set" << std::endl;
+// }
+
   const GCSA::GCSA gcsa(handler.index_name);
   if(!gcsa.isOk()) { return 2; }
   gcsa.reportSize(true);
@@ -87,7 +92,7 @@ int main(int argc, char** argv)
     // Always start with exact matching.
     double row_start = CSA::readTimer();
 
-    std::cout << "Finding row " << i << ":" <<std::endl;
+    std::cout << "Finding row " << i << "(" << frag2rmap[i].second << "):" <<std::endl;
     for (std::vector<usint>::iterator ri = rows[i].begin(); ri != rows[i].end(); ++ri) {
         std::cout << *ri << ", ";
     }
