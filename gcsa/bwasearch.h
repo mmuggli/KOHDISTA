@@ -214,28 +214,30 @@ class BWASearch
 
     pair_type find(const std::vector<usint>& pattern, bool reverse_complement, usint skip = 0) const {
         if (VERBOSE) std::cout << "find(pattern, reverse_complement=" << reverse_complement << ", skip=" << skip << ")" << std::endl;
-        std::vector<usint> pat, revpat;
+
+        std::cout << "backward searching matching orientation" << std::endl;
+        std::vector<usint> pat;
         for (usint i = skip; i < pattern.size(); ++i) {
             pat.push_back(pattern[i]);
-        }//= pattern.substr(skip);
+        }
+        assert(pat.size() > 0);
+        find_one_dir(pat);
+
+        std::cout << "backward searching reverse orientation" << std::endl;
+        std::vector<usint> revpat;
         for (long long int i = pattern.size() - skip - 1; i >= 0 ; --i) {
             revpat.push_back(pattern[i]);
-        }//= pattern.substr(skip);
+        }
+        assert(revpat.size() > 0);
+        find_one_dir(revpat);        
 
-        //revpat = pat; //FIXME: do something more effient than copy the whole vector, change code to iterate in rev order
-        //std::reverse(revpat.begin(), revpat.end());  
-        
-        if(pat.size() == 0) { return this->index.getSARange(); }
-        std::cout << "backward searching matching orientation" << std::endl;
-        find_one_dir(pat);
-        std::cout << "backward searching reverse orientation" << std::endl;
-        find_one_dir(revpat);
         return pair_type(1,0);;
     }
 
 
-
-
+    static inline unsigned int uint_max(unsigned int a, unsigned int b) {
+        return a < b ? b : a;
+    }
 
     pair_type find_one_dir(const std::vector<usint>& pat) const {
 
@@ -248,53 +250,38 @@ class BWASearch
                                                                                              myc <= delta ? 1 : myc - delta, // if subtracting results in less than 1, use 1
                                                                                              myc + delta);
 
-            // actual algo
-            int hitcount = 0;
-            std::set<work_t> exhausted_nodes;
-                
             for(std::vector<long unsigned int>::iterator itr = hits.begin(); itr != hits.end(); ++itr) {
-                hitcount++;
-                //std::cout << "Trying initial symbol substitute " << hitcount << ". " << *itr << " for " << myc << std::endl; 
-
-
-
                 pair_type myrange = /*this->index.getSARange()*/ this->index.getCharRange(*itr);
-                //pair_type myrange = this->index.getSARange();// this->index.getCharRange(myc);
                 myrange.second += 1;
+
                 if (VERBOSE >= 2) std::cout << "bootstrap range for initial query symbol candidate " <<*itr<< " is [" << myrange.first << ".." << myrange.second << "]" << std::endl;
-                //pair_type retrange = 
+
                 int deviation = abs(*itr - myc);
-                float chi_squared = std::pow((float)deviation / (float)get_stddev(myc < *itr ? myc : *itr), 2);
+                float chi_squared = std::pow((float)deviation / (float)get_stddev(uint_max(*itr, myc)), 2);
+
                 std::vector<long unsigned int> hitvec;
+                hitvec.push_back(*itr);
+
                 std::vector<std::pair<long unsigned int, int> > qvec;
-                std::vector<pair_type> ranges;
                 std::pair<long unsigned int, int> q;
                 q.first = myc;
                 q.second = 0;
                 qvec.push_back(q);
-                hitvec.push_back(*itr);
-                double targsum = *itr;
-                double qsum = myc;
-                double varsum = std::pow( (float)get_stddev((myc < *itr ? myc : *itr) + abs(myc - *itr)/2) , 2);
-                this->mybackwardSearch(pat, pat.size() - 1 , myrange, chi_squared, exhausted_nodes, 1, hitvec, qvec, ranges, targsum, qsum, varsum);
-                //if (!CSA::isEmpty(retrange)) return retrange; //fixme
-                // //FIXME: reverse pattern here and rerun
-                //std::cout << "DEBUG: my reverse search for pattern:" << std::endl;
-                //this->mybackwardSearch(revpat, revpat.size() - 1 , myrange);
+
+                std::vector<pair_type> ranges;
+
+
+
+                this->mybackwardSearch(pat, // pattern to search for
+                                       pat.size() - 1 , // index of next symbol to search for
+                                       myrange, // SA interval
+                                       chi_squared, // chi**2 sum
+                                       1, // matched count
+                                       hitvec, // fragment sizes (or combined fragment sizes) in the target posited for a match so far
+                                       qvec, // fragment sizes (or combined fragment sizess) in the query used so far as well as how many extra were combined
+                                       ranges); // sequence of SA ranges (we can call locate on an SA node and if it's index exceeds the original sequence, it's nonbackbone)
                 
             }
-            // std::cout << "DEBUG: normal search for pattern:" << std::endl;
-            // unsigned int c = (reverse_complement ? this->complement(pat[0]) : pat[pat.size() - 1]);
-            // pair_type range = /*this->index.getSARange()*/ this->index.getCharRange(c);
-            // if(CSA::isEmpty(range)) { return range; }
-
-            // MatchInfo info(1, range, (reverse_complement ? MatchInfo::REVERSE_COMPLEMENT : 0));
-            // std::cout << "Normal search initial interval is [" << info.range.first <<".."<<info.range.second<<"]" << std::endl;
-            // this->backwardSearch(pat, info);
-            // std::cout << "Normal search final interval is [" << info.range.first <<".."<<info.range.second<<"]" << std::endl;
-
-            // this->index.convertToSARange(info.range);  
-            //return info.range;
             return pair_type(1,0);
         }
 
@@ -304,7 +291,7 @@ class BWASearch
     const int MAX_LOOKAHEAD = 2;
     //TODO: convert this to recursive call
     //TODO: use sigma*length as stddev
-    bool mybackwardSearch(const std::vector<usint>& pattern,  const unsigned int &it, const pair_type &range, const double &chi_squared_sum, std::set<work_t > &exhausted_nodes, const unsigned int &matched_count, std::vector<long unsigned int> &hitvec, std::vector<std::pair<long unsigned int, int> > &qvec, std::vector<pair_type> &ranges, double targsum, double qsum, double varsum) const {
+    bool mybackwardSearch(const std::vector<usint>& pattern,  const unsigned int &it, const pair_type &range, const double &chi_squared_sum, const unsigned int &matched_count, std::vector<long unsigned int> &hitvec, std::vector<std::pair<long unsigned int, int> > &qvec, std::vector<pair_type> &ranges) const {
         // handle it=0 to prevent underrun in the other branch
         if (it == 0  || matched_count >= 15) { // stop the recurrsion
 
@@ -375,7 +362,6 @@ class BWASearch
                 return true;
             }
         } else {
-
             if (VERBOSE >= 2) {
                 for(int i=0; i < pattern.size() - it; ++i) std::cout << "\t";
                 std::cout << "mybackwardSsearch(pattern[" << it -1 << "] /* "<< pattern[it-1] << " */, range=<" <<range.first << "," << range.second << ">)" <<  std::endl;
@@ -393,7 +379,6 @@ class BWASearch
 
                 // compute the sum of the next lookahead fragments
 
-//                unsigned int c = pattern[it - 1];
                 unsigned int c = 0;
                 for (int j = 0; j <= actv_la; ++j) {
                     int index = it - 1 - j;
@@ -408,51 +393,36 @@ class BWASearch
                                                                                                  c <= delta ? 1 : c - delta,  // if subtracting results in less than 1, use 1
                                                                                                  c + delta);
 
-                // actual algo
                 for(std::vector<long unsigned int>::iterator itr = hits.begin(); itr != hits.end(); ++itr) {
                     pair_type new_range = this->index.LF(range, *itr); 
-                    ranges.push_back(new_range);
-                    int deviation = abs(*itr - c);
-                    float chi_squared = std::pow((float)deviation / (float)get_stddev(c < *itr ? c : *itr), 2);
+
                     if(!CSA::isEmpty(new_range)) {
-                        boost::math::chi_squared cs(/*opt_depth*/ matched_count + 1 /*pattern.size() - it*/);
+                        int deviation = abs(*itr - c);
+                        float chi_squared = std::pow((float)deviation / (float)get_stddev(uint_max(c, *itr)), 2);
+                        boost::math::chi_squared cs(matched_count + 1);
                         double chisqcdf = boost::math::cdf(cs, chi_squared_sum + chi_squared);
 
-                        double _targsum = *itr + targsum;
-                        double _qsum = c + qsum;
-                        double _varsum = std::pow( (double)get_stddev((c < *itr ? c : *itr) + abs(c - *itr)/2) , 2) + varsum;
-
-                        //std::cout << abs(_targsum - _qsum) << " lte " << 4.0 * sqrt(_varsum) << " is " << (abs(_targsum - _qsum) <= 4.0 * sqrt(_varsum)) << std::endl;
-                        //if (abs(_targsum - _qsum) <= 4.0 * sqrt(_varsum)) {
                         if (chisqcdf <=   MAX_CHISQUARED_CDF) {
-                        //if ((float)(chi_squared_sum + chi_squared) / (float)(matched_count + 1) < 3.0) {
                             unsigned int next_search_index = it - 1 - actv_la;
-                            work_t work(next_search_index, new_range);
-                            if(exhausted_nodes.count(work) == 0) {
-                                hitvec.push_back(*itr);
-                                std::pair<long unsigned int, int> q;
-                                q.first = c;
-                                q.second = actv_la;
-                                qvec.push_back(q);
+                            ranges.push_back(new_range);
 
+                            hitvec.push_back(*itr);
 
+                            std::pair<long unsigned int, int> q;
+                            q.first = c;
+                            q.second = actv_la;
+                            qvec.push_back(q);
 
+                            this->mybackwardSearch(pattern, next_search_index, new_range, chi_squared_sum + chi_squared, matched_count + 1, hitvec, qvec, ranges);
 
-                                bool found = this->mybackwardSearch(pattern, next_search_index, new_range, chi_squared_sum + chi_squared, exhausted_nodes, matched_count + 1, hitvec, qvec, ranges, _targsum, _qsum, _varsum);
-                                qvec.pop_back();
-                                hitvec.pop_back();
+                            qvec.pop_back();
+                            hitvec.pop_back();
 
-                                
-                                //exhausted_nodes.insert(work);
-                                if (found && range.second - range.first == 0) {
-                                    ranges.pop_back();
-                                    return true;
-
-                                }
-                            }
+                            ranges.pop_back();                                
+                        
                         }
                     }
-                    ranges.pop_back();
+
                 }
             }
         }
