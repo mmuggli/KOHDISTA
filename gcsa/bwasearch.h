@@ -212,26 +212,54 @@ class BWASearch
         return expect_stddev_bp;
     }
 
-    pair_type find(const std::vector<usint>& pattern, bool reverse_complement, usint skip = 0) const {
-        if (VERBOSE) std::cout << "find(pattern, reverse_complement=" << reverse_complement << ", skip=" << skip << ")" << std::endl;
+    void find(const std::vector<usint>& pattern) const {
+
+
 
         std::cout << "backward searching matching orientation" << std::endl;
-        std::vector<usint> pat;
-        for (usint i = skip; i < pattern.size(); ++i) {
-            pat.push_back(pattern[i]);
+        std::set<usint> occurrences;
+        for (unsigned int skip = 0; skip < 3; ++skip) {
+        
+
+
+            std::vector<usint> pat;
+            for (usint i = 0; i < pattern.size() - skip; ++i) {
+                pat.push_back(pattern[i]);
+            }
+            assert(pat.size() > 0);
+            find_one_dir(pat, occurrences);
         }
-        assert(pat.size() > 0);
-        find_one_dir(pat);
+        if (occurrences.size()) {
+            std::cout << "Found " << occurrences.size() << ":" << std::endl;
+            for(std::set<usint>::iterator oi = occurrences.begin(); oi != occurrences.end(); ++oi) {
+                report_occurrence(*oi);
+            }
+        }
+
+
 
         std::cout << "backward searching reverse orientation" << std::endl;
-        std::vector<usint> revpat;
-        for (long long int i = pattern.size() - skip - 1; i >= 0 ; --i) {
-            revpat.push_back(pattern[i]);
-        }
-        assert(revpat.size() > 0);
-        find_one_dir(revpat);        
+        std::set<usint> revoccurrences;
+        for (unsigned int skip = 0; skip < 3; ++skip) {
+        
+        
 
-        return pair_type(1,0);;
+            std::vector<usint> revpat;
+            for (long long int i = pattern.size()  - 1; i >= skip ; --i) {
+                revpat.push_back(pattern[i]);
+            }
+            assert(revpat.size() > 0);
+            find_one_dir(revpat, revoccurrences);        
+        }
+
+        if (revoccurrences.size()) {
+            std::cout << "Found " << revoccurrences.size() << ":" << std::endl;
+            for(std::set<usint>::iterator oi = revoccurrences.begin(); oi != revoccurrences.end(); ++oi) {
+                report_occurrence(*oi);
+            }
+        }
+
+     
     }
 
 
@@ -239,58 +267,61 @@ class BWASearch
         return a < b ? b : a;
     }
 
-    pair_type find_one_dir(const std::vector<usint>& pat) const {
+    pair_type find_one_dir(const std::vector<usint>& pat, std::set<usint> &occurrences) const {
 
         unsigned int myc = (pat[pat.size() - 1] );
+        
+
+        pair_type myinitrange = this->index.getSARange();
+        unsigned int delta = get_stddev(myc) * 3;
+        std::vector<long unsigned int> hits = this->index.restricted_unique_range_values(myinitrange.first, myinitrange.second, 
+                                                                                         myc <= delta ? 1 : myc - delta, // if subtracting results in less than 1, use 1
+                                                                                         myc + delta);
+
+        for(std::vector<long unsigned int>::iterator hit_itr = hits.begin(); hit_itr != hits.end(); ++hit_itr) {
+            pair_type myrange = /*this->index.getSARange()*/ this->index.getCharRange(*hit_itr);
+            myrange.second += 1;
+            long unsigned int subst_frag = *hit_itr;
+            if (VERBOSE >= 2) std::cout << "bootstrap range for initial query symbol candidate " <<subst_frag<< " is [" << myrange.first << ".." << myrange.second << "]" << std::endl;
+
+            int deviation = abs(subst_frag - myc);
+            float chi_squared = std::pow((float)deviation / (float)get_stddev(uint_max(subst_frag, myc)), 2);
+
+            std::vector<long unsigned int> hitvec;
+            hitvec.push_back(subst_frag);
+
+            std::vector<std::pair<long unsigned int, int> > qvec;
+            std::pair<long unsigned int, int> q;
+            q.first = myc;
+            q.second = 0;
+            qvec.push_back(q);
+
+            std::vector<pair_type> ranges;
 
 
-            pair_type myinitrange = this->index.getSARange();
-            unsigned int delta = get_stddev(myc) * 3;
-            std::vector<long unsigned int> hits = this->index.restricted_unique_range_values(myinitrange.first, myinitrange.second, 
-                                                                                             myc <= delta ? 1 : myc - delta, // if subtracting results in less than 1, use 1
-                                                                                             myc + delta);
 
-            for(std::vector<long unsigned int>::iterator itr = hits.begin(); itr != hits.end(); ++itr) {
-                pair_type myrange = /*this->index.getSARange()*/ this->index.getCharRange(*itr);
-                myrange.second += 1;
-
-                if (VERBOSE >= 2) std::cout << "bootstrap range for initial query symbol candidate " <<*itr<< " is [" << myrange.first << ".." << myrange.second << "]" << std::endl;
-
-                int deviation = abs(*itr - myc);
-                float chi_squared = std::pow((float)deviation / (float)get_stddev(uint_max(*itr, myc)), 2);
-
-                std::vector<long unsigned int> hitvec;
-                hitvec.push_back(*itr);
-
-                std::vector<std::pair<long unsigned int, int> > qvec;
-                std::pair<long unsigned int, int> q;
-                q.first = myc;
-                q.second = 0;
-                qvec.push_back(q);
-
-                std::vector<pair_type> ranges;
-
-
-
-                this->mybackwardSearch(pat, // pattern to search for
-                                       pat.size() - 1 , // index of next symbol to search for
-                                       myrange, // SA interval
-                                       chi_squared, // chi**2 sum
-                                       1); // matched count
+            this->mybackwardSearch(pat, // pattern to search for
+                                   pat.size() - 1 , // index of next symbol to search for
+                                   myrange, // SA interval
+                                   chi_squared, // chi**2 sum
+                                   1,// matched count
+                                   occurrences); 
                 
                 
-            }
-            return pair_type(1,0);
         }
+
+        return pair_type(1,0);
+    }
 
 
 
     const double MAX_CHISQUARED_CDF = .9;
     const int MAX_LOOKAHEAD = 2;
+    const int MIN_MATCH_LEN = 10;
     //TODO: convert this to recursive call
     //TODO: use sigma*length as stddev
 
-    void report_occurance(unsigned int val) const {
+    void report_occurrence(unsigned int val) const {
      
         bool backbone = true;
         if (val > this->index.getBackbone()->getSize()-1) {
@@ -309,26 +340,26 @@ class BWASearch
         
     }
 
-    bool mybackwardSearch(const std::vector<usint>& pattern,  const unsigned int &it, const pair_type &range, const double &chi_squared_sum, const unsigned int &matched_count) const {
-        // handle it=0 to prevent underrun in the other branch
-        if (it == 0  || matched_count >= 15) { // stop the recurrsion
-            boost::math::chi_squared cs(matched_count);
+    void mybackwardSearch(const std::vector<usint>& pattern,  const unsigned int &pat_cursor, const pair_type &range, const double &chi_squared_sum, const unsigned int &matched_count, std::set<usint> &occurrence_set) const {
+        // handle pat_cursor=0 to prevent underrun in the other branch
+        if (pat_cursor == 0  || matched_count >= MIN_MATCH_LEN) { // stop the recurrsion
+            
+            boost::math::chi_squared cs(matched_count );
             double chisqcdf = boost::math::cdf(cs, chi_squared_sum);
-            std::cout << "'chi_squared_cdf' : " << chisqcdf << std::endl;
 
             std::vector<usint>* occurrences = this->index.locateRange(range);
-            std::cout << "Found " << occurrences->size() << " match(s) (BWT range " << range.first << ".." << range.second << ") located at: " ;
-            assert(occurrences != 0);
             for (std::vector<usint>::iterator mi = occurrences->begin(); mi != occurrences->end(); ++mi) {
-                report_occurance(*mi);
+                std::cout << "chisqcdf: " << chisqcdf << " match found at: ";
+                report_occurrence(*mi);
+                //occurrence_set.insert(*mi);
             }
             delete occurrences;
         } else {
 
             int lookahead = MAX_LOOKAHEAD;
-            //trim lookahead to max remaining
-            if ((int)it - 1 - lookahead < 0) {
-                lookahead = it - 1;
+            if ((int)pat_cursor - 1 - lookahead < 0) {
+                lookahead = pat_cursor - 1; //trim lookahead to max remaining, preventing pattern underrun
+
             }
 
             for (int actv_la = 0; actv_la <= lookahead; ++actv_la) {
@@ -336,7 +367,7 @@ class BWASearch
                 // compute the sum of the next lookahead fragments
                 unsigned int c = 0;
                 for (int j = 0; j <= actv_la; ++j) {
-                    int index = it - 1 - j;
+                    int index = pat_cursor - 1 - j;
                     assert(index >= 0);
                     c += pattern[index];
                 }
@@ -347,22 +378,23 @@ class BWASearch
                                                                                                  c <= delta ? 1 : c - delta,  // if subtracting results in less than 1, use 1
                                                                                                  c + delta);
 
-                for(std::vector<long unsigned int>::iterator itr = hits.begin(); itr != hits.end(); ++itr) {
-                    pair_type new_range = this->index.LF(range, *itr); 
-
-                    int deviation = abs(*itr - c);
-                    float chi_squared = std::pow((float)deviation / (float)get_stddev(uint_max(c, *itr)), 2);
+                for(std::vector<long unsigned int>::iterator hit_itr = hits.begin(); hit_itr != hits.end(); ++hit_itr) {
+                    // compute chi^2 score for putative substitute fragment in target
+                    long unsigned int subst_frag = *hit_itr;
+                    int deviation = abs(subst_frag - c);
+                    float chi_squared = std::pow((float)deviation / (float)get_stddev(uint_max(c, subst_frag)), 2);
                     boost::math::chi_squared cs(matched_count + 1);
                     double chisqcdf = boost::math::cdf(cs, chi_squared_sum + chi_squared);
+
                     if (chisqcdf <=   MAX_CHISQUARED_CDF) {
-                        unsigned int next_search_index = it - 1 - actv_la;
-                        this->mybackwardSearch(pattern, next_search_index, new_range, chi_squared_sum + chi_squared, matched_count + 1);
+                        pair_type new_range = this->index.LF(range, subst_frag); 
+                        unsigned int next_pat_cursor = pat_cursor - 1 - actv_la;
+                        this->mybackwardSearch(pattern, next_pat_cursor, new_range, chi_squared_sum + chi_squared, matched_count + 1, occurrence_set);
                     }
 
                 }
             }
         }
-        return false;
     }
 
 

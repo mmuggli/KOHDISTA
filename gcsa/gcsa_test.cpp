@@ -2,7 +2,7 @@
 #include <ctime>
 #include <iostream>
 #include <vector>
-
+#include <set>
 #include <misc/utils.h>
 
 #include "gcsa.h"
@@ -84,7 +84,8 @@ int main(int argc, char** argv)
   double start = CSA::readTimer();
   std::cout << "Data load time:         " <<  start - appstart  << " seconds" << std::endl;
 
-  for(usint i = 0; i < n; i++)
+  for(usint i = 2/*0*/; i < 3/*n*/; i++)
+//  for(usint i = 0; i < n; i++)
   {
     total += rows[i].size();
     //bool match = false;
@@ -97,12 +98,12 @@ int main(int argc, char** argv)
         std::cout << *ri << ", ";
     }
     std::cout << std::endl;
-    for (unsigned int skip = 0; skip < 3; ++skip) {
+
         
-        bwasearch.find(rows[i], false, handler.skip);
-        std::cout << "Find (with skip = " << skip << ") completed in " <<   CSA::readTimer() - row_start << " seconds." << std::endl;
-    }
-        std::cout << "Find (row = " << i << ") completed in " <<   CSA::readTimer() - row_start << " seconds." << std::endl;
+    bwasearch.find(rows[i]);
+
+    
+    std::cout << "Find (row = " << i << ") completed in " <<   CSA::readTimer() - row_start << " seconds." << std::endl;
     //disabled as we now run find in backward search
     //    usint temp = bwasearch.handleOccurrences(result, handler.locate, handler.max_matches);
   //   if(temp > 0)
