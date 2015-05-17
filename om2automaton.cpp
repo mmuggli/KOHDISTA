@@ -66,7 +66,7 @@ unsigned int mytolower(unsigned int lab)
         lab |= 0x1; // mark it as a nonbackbone "lowercase" node        
         return lab;
 }
-const int BIN_SIZE = 25;
+const int BIN_SIZE = 100;
 const int DESORPTION_THRESH = 1000;
 unsigned int quantize(unsigned int val)
 {
@@ -129,7 +129,10 @@ int main(int argc, char** argv)
 
 
     Node *end = new Node(0, j, j);
+    int end_value = j;
+    std::cout <<"end node value is " <<end_value << std::endl;
     j++;
+
     nodes.push_back(end);
     std::cout << "creating edge from " << current->pos << " to " << end->pos << std::endl;
     Edge *e = new Edge(current, end);
@@ -145,7 +148,8 @@ int main(int argc, char** argv)
         // add order 1 skip nodes
         unsigned int lab = mytolower(nodes[i+1]->label + nodes[i+2]->label);
 
-        Node *sumnode = new Node(lab, nodes[i+1]->value, j);
+        Node *sumnode = new Node(lab, nodes[i+1]->value + end_value, j); //j+1 means non-backbone none and no alignment which we can hopefully detect somehow 
+        //std::cout << "o1 skip node lab=" << lab << " val_and_pos=" << j << std::endl;
         ++j;
         nodes.push_back(sumnode);
         Edge *e1 = new Edge(nodes[i], sumnode);
@@ -158,7 +162,7 @@ int main(int argc, char** argv)
         if (i  < r / 4 - 4) {
             unsigned int lab = mytolower(nodes[i+1]->label + nodes[i+2]->label + nodes[i+3]->label);
 
-            Node *sumnode = new Node(lab, nodes[i+1]->value, j);
+            Node *sumnode = new Node(lab, nodes[i+1]->value + end_value, j); //j+1 means non-backbone none and no alignment
             ++j;
             nodes.push_back(sumnode);
             Edge *e1 = new Edge(nodes[i], sumnode);
