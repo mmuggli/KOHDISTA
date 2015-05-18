@@ -365,7 +365,7 @@ class BWASearch
 
     void mybackwardSearch(const std::vector<usint>& pattern,  const unsigned int &pat_cursor, const pair_type &range, const double &chi_squared_sum, const unsigned int &matched_count, const unsigned int &missed_count, std::set<usint> &occurrence_set) const {
         // handle pat_cursor=0 to prevent underrun in the other branch
-        if (pat_cursor == 0  || matched_count >= MIN_MATCH_LEN) { // stop the recurrsion
+        if (pat_cursor == 0   || (matched_count >= MIN_MATCH_LEN && NU * matched_count - LAMBDA * missed_count >= 8.0)) { // stop the recurrsion
             float t_score = NU * matched_count - LAMBDA * missed_count;
             if (t_score < 8.0) return;
             boost::math::chi_squared cs(matched_count );
