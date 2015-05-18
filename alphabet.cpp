@@ -65,7 +65,7 @@ Alphabet::initialize(const std::map<usint, usint>& counts)
   for(std::map<usint, usint>::const_iterator mapiter = counts.begin(); mapiter != counts.end(); ++mapiter)
   {
       symcnt++;
-      if (symcnt % 1000 == 0) std::cout << "alpha::init-1'd " << symcnt << " symbols." << std::endl;
+//      if (symcnt % 1000 == 0) std::cout << "alpha::init-1'd " << symcnt << " symbols." << std::endl;
 
     this->index_ranges[mapiter->first] = ((mapiter->second > 0 || this->size > 0) ?
                              pair_type(this->size, this->size + mapiter->second - 1) :
@@ -82,17 +82,16 @@ Alphabet::initialize(const std::map<usint, usint>& counts)
   std::cout << "Alphabet::index_rate: " << this->index_rate << std::endl;
   usint current = 0;
   symcnt = 0;
-  for(usint c = 0, i = 0; c < this->chars; c++)
-  {
+  for(usint c = 0, i = 0; c < this->chars; c++) {
       symcnt++;
       if (symcnt % 1000 == 0) std::cout << "alpha::init-2'd " << symcnt << " symbols." << std::endl;
-    pair_type range = this->index_ranges[this->text_chars[c]];
-    while(current <= range.second)
-    {
-      this->index_pointers[i] = c;
-      current += this->index_rate;
-      i++;
-    }
+//      pair_type range = this->index_ranges[this->text_chars[c]];
+      while(current <= range.second)
+      {
+          this->index_pointers[i] = c;
+          current += this->index_rate;
+          i++;
+      }
   }
 
   this->ok = true;

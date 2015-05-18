@@ -325,6 +325,7 @@ class BWASearch
                                            myrange, // SA interval
                                            chi_squared, // chi**2 sum
                                            1,// matched count
+                                           actv_la, // missed count
                                            occurrences); 
                 
                 
@@ -338,6 +339,8 @@ class BWASearch
     const double MAX_CHISQUARED_CDF = .9;
     const int MAX_LOOKAHEAD = 2;
     const int MIN_MATCH_LEN = 10;
+    const float LAMBDA = 1.2;
+    const float NU = 0.9;
     //TODO: convert this to recursive call
     //TODO: use sigma*length as stddev
 
@@ -360,16 +363,17 @@ class BWASearch
         
     }
 
-    void mybackwardSearch(const std::vector<usint>& pattern,  const unsigned int &pat_cursor, const pair_type &range, const double &chi_squared_sum, const unsigned int &matched_count, std::set<usint> &occurrence_set) const {
+    void mybackwardSearch(const std::vector<usint>& pattern,  const unsigned int &pat_cursor, const pair_type &range, const double &chi_squared_sum, const unsigned int &matched_count, const unsigned int &missed_count, std::set<usint> &occurrence_set) const {
         // handle pat_cursor=0 to prevent underrun in the other branch
         if (pat_cursor == 0  || matched_count >= MIN_MATCH_LEN) { // stop the recurrsion
-            
+            float t_score = NU * matched_count - LAMBDA * missed_count;
+            if (t_score < 8.0) return;
             boost::math::chi_squared cs(matched_count );
             double chisqcdf = boost::math::cdf(cs, chi_squared_sum);
 
             std::vector<usint>* occurrences = this->index.locateRange(range);
             for (std::vector<usint>::iterator mi = occurrences->begin(); mi != occurrences->end(); ++mi) {
-                std::cout << "chisqcdf: " << chisqcdf << " match found at: ";
+                //std::cout << "t-score: " << t_score <<  " chisqcdf: " << chisqcdf << " match found at: ";
                 //report_occurrence(*mi);
                 occurrence_set.insert(*mi);
             }
@@ -409,7 +413,18 @@ class BWASearch
                     if (chisqcdf <=   MAX_CHISQUARED_CDF) {
                         pair_type new_range = this->index.LF(range, subst_frag); 
                         unsigned int next_pat_cursor = pat_cursor - 1 - actv_la;
-                        this->mybackwardSearch(pattern, next_pat_cursor, new_range, chi_squared_sum + chi_squared, matched_count + 1, occurrence_set);
+
+                        bool off_backbone_penalty = 0;
+                        if (new_range.first == new_range.second) {
+                            std::vector<usint>* occurrences = this->index.locateRange(new_range);
+                            if (*occurrences->begin() > this->index.getBackbone()->getSize()-1) {
+                                off_backbone_penalty++; //FIXME can we figure out order 2 skip nodes here?
+                            }
+
+                        }
+
+
+                        this->mybackwardSearch(pattern, next_pat_cursor, new_range, chi_squared_sum + chi_squared, matched_count + 1, missed_count + actv_la + off_backbone_penalty, occurrence_set);
                     }
 
                 }

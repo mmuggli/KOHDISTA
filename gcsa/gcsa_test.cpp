@@ -84,8 +84,8 @@ int main(int argc, char** argv)
   double start = CSA::readTimer();
   std::cout << "Data load time:         " <<  start - appstart  << " seconds" << std::endl;
 
-  for(usint i = 2/*0*/; i < 3/*n*/; i++)
-//  for(usint i = 0; i < n; i++)
+//  for(usint i = 2/*0*/; i < 3/*n*/; i++)
+  for(usint i = 0; i < n; i++)
   {
     total += rows[i].size();
     //bool match = false;
