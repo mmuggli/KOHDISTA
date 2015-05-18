@@ -84,8 +84,8 @@ Alphabet::initialize(const std::map<usint, usint>& counts)
   symcnt = 0;
   for(usint c = 0, i = 0; c < this->chars; c++) {
       symcnt++;
-      if (symcnt % 1000 == 0) std::cout << "alpha::init-2'd " << symcnt << " symbols." << std::endl;
-//      pair_type range = this->index_ranges[this->text_chars[c]];
+//      if (symcnt % 1000 == 0) std::cout << "alpha::init-2'd " << symcnt << " symbols." << std::endl;
+      pair_type range = this->index_ranges[this->text_chars[c]];
       while(current <= range.second)
       {
           this->index_pointers[i] = c;

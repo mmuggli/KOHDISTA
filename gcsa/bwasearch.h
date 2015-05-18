@@ -297,7 +297,8 @@ class BWASearch
                 std::vector<long unsigned int> hits = this->index.restricted_unique_range_values(myinitrange.first, myinitrange.second, 
                                                                                                  c <= delta ? 1 : c - delta, // if subtracting results in less than 1, use 1
                                                                                                  c + delta);
-                
+                std::set<work_t > exhausted_nodes;
+                    
                 for(std::vector<long unsigned int>::iterator hit_itr = hits.begin(); hit_itr != hits.end(); ++hit_itr) {
                     pair_type myrange = /*this->index.getSARange()*/ this->index.getCharRange(*hit_itr);
                     myrange.second += 1;
@@ -326,7 +327,8 @@ class BWASearch
                                            chi_squared, // chi**2 sum
                                            1,// matched count
                                            actv_la, // missed count
-                                           occurrences); 
+                                           occurrences,
+                                           exhausted_nodes); 
                 
                 
                 }
@@ -363,11 +365,11 @@ class BWASearch
         
     }
 
-    void mybackwardSearch(const std::vector<usint>& pattern,  const unsigned int &pat_cursor, const pair_type &range, const double &chi_squared_sum, const unsigned int &matched_count, const unsigned int &missed_count, std::set<usint> &occurrence_set) const {
+    bool mybackwardSearch(const std::vector<usint>& pattern,  const unsigned int &pat_cursor, const pair_type &range, const double &chi_squared_sum, const unsigned int &matched_count, const unsigned int &missed_count, std::set<usint> &occurrence_set,                     std::set<work_t > &exhausted_nodes) const {
         // handle pat_cursor=0 to prevent underrun in the other branch
         if (pat_cursor == 0   || (matched_count >= MIN_MATCH_LEN && NU * matched_count - LAMBDA * missed_count >= 8.0)) { // stop the recurrsion
             float t_score = NU * matched_count - LAMBDA * missed_count;
-            if (t_score < 8.0) return;
+            if (t_score < 8.0) return false;
             boost::math::chi_squared cs(matched_count );
             double chisqcdf = boost::math::cdf(cs, chi_squared_sum);
 
@@ -423,13 +425,19 @@ class BWASearch
 
                         }
 
+                        work_t work(next_pat_cursor, new_range);
 
-                        this->mybackwardSearch(pattern, next_pat_cursor, new_range, chi_squared_sum + chi_squared, matched_count + 1, missed_count + actv_la + off_backbone_penalty, occurrence_set);
+                        if(exhausted_nodes.count(work) == 0) {
+                            this->mybackwardSearch(pattern, next_pat_cursor, new_range, chi_squared_sum + chi_squared, matched_count + 1, missed_count + actv_la + off_backbone_penalty, occurrence_set, exhausted_nodes);
+                            exhausted_nodes.insert(work);
+
+                        }
                     }
 
                 }
             }
         }
+        return false;
     }
 
 
