@@ -66,11 +66,24 @@ unsigned int mytolower(unsigned int lab)
         lab |= 0x1; // mark it as a nonbackbone "lowercase" node        
         return lab;
 }
-const int BIN_SIZE = 100;
+
+bool myisupper(unsigned int lab)
+{
+    if (lab & 0x1) return false;
+    return true;
+}
+
+bool mislower(unsigned int lab)
+{
+    if (lab & 0x1) return true;
+    return false;
+}
+
+const int BIN_SIZE = 10;
 const int DESORPTION_THRESH = 1000;
 unsigned int quantize(unsigned int val)
 {
-    return val;
+//    return val;
     unsigned int new_val = 0;
     if (val % BIN_SIZE < BIN_SIZE / 2.0)
         new_val = val - val % BIN_SIZE;
@@ -117,7 +130,7 @@ int main(int argc, char** argv)
 
     for (i = 0; i < r / 4; ++i) {
 
-        unsigned int lab = mytoupper(quantize(((unsigned int *)addr)[i]));
+        unsigned int lab = mytoupper(((unsigned int *)addr)[i]);
 
         Node *n = new Node(lab, j, j);
         ++j;
@@ -197,9 +210,16 @@ int main(int argc, char** argv)
     for (std::vector<Node *>::iterator ni = nodes.begin(); ni != nodes.end(); ++ni) {
         unsigned int lab = ((*ni)->label);
         if (lab == 0) std::cout << "0 lab at node " << (*ni)->value <<  " pos " << (*ni)->pos << std::endl;
-        lab = remap(lab);
+
+        // quantize, preserving backboniness
+        if (myisupper(lab)) {
+            lab = mytoupper(quantize(lab));
+        } else {
+            lab = mytolower(quantize(lab));
+        }
+//        lab = remap(lab);
         
-//        counts[lab] += 1;
+        counts[lab] += 1;
         ofd.write((char*)&lab, 4);
         ofd.write((char*)&((*ni)->value), 4);
     }
