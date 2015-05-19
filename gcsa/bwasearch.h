@@ -261,7 +261,7 @@ class BWASearch
 
      
     }
-
+    const float STDDEV_MULT = 3;
 
     static inline unsigned int uint_max(unsigned int a, unsigned int b) {
         return a < b ? b : a;
@@ -278,6 +278,8 @@ class BWASearch
             }
 
             for (int actv_la = 0; actv_la <= lookahead; ++actv_la) {
+                double search_start = CSA::readTimer();
+
 
                 // compute the sum of the next lookahead fragments
                 unsigned int c = 0;
@@ -293,7 +295,7 @@ class BWASearch
 
 
                 pair_type myinitrange = this->index.getSARange();
-                unsigned int delta = get_stddev(c) * 3;
+                unsigned int delta = get_stddev(c) * STDDEV_MULT;
                 std::vector<long unsigned int> hits = this->index.restricted_unique_range_values(myinitrange.first, myinitrange.second, 
                                                                                                  c <= delta ? 1 : c - delta, // if subtracting results in less than 1, use 1
                                                                                                  c + delta);
@@ -332,6 +334,7 @@ class BWASearch
                 
                 
                 }
+                std::cout << "find_one_dir (actv_la = " << actv_la << ") completed in " <<   CSA::readTimer() - search_start << " sec." << std::endl;
             }
         return pair_type(1,0);
     }
@@ -399,7 +402,7 @@ class BWASearch
                 }
 
                 //wt stuff
-                unsigned int delta = 3 * get_stddev(c) ;
+                unsigned int delta = STDDEV_MULT * get_stddev(c) ;
                 std::vector<long unsigned int> hits = this->index.restricted_unique_range_values(range.first, range.second, 
                                                                                                  c <= delta ? 1 : c - delta,  // if subtracting results in less than 1, use 1
                                                                                                  c + delta);
