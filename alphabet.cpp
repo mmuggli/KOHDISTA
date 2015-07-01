@@ -77,8 +77,8 @@ Alphabet::initialize(const std::map<usint, usint>& counts)
     }
     size += mapiter->second;
   }
+  this->index_rate = std::max((this->size + counts.size() /*CHARS*/ - 1) / counts.size() /*CHARS*/, (usint)1);
 
-  this->index_rate = std::max((this->size + CHARS - 1) / CHARS, (usint)1);
   std::cout << "Alphabet::index_rate: " << this->index_rate << std::endl;
   usint current = 0;
   symcnt = 0;
