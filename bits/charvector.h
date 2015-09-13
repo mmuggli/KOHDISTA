@@ -6,6 +6,7 @@
 #include "bitvector.h"
 #include "nibblevector.h"
 #include <map>
+#include <set>
 #include "deltavector.h"
 #include <sdsl/suffix_arrays.hpp>
 
@@ -23,7 +24,8 @@ public:
     void writeTo(FILE* file) const;
     usint reportSize() const;
 //    usint rank(usint c, usint num, bool at_least = false) const ;
-    std::vector<usint> restricted_unique_range_values(usint l, usint r, usint min, usint max) const;//FIXME: don't copy vector in return  
+    std::vector<usint> restricted_unique_range_values(usint l, usint r, usint min, usint max) const;//FIXME: don't copy vector in return
+    std::set<usint> array_restricted_unique_range_values(usint l, usint r, usint min, usint max) const;//FIXME: don't copy vector in return  
     usint maxlength() const;
     void constructF(   sdsl::int_vector<1u> &a_inedgetest);
     void setwt(sdsl::int_vector<> &v);
@@ -48,6 +50,7 @@ public:
     size_t iterSize(usint c) const;
 private:
     sdsl::wt_int<> *wt;
+    sdsl::int_vector<> wt_data;
     std::map<usint, CSA::BitVector*> array;
     // sdsl::csa_wt<sdsl::wt_int<>, 
     //              64, 

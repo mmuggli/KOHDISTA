@@ -37,9 +37,11 @@ GCSA::GCSA(const std::string& base_name) :
     std::cerr << "Error opening input file (" << index_name << ")!" << std::endl;
     return;
   }
+  std::cout << "(position " << input.tellg() << ")" << std::endl;
   std::cout << "Loading alphabet from " << index_name << std::endl;
   this->alphabet = new CSA::Alphabet(input);
 //  for(usint i = 1; i < 256 /*FIXME:CHARS*/; i++)
+  std::cout << "(position " << input.tellg() << ")" << std::endl;
   std::cout << "Loading BWT from " << index_name << std::endl;
   for( std::map<usint, pair_type>::const_iterator itr = this->alphabet->begin(); itr != this->alphabet->end(); ++itr)
   {
@@ -50,7 +52,8 @@ GCSA::GCSA(const std::string& base_name) :
 
     //else { this->array[i] = 0; }
   }
-
+  std::cout << "Loading array from " << index_name << std::endl;
+  std::cout << "(position " << input.tellg() << ")" << std::endl;
   array.load(input);
   array.syncFMIndex();
   std::cout << "Loading M from " << index_name << std::endl;
@@ -327,21 +330,29 @@ GCSA::writeTo(const std::string& base_name) const
     std::cerr << "Error opening output file (" << index_name << ")!" << std::endl;
     return;
   }
+  unsigned lastpos = output1.tellp();
+  std::cout << "(position " << output.tellp() << ")" << std::endl;
+
   std::cout << "Writing alphabet to " << index_name << std::endl;
   this->alphabet->writeTo(output);
+  std::cout << "(position " << output.tellp() << ")" << std::endl;
   std::cout << "Writing BWT to " << index_name << std::endl;
   this->array.writeTo(output);
   // for(usint i = 1; i < 256/*FIXME:CHARS*/; i++)
   // {
   //     if(this->alphabet->hasChar(i)) { this->array.at(i)->writeTo(output); }
   // }
+  std::cout << "(position " << output.tellp() << ")" << std::endl;
   std::cout << "Writing M to " << index_name << std::endl;
   this->outgoing->writeTo(output);
+  std::cout << "(position " << output.tellp() << ")" << std::endl;
   std::cout << "Writing sampled_positions to " << index_name << std::endl;
   this->sampled_positions->writeTo(output);
   usint sample_bits = (this->support_locate ? this->samples->getItemSize() : 0);
+  std::cout << "(position " << output.tellp() << ")" << std::endl;
   std::cout << "Writing sample_bits to " << index_name << std::endl;
   output.write((char*)&sample_bits, sizeof(usint));
+  std::cout << "(position " << output.tellp() << ")" << std::endl;
   std::cout << "Writing samples to " << index_name << std::endl;
   if(this->support_locate) { this->samples->writeBuffer(output); }
 
@@ -524,6 +535,11 @@ GCSA::convertToSARange(std::vector<pair_type>& bwt_ranges) const
     std::vector<usint> GCSA::restricted_unique_range_values(usint l, usint r, usint min, usint max) const
     {
         return array.restricted_unique_range_values(l, r, min, max);
+    }
+
+        std::set<usint> GCSA::array_restricted_unique_range_values(usint l, usint r, usint min, usint max) const
+    {
+        return array.array_restricted_unique_range_values(l, r, min, max);
     }
 
 pair_type

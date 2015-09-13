@@ -16,7 +16,7 @@ rmap = 0
 for i,line in enumerate(open(sys.argv[1])):
     if i % 100000 == 0: print("processing lineno:",i)
     fields = line.strip().split("\t")
-    if "omdb" in line: name = line.strip()
+    if "map" in line: name = line.strip()
     # write the target binary file
     if len(fields) > 2 and i % 3 == 1:
         frags = fields[2:]

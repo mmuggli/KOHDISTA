@@ -296,9 +296,30 @@ class BWASearch
 
                 pair_type myinitrange = this->index.getSARange();
                 unsigned int delta = get_stddev(c) * STDDEV_MULT;
+                double starttime = CSA::readTimer() ;
                 std::vector<long unsigned int> hits = this->index.restricted_unique_range_values(myinitrange.first, myinitrange.second, 
                                                                                                  c <= delta ? 1 : c - delta, // if subtracting results in less than 1, use 1
                                                                                                  c + delta);
+                double start2time = CSA::readTimer() ;
+                std::set<long unsigned int> hits2 = this->index.array_restricted_unique_range_values(myinitrange.first, myinitrange.second, 
+                                                                                                 c <= delta ? 1 : c - delta, // if subtracting results in less than 1, use 1
+                                                                                                 c + delta);
+                double finishtime = CSA::readTimer() ;
+                std::cout << "wt search = " << start2time - starttime << "; array scan = " << finishtime - start2time << "; interval = " << myinitrange.second - myinitrange.first << std::endl;
+                // ensure new methods gives equivalent results
+                for(std::set<long unsigned int>::iterator h2i = hits2.begin(); h2i != hits2.end(); ++h2i) {
+                    if (std::binary_search(hits.begin(), hits.end(), *h2i)) {
+                        ;//std::cout << "Found " << needle << '\n';
+                    } else {
+                        std::cout << "Alert! Array search found the following element not found by the wt: " << *h2i << std::endl;
+                    }
+
+                }
+
+                if (hits.size() != hits2.size() ) {
+                    std::cout << "Alert! wt is of size " << hits.size() << " and array results are of size " << hits2.size() << std::endl;
+                }
+
                 std::set<work_t > exhausted_nodes;
                     
                 for(std::vector<long unsigned int>::iterator hit_itr = hits.begin(); hit_itr != hits.end(); ++hit_itr) {
@@ -403,10 +424,34 @@ class BWASearch
 
                 //wt stuff
                 unsigned int delta = STDDEV_MULT * get_stddev(c) ;
+                double starttime = CSA::readTimer() ;
                 std::vector<long unsigned int> hits = this->index.restricted_unique_range_values(range.first, range.second, 
                                                                                                  c <= delta ? 1 : c - delta,  // if subtracting results in less than 1, use 1
                                                                                                  c + delta);
 
+                double start2time = CSA::readTimer() ;
+                std::set<long unsigned int> hits2 = this->index.array_restricted_unique_range_values(range.first, range.second, 
+                                                                                                 c <= delta ? 1 : c - delta, // if subtracting results in less than 1, use 1
+                                                                                                 c + delta);
+                double finishtime = CSA::readTimer() ;
+//                std::cout << "wt search = " << start2time - starttime << "; array scan = " << finishtime - start2time << "; interval = " << range.second - range.first << std::endl;
+
+
+
+                for(std::set<long unsigned int>::iterator h2i = hits2.begin(); h2i != hits2.end(); ++h2i) {
+                    if (std::binary_search(hits.begin(), hits.end(), *h2i)) {
+                        ;//std::cout << "Found " << needle << '\n';
+                    } else {
+                        std::cout << "Alert! Array search found the following element not found by the wt: " << *h2i << std::endl;
+                    }
+
+                }
+
+                if (hits.size() != hits2.size() ) {
+                    std::cout << "Alert! wt is of size " << hits.size() << " and array results are of size " << hits2.size() << std::endl;
+                }
+
+                
                 for(std::vector<long unsigned int>::iterator hit_itr = hits.begin(); hit_itr != hits.end(); ++hit_itr) {
                     // compute chi^2 score for putative substitute fragment in target
                     long unsigned int subst_frag = *hit_itr;

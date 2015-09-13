@@ -18,7 +18,7 @@ VECTOR_FLAGS = $(PSI_FLAGS) $(LCP_FLAGS) $(SA_FLAGS)
 SDSL_PREFIX = /s/chopin/l/grad/muggli/local
 SDSL_STUFF =  -I/usr/include/boost/ -I$(SDSL_PREFIX)/include -L /usr/lib64 -L$(SDSL_PREFIX)/lib  -lsdsl -ldivsufsort -ldivsufsort64
 
-CXXFLAGS = -Wall  -O2 -march=native -std=c++11 $(SIZE_FLAGS) $(PARALLEL_FLAGS) $(VECTOR_FLAGS) $(SDSL_STUFF)
+CXXFLAGS = -Wall  -g -std=c++11 $(SIZE_FLAGS) $(PARALLEL_FLAGS) $(VECTOR_FLAGS) $(SDSL_STUFF)
 OBJS = rlcsa.o rlcsa_builder.o sasamples.o alphabet.o \
 lcpsamples.o sampler.o suffixarray.o adaptive_samples.o docarray.o \
 bits/array.o bits/bitbuffer.o bits/multiarray.o bits/bitvector.o bits/charvector.o bits/deltavector.o \
@@ -34,6 +34,7 @@ VPATH = bits:misc:utils
 LFLAGS =  #-pie
 all: default
 	$(MAKE) -C gcsa
+	$(MAKE) -C tools
 
 default: parallel_build build_rlcsa rlcsa_test sampler_test display_test document_graph
 
@@ -109,6 +110,7 @@ clean:
 	rm -f $(PROGRAMS)
 	rm -f *.o bits/*.o misc/*.o utils/*.o
 	$(MAKE) -C gcsa clean
+	$(MAKE) -C tools clean
 
 package:
 	mkdir rlcsa

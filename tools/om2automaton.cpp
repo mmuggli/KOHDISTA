@@ -79,7 +79,7 @@ bool mislower(unsigned int lab)
     return false;
 }
 
-const int BIN_SIZE = 10;
+const int BIN_SIZE = 30;
 const int DESORPTION_THRESH = 1000;
 unsigned int quantize(unsigned int val)
 {

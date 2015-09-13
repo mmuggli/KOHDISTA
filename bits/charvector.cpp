@@ -18,6 +18,20 @@ namespace CSA
         return maxl;
     }
 
+    std::set<usint> CharVector::array_restricted_unique_range_values(usint l, usint r, usint min, usint max) const //FIXME: don't copy vector in return
+    {
+        std::set<long unsigned int> hits; //fixme: change to a set or ensure only one copy of each somehow
+        sdsl::bit_vector::select_1_type& b_sell = *b_sel;//(&inedgetest);
+        usint mapped_l = b_sell(l+1) ;//lincoming_itr->select(l)
+        usint mapped_r = b_sell(r+2)-1; //we want the subsequent node's 1 and then pack off one wt position //lincoming_itr->select(r);
+        for(usint i=mapped_l; i <= mapped_r; ++i) {
+            if (wt_data[i] <= max && wt_data[i] >= min) {
+                hits.insert(wt_data[i]);
+            }
+        }
+        return hits;
+    }
+    
     std::vector<usint> CharVector::restricted_unique_range_values(usint l, usint r, usint min, usint max) const //FIXME: don't copy vector in return
     {
         std::vector<long unsigned int> hits;
@@ -72,6 +86,7 @@ namespace CSA
 
     void CharVector::setwt(sdsl::int_vector<> &v)
     {
+        wt_data = v;
         wt = new sdsl::wt_int<>; //FIXME: leaking memory here
         construct_im(*wt, v);
     }
@@ -109,6 +124,9 @@ namespace CSA
     }
     void CharVector::writeTo(std::ofstream& file) const
     {
+        unsigned lastpos = file.tellp();
+        std::cout << "(position " << file.tellp() << ")" << std::endl;
+        std::cout << "Writing char bitvectors to file" << std::endl;
         for(std::map<usint, CSA::BitVector*>::const_iterator itr = array.begin(); itr != array.end(); ++itr)
 //        for(usint i = 1; i < 256/*FIXME:CHARS*/; i++)
         {
@@ -118,21 +136,40 @@ namespace CSA
             if(array.count(i)) { array.at(i)->writeTo(file); }
 
         }
-
+        std::cout << "(lastwrite " << file.tellp() - lastpos << ")" << std::endl; lastpos = file.tellp();
+        std::cout << "(position " << file.tellp() << ")" << std::endl;
         std::cout << "Writing F to file" << std::endl;
         inedgetest.serialize(file);
+        std::cout << "(lastwrite " << file.tellp() - lastpos << ")" << std::endl; lastpos = file.tellp();
+        std::cout << "(position " << file.tellp() << ")" << std::endl;
         std::cout << "Writing wavelet tree to file"  << std::endl;
         wt->serialize(file);
+        std::cout << "(lastwrite " << file.tellp() - lastpos << ")" << std::endl; lastpos = file.tellp();
+        std::cout << "(position " << file.tellp() << ")" << std::endl;
+        std::cout << "Writing wavelet tree DATA to file"  << std::endl;
+        wt_data.serialize(file);
+        std::cout << "(lastwrite " << file.tellp() - lastpos << ")" << std::endl; lastpos = file.tellp();
+        std::cout << "(position " << file.tellp() << ")" << std::endl;
 
     }
     void CharVector::load(std::ifstream &file)
     {
-
+        unsigned lastpos = file.tellg();
         wt = new sdsl::wt_int<>;
+        std::cout << "(position " << file.tellg() << ")" << std::endl;
         std::cout << "Loading F from file "  << std::endl;
         inedgetest.load(file);
+        std::cout << "(lastwrite " << file.tellg() - lastpos << ")" << std::endl; lastpos = file.tellg();
+        std::cout << "(position " << file.tellg() << ")" << std::endl;
         std::cout << "Loading wavelet tree from file "  << std::endl;
         wt->load(file);
+        std::cout << "(lastwrite " << file.tellg() - lastpos << ")" << std::endl; lastpos = file.tellg();
+        std::cout << "(position " << file.tellg() << ")" << std::endl;
+        std::cout << "Loading wavelet tree DATA from file "  << std::endl;
+        wt_data.load(file);
+
+        std::cout << "(lastwrite " << file.tellg() - lastpos << ")" << std::endl; lastpos = file.tellg();
+        std::cout << "(position " << file.tellg() << ")" << std::endl;
         std::cout << "Adding select support..." ;
         b_sel = new sdsl::bit_vector::select_1_type(&inedgetest);
         std::cout << "done.";
