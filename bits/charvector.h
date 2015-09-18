@@ -29,6 +29,8 @@ public:
     usint maxlength() const;
     void constructF(   sdsl::int_vector<1u> &a_inedgetest);
     void setwt(sdsl::int_vector<> &v);
+    unsigned outgoing_rank(usint i) const {return outgoing_ranks[i];}
+    void constructM(sdsl::int_vector<> &a_outgoing_ranks) {outgoing_ranks = a_outgoing_ranks;}
     inline std::map<usint, CSA::BitVector*>::const_iterator begin() const { return array.begin();}
     inline std::map<usint, CSA::BitVector*>::const_iterator end() const { return array.end();}
     class Iterator {
@@ -51,6 +53,7 @@ public:
 private:
     sdsl::wt_int<> *wt;
     sdsl::int_vector<> wt_data;
+    sdsl::int_vector<> outgoing_ranks;
     std::map<usint, CSA::BitVector*> array;
     // sdsl::csa_wt<sdsl::wt_int<>, 
     //              64, 

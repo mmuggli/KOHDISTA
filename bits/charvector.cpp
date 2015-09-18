@@ -125,7 +125,7 @@ namespace CSA
     void CharVector::writeTo(std::ofstream& file) const
     {
         unsigned lastpos = file.tellp();
-        std::cout << "(position " << file.tellp() << ")" << std::endl;
+        // std::cout << "(position " << file.tellp() << ")" << std::endl;
         std::cout << "Writing char bitvectors to file" << std::endl;
         for(std::map<usint, CSA::BitVector*>::const_iterator itr = array.begin(); itr != array.end(); ++itr)
 //        for(usint i = 1; i < 256/*FIXME:CHARS*/; i++)
@@ -136,40 +136,43 @@ namespace CSA
             if(array.count(i)) { array.at(i)->writeTo(file); }
 
         }
-        std::cout << "(lastwrite " << file.tellp() - lastpos << ")" << std::endl; lastpos = file.tellp();
-        std::cout << "(position " << file.tellp() << ")" << std::endl;
+        // std::cout << "(lastwrite " << file.tellp() - lastpos << ")" << std::endl; lastpos = file.tellp();
+        // std::cout << "(position " << file.tellp() << ")" << std::endl;
         std::cout << "Writing F to file" << std::endl;
         inedgetest.serialize(file);
-        std::cout << "(lastwrite " << file.tellp() - lastpos << ")" << std::endl; lastpos = file.tellp();
-        std::cout << "(position " << file.tellp() << ")" << std::endl;
+        // std::cout << "(lastwrite " << file.tellp() - lastpos << ")" << std::endl; lastpos = file.tellp();
+        // std::cout << "(position " << file.tellp() << ")" << std::endl;
         std::cout << "Writing wavelet tree to file"  << std::endl;
         wt->serialize(file);
-        std::cout << "(lastwrite " << file.tellp() - lastpos << ")" << std::endl; lastpos = file.tellp();
-        std::cout << "(position " << file.tellp() << ")" << std::endl;
+        // std::cout << "(lastwrite " << file.tellp() - lastpos << ")" << std::endl; lastpos = file.tellp();
+        // std::cout << "(position " << file.tellp() << ")" << std::endl;
         std::cout << "Writing wavelet tree DATA to file"  << std::endl;
         wt_data.serialize(file);
-        std::cout << "(lastwrite " << file.tellp() - lastpos << ")" << std::endl; lastpos = file.tellp();
-        std::cout << "(position " << file.tellp() << ")" << std::endl;
+        // std::cout << "(lastwrite " << file.tellp() - lastpos << ")" << std::endl; lastpos = file.tellp();
+        // std::cout << "(position " << file.tellp() << ")" << std::endl;
+        std::cout << "Writing outgoing_ranks to file"  << std::endl;
+        outgoing_ranks.serialize(file);
 
     }
     void CharVector::load(std::ifstream &file)
     {
         unsigned lastpos = file.tellg();
         wt = new sdsl::wt_int<>;
-        std::cout << "(position " << file.tellg() << ")" << std::endl;
+        // std::cout << "(position " << file.tellg() << ")" << std::endl;
         std::cout << "Loading F from file "  << std::endl;
         inedgetest.load(file);
-        std::cout << "(lastwrite " << file.tellg() - lastpos << ")" << std::endl; lastpos = file.tellg();
-        std::cout << "(position " << file.tellg() << ")" << std::endl;
+        // std::cout << "(lastwrite " << file.tellg() - lastpos << ")" << std::endl; lastpos = file.tellg();
+        // std::cout << "(position " << file.tellg() << ")" << std::endl;
         std::cout << "Loading wavelet tree from file "  << std::endl;
         wt->load(file);
-        std::cout << "(lastwrite " << file.tellg() - lastpos << ")" << std::endl; lastpos = file.tellg();
-        std::cout << "(position " << file.tellg() << ")" << std::endl;
+        // std::cout << "(lastwrite " << file.tellg() - lastpos << ")" << std::endl; lastpos = file.tellg();
+        // std::cout << "(position " << file.tellg() << ")" << std::endl;
         std::cout << "Loading wavelet tree DATA from file "  << std::endl;
         wt_data.load(file);
-
-        std::cout << "(lastwrite " << file.tellg() - lastpos << ")" << std::endl; lastpos = file.tellg();
-        std::cout << "(position " << file.tellg() << ")" << std::endl;
+        std::cout << "Loading outgoing ranks from file "  << std::endl;
+        outgoing_ranks.load(file);
+        // std::cout << "(lastwrite " << file.tellg() - lastpos << ")" << std::endl; lastpos = file.tellg();
+        // std::cout << "(position " << file.tellg() << ")" << std::endl;
         std::cout << "Adding select support..." ;
         b_sel = new sdsl::bit_vector::select_1_type(&inedgetest);
         std::cout << "done.";

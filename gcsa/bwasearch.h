@@ -267,6 +267,10 @@ class BWASearch
         return a < b ? b : a;
     }
 
+    void local_restricted_unique_range_values(unsigned long long a, unsigned long long b, unsigned long long c, unsigned long long d, std::vector<long unsigned int> &ret) const {
+        ret = this->index.restricted_unique_range_values(a,b,c,d);
+    }
+    
     pair_type find_one_dir(const std::vector<usint>& pattern, std::set<usint> &occurrences) const {
 
         int pat_cursor = pattern.size() - 1;
@@ -297,28 +301,30 @@ class BWASearch
                 pair_type myinitrange = this->index.getSARange();
                 unsigned int delta = get_stddev(c) * STDDEV_MULT;
                 double starttime = CSA::readTimer() ;
-                std::vector<long unsigned int> hits = this->index.restricted_unique_range_values(myinitrange.first, myinitrange.second, 
-                                                                                                 c <= delta ? 1 : c - delta, // if subtracting results in less than 1, use 1
-                                                                                                 c + delta);
+                std::vector<long unsigned int> hits;
+                local_restricted_unique_range_values(myinitrange.first, myinitrange.second, 
+                                                     c <= delta ? 1 : c - delta, // if subtracting results in less than 1, use 1
+                                                     c + delta,
+                                                     hits);
                 double start2time = CSA::readTimer() ;
-                std::set<long unsigned int> hits2 = this->index.array_restricted_unique_range_values(myinitrange.first, myinitrange.second, 
-                                                                                                 c <= delta ? 1 : c - delta, // if subtracting results in less than 1, use 1
-                                                                                                 c + delta);
+                // std::set<long unsigned int> hits2 = this->index.array_restricted_unique_range_values(myinitrange.first, myinitrange.second, 
+                //                                                                                  c <= delta ? 1 : c - delta, // if subtracting results in less than 1, use 1
+                //                                                                                  c + delta);
                 double finishtime = CSA::readTimer() ;
-                std::cout << "wt search = " << start2time - starttime << "; array scan = " << finishtime - start2time << "; interval = " << myinitrange.second - myinitrange.first << std::endl;
+//                std::cout << "wt search = " << start2time - starttime << "; array scan = " << finishtime - start2time << "; interval = " << myinitrange.second - myinitrange.first << "; query size = " << c << std::endl;
                 // ensure new methods gives equivalent results
-                for(std::set<long unsigned int>::iterator h2i = hits2.begin(); h2i != hits2.end(); ++h2i) {
-                    if (std::binary_search(hits.begin(), hits.end(), *h2i)) {
-                        ;//std::cout << "Found " << needle << '\n';
-                    } else {
-                        std::cout << "Alert! Array search found the following element not found by the wt: " << *h2i << std::endl;
-                    }
+                // for(std::set<long unsigned int>::iterator h2i = hits2.begin(); h2i != hits2.end(); ++h2i) {
+                //     if (std::binary_search(hits.begin(), hits.end(), *h2i)) {
+                //         ;//std::cout << "Found " << needle << '\n';
+                //     } else {
+                //         std::cout << "Alert! Array search found the following element not found by the wt: " << *h2i << std::endl;
+                //     }
 
-                }
+                // }
 
-                if (hits.size() != hits2.size() ) {
-                    std::cout << "Alert! wt is of size " << hits.size() << " and array results are of size " << hits2.size() << std::endl;
-                }
+                // if (hits.size() != hits2.size() ) {
+                //     std::cout << "Alert! wt is of size " << hits.size() << " and array results are of size " << hits2.size() << std::endl;
+                // }
 
                 std::set<work_t > exhausted_nodes;
                     
@@ -424,35 +430,52 @@ class BWASearch
 
                 //wt stuff
                 unsigned int delta = STDDEV_MULT * get_stddev(c) ;
-                double starttime = CSA::readTimer() ;
-                std::vector<long unsigned int> hits = this->index.restricted_unique_range_values(range.first, range.second, 
-                                                                                                 c <= delta ? 1 : c - delta,  // if subtracting results in less than 1, use 1
-                                                                                                 c + delta);
+                unsigned long long interval_size = range.second - range.first;
+                double start2time = 0, finishtime = 0, starttime = CSA::readTimer() ;
+                const int WT_MIN = 750;
+                
+                std::vector<long unsigned int> hits;
+                std::set<long unsigned int> hits2;
 
-                double start2time = CSA::readTimer() ;
-                std::set<long unsigned int> hits2 = this->index.array_restricted_unique_range_values(range.first, range.second, 
-                                                                                                 c <= delta ? 1 : c - delta, // if subtracting results in less than 1, use 1
-                                                                                                 c + delta);
-                double finishtime = CSA::readTimer() ;
-//                std::cout << "wt search = " << start2time - starttime << "; array scan = " << finishtime - start2time << "; interval = " << range.second - range.first << std::endl;
-
-
-
-                for(std::set<long unsigned int>::iterator h2i = hits2.begin(); h2i != hits2.end(); ++h2i) {
-                    if (std::binary_search(hits.begin(), hits.end(), *h2i)) {
-                        ;//std::cout << "Found " << needle << '\n';
-                    } else {
-                        std::cout << "Alert! Array search found the following element not found by the wt: " << *h2i << std::endl;
-                    }
-
-                }
-
-                if (hits.size() != hits2.size() ) {
-                    std::cout << "Alert! wt is of size " << hits.size() << " and array results are of size " << hits2.size() << std::endl;
-                }
+                    // hits = this->index.restricted_unique_range_values(range.first, range.second, 
+                    //                                                   c <= delta ? 1 : c - delta,  // if subtracting results in less than 1, use 1
+                    //                                                   c + delta);
 
                 
-                for(std::vector<long unsigned int>::iterator hit_itr = hits.begin(); hit_itr != hits.end(); ++hit_itr) {
+                if (interval_size > WT_MIN) {
+                    hits = this->index.restricted_unique_range_values(range.first, range.second, 
+                                                                      c <= delta ? 1 : c - delta,  // if subtracting results in less than 1, use 1
+                                                                      c + delta);
+                    //FIXME: find a way not to copy the WT results into a set! This is the uncommon case, and it's all on the stack, but still wasteful
+                    for(std::vector<long unsigned int>::iterator h2i = hits.begin(); h2i != hits.end(); ++h2i)
+                        hits2.insert(*h2i);
+                } else {
+                    
+                    //start2time = CSA::readTimer() ;
+                    hits2 = this->index.array_restricted_unique_range_values(range.first, range.second, 
+                                                                             c <= delta ? 1 : c - delta, // if subtracting results in less than 1, use 1
+                                                                             c + delta);
+                }
+                //finishtime = CSA::readTimer() ;
+//                if (interval_size > MIN_BOTH) std::cout << "wt search = " << start2time - starttime << "; array scan = " << finishtime - start2time << "; interval = " << interval_size << "; query size = " << c << std::endl;
+
+
+
+                // for(std::set<long unsigned int>::iterator h2i = hits2.begin(); h2i != hits2.end(); ++h2i) {
+                //     if (std::binary_search(hits.begin(), hits.end(), *h2i)) {
+                //         ;//std::cout << "Found " << needle << '\n';
+                //     } else {
+                //         std::cout << "Alert! Array search found the following element not found by the wt: " << *h2i << std::endl;
+                //     }
+
+                // }
+
+                // if (hits.size() != hits2.size() ) {
+                //     std::cout << "Alert! wt is of size " << hits.size() << " and array results are of size " << hits2.size() << std::endl;
+                // }
+
+                
+                for(std::set<long unsigned int>::iterator hit_itr = hits2.begin(); hit_itr != hits2.end(); ++hit_itr) {
                     // compute chi^2 score for putative substitute fragment in target
                     long unsigned int subst_frag = *hit_itr;
                     int deviation = abs(subst_frag - c);
@@ -465,13 +488,13 @@ class BWASearch
                         unsigned int next_pat_cursor = pat_cursor - 1 - actv_la;
 
                         bool off_backbone_penalty = 0;
-                        if (new_range.first == new_range.second) {
-                            std::vector<usint>* occurrences = this->index.locateRange(new_range);
-                            if (*occurrences->begin() > this->index.getBackbone()->getSize()-1) {
-                                off_backbone_penalty++; //FIXME can we figure out order 2 skip nodes here?
-                            }
+                        // if (new_range.first == new_range.second) {
+                        //     std::vector<usint>* occurrences = this->index.locateRange(new_range);
+                        //     if (*occurrences->begin() > this->index.getBackbone()->getSize()-1) {
+                        //         off_backbone_penalty++; //FIXME can we figure out order 2 skip nodes here?
+                        //     }
 
-                        }
+                        // }
 
                         work_t work(next_pat_cursor, new_range);
 

@@ -30,6 +30,7 @@ GCSA::GCSA(const std::string& base_name) :
 //  this->array = (CSA::BitVector**)malloc(CHARS*sizeof(CSA::SDSLVector *));
     //for(usint i = 0; i < CHARS; i++) { this->array[i] = 0; }
 
+    
   std::string index_name = base_name + GCSA_EXTENSION;
   std::ifstream input(index_name.c_str(), std::ios_base::binary);
   if(!input)
@@ -101,7 +102,7 @@ GCSA::GCSA(PathGraph& graph, Graph& parent, bool print) :
 //  DeltaEncoder* array_encoders[CHARS];
     std::map<usint, CSA::DeltaEncoder*> array_encoders;
     //DeltaEncoder** array_encoders = (DeltaEncoder**)malloc(CHARS);
-    CSA::RLEEncoder outedges(OUTGOING_BLOCK_SIZE, CSA::MEGABYTE);
+    CSA::RLEEncoder outedges(OUTGOING_BLOCK_SIZE, CSA::KILOBYTE);
 
     //usint *counts = (usint*)malloc(CHARS*sizeof(usint *));
     std::map<usint, usint> counts;
@@ -126,17 +127,19 @@ GCSA::GCSA(PathGraph& graph, Graph& parent, bool print) :
     std::cout << "Elapsed time: " << CSA::readTimer() - CSA::start_time  << std::endl;
 
     sdsl::int_vector<> wt_data;
+    sdsl::int_vector<> outgoing_ranks;
     sdsl::int_vector<1u> inedgetest; 
     inedgetest.resize(graph.edges.size() + 2 /*for the last node?*/);
 //    sdsl::bit_vector  = sdsl::bit_vector(graph.edges.size(), 0);
     wt_data.resize(graph.edges.size() + 2);
+    outgoing_ranks.resize(graph.edges.size() + 2);
     std::string inedgebv;
 
     //FIXME: build up a superflous map for debugging printing
     // std::map<int, int> num2lab;
     // for (std::vector<PathEdge>::iterator edge = graph.edges.begin(); edge != graph.edges.end(); ++edge)
     //     num2lab[edge->from] = edge->label;
-
+    unsigned current_rank = 0;
     int nodecntr = 0;
     for(std::vector<PathNode>::iterator node = graph.nodes.begin(); node != graph.nodes.end(); ++node)
     {
@@ -174,7 +177,7 @@ GCSA::GCSA(PathGraph& graph, Graph& parent, bool print) :
             }
             wt_data[incomingedge_offset] = label;
 //            std::cout << " setting wt[" << incomingedge_offset << "] = " << label << " ";
-
+            
             incomingedge_offset++;
         }
         //special case for initial symbol in automaton with no real incoming edges.  We actually add two nodes worth since we want to be able to query one past the final one and then back off one
@@ -193,9 +196,13 @@ GCSA::GCSA(PathGraph& graph, Graph& parent, bool print) :
 
         // Write M
         outedges.addBit(edge_offset);
+        current_rank += 1;
         unsigned addend = std::max((usint)1, (*node).outdegree());
         //for (unsigned ii = 0; ii < addend - 1; ++ii) std::cout <<"0";
         //      std::cout <<" F = " << inedgebvcontr << std::endl;
+        for(unsigned ijk = edge_offset; ijk < edge_offset + addend; ++ijk) {
+            outgoing_ranks[ijk] = current_rank;
+        }
         edge_offset += addend;
         inedgebv += inedgebvcontr;
     }
@@ -238,6 +245,10 @@ GCSA::GCSA(PathGraph& graph, Graph& parent, bool print) :
     this->array.constructF(inedgetest);
     std::cout << "gcsa: done Constructing F" << std::endl;
     std::cout << "Elapsed time: " << CSA::readTimer() - CSA::start_time  << std::endl;
+    this->array.constructM(outgoing_ranks);
+    std::cout << "gcsa: done Constructing F" << std::endl;
+    std::cout << "Elapsed time: " << CSA::readTimer() - CSA::start_time  << std::endl;
+
     this->node_count = this->outgoing->getNumberOfItems();
 
 //    size_t ones = sdsl::rank_support_v<1>(&inedgetest)(inedgetest.size());
@@ -330,7 +341,7 @@ GCSA::writeTo(const std::string& base_name) const
     std::cerr << "Error opening output file (" << index_name << ")!" << std::endl;
     return;
   }
-  unsigned lastpos = output1.tellp();
+  unsigned lastpos = output.tellp();
   std::cout << "(position " << output.tellp() << ")" << std::endl;
 
   std::cout << "Writing alphabet to " << index_name << std::endl;
@@ -622,13 +633,25 @@ GCSA::getEdgeIterator(char *placement) const
 
 //--------------------------------------------------------------------------
 
+
 pair_type
 GCSA::convertToNodeRange(pair_type edge_range) const
 {
   char iterbuf[this->outgoing->iterSize()];
   CSA::BitVector::Iterator* outgoing_iter = this->outgoing->newIterator(iterbuf);
-  edge_range.first = outgoing_iter->rank(edge_range.first) - 1;
-  edge_range.second = outgoing_iter->rank(edge_range.second) - 1;
+  // if (outgoing_iter->rank(edge_range.first) != array.outgoing_rank(edge_range.first) ) {
+  //     std::cout << "rank LUT error for i=" << edge_range.first << " values: " << outgoing_iter->rank(edge_range.first)
+  //               << " " << array.outgoing_rank(edge_range.first) << std::endl;
+  // }
+  // if (outgoing_iter->rank(edge_range.second) != array.outgoing_rank(edge_range.second) ) {
+  //     std::cout << "rank LUT error for i=" << edge_range.second << " values: " << outgoing_iter->rank(edge_range.second)
+  //               << " " << array.outgoing_rank(edge_range.second) << std::endl;
+  // }
+
+  // edge_range.first = outgoing_iter->rank(edge_range.first) - 1;
+  // edge_range.second = outgoing_iter->rank(edge_range.second) - 1;
+  edge_range.first = array.outgoing_rank(edge_range.first) - 1;
+  edge_range.second = array.outgoing_rank(edge_range.second) - 1;
   outgoing_iter->~Iterator();
   return edge_range;
 }

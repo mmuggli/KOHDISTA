@@ -23,7 +23,7 @@ RLCSA = $(RLCSA_ROOT)/rlcsa.a
 SDSL_PREFIX = /s/chopin/l/grad/muggli/local
 SDSL_STUFF =  -I/usr/include/boost/ -I$(SDSL_PREFIX)/include -L /usr/lib64 -L$(SDSL_PREFIX)/lib  -lsdsl -ldivsufsort -ldivsufsort64 
 
-CXXFLAGS = -Wall -g $(DEBUG_FLAGS) $(SIZE_FLAGS) $(PARALLEL_FLAGS) $(VECTOR_FLAGS) -I$(RLCSA_ROOT) $(SDSL_STUFF) -std=c++11 
+CXXFLAGS = -Wall -O2 $(DEBUG_FLAGS) $(SIZE_FLAGS) $(PARALLEL_FLAGS) $(VECTOR_FLAGS) -I$(RLCSA_ROOT) $(SDSL_STUFF) -std=c++11 
 
 OBJS = graph.o gcsa.o parameter_handler.o
 LIBRARIES = gcsa.a $(RLCSA) ~/local/lib/libsdsl.a ~/local/lib/libdivsufsort.a  ~/local/lib/libdivsufsort64.a
