@@ -548,9 +548,9 @@ GCSA::convertToSARange(std::vector<pair_type>& bwt_ranges) const
         return array.restricted_unique_range_values(l, r, min, max);
     }
 
-        std::set<usint> GCSA::array_restricted_unique_range_values(usint l, usint r, usint min, usint max) const
+    void GCSA::array_restricted_unique_range_values(usint l, usint r, usint min, usint max, std::set<usint>& hits) const
     {
-        return array.array_restricted_unique_range_values(l, r, min, max);
+        return array.array_restricted_unique_range_values(l, r, min, max, hits);
     }
 
 pair_type

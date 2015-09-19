@@ -187,14 +187,18 @@ struct MatchInfoComparator
 };
 
 //--------------------------------------------------------------------------
-
+    typedef std::pair<unsigned int, pair_type> work_t;
+    std::vector<usint> global_pattern;
+    std::set<usint> global_occurrences;
+    std::set<work_t > global_exhausted_nodes;
+    
 template<class Index>
 class BWASearch
 {
   public:
 
     const static usint INITIAL_STEP = 8;  // Should be >= log(n) / 4.
-    typedef std::pair<unsigned int, pair_type> work_t;
+
     BWASearch(const Index& _index,  const CSA::DeltaVector &_rmap_starts, const std::vector<std::pair<unsigned int, std::string> > _frag2rmap) :
       index(_index), rmap_starts(_rmap_starts), frag2rmap(_frag2rmap), ALPHABET("ACGTN"), COMPLEMENT("TGCAN")
     {
@@ -212,12 +216,15 @@ class BWASearch
         return expect_stddev_bp;
     }
 
+
+
     void find(const std::vector<usint>& pattern) const {
 
 
 
         std::cout << "backward searching matching orientation" << std::endl;
         std::set<usint> occurrences;
+        global_occurrences = occurrences;
         for (unsigned int skip = 0; skip < 3; ++skip) {
         
 
@@ -229,9 +236,9 @@ class BWASearch
             assert(pat.size() > 0);
             find_one_dir(pat, occurrences);
         }
-        if (occurrences.size()) {
-            std::cout << "Found " << occurrences.size() << ":" << std::endl;
-            for(std::set<usint>::iterator oi = occurrences.begin(); oi != occurrences.end(); ++oi) {
+        if (global_occurrences.size()) {
+            std::cout << "Found " << global_occurrences.size() << ":" << std::endl;
+            for(std::set<usint>::iterator oi = global_occurrences.begin(); oi != global_occurrences.end(); ++oi) {
                 report_occurrence(*oi);
             }
         }
@@ -240,6 +247,7 @@ class BWASearch
 
         std::cout << "backward searching reverse orientation" << std::endl;
         std::set<usint> revoccurrences;
+        global_occurrences = revoccurrences;
         for (unsigned int skip = 0; skip < 3; ++skip) {
         
         
@@ -252,9 +260,9 @@ class BWASearch
             find_one_dir(revpat, revoccurrences);        
         }
 
-        if (revoccurrences.size()) {
-            std::cout << "Found " << revoccurrences.size() << ":" << std::endl;
-            for(std::set<usint>::iterator oi = revoccurrences.begin(); oi != revoccurrences.end(); ++oi) {
+        if (global_occurrences.size()) {
+            std::cout << "Found " << global_occurrences.size() << ":" << std::endl;
+            for(std::set<usint>::iterator oi = global_occurrences.begin(); oi != global_occurrences.end(); ++oi) {
                 report_occurrence(*oi);
             }
         }
@@ -270,6 +278,8 @@ class BWASearch
     void local_restricted_unique_range_values(unsigned long long a, unsigned long long b, unsigned long long c, unsigned long long d, std::vector<long unsigned int> &ret) const {
         ret = this->index.restricted_unique_range_values(a,b,c,d);
     }
+
+
     
     pair_type find_one_dir(const std::vector<usint>& pattern, std::set<usint> &occurrences) const {
 
@@ -349,15 +359,16 @@ class BWASearch
                     std::vector<pair_type> ranges;
 
 
-
-                    this->mybackwardSearch(pattern, // pattern to search for
+                    global_pattern = pattern;
+                    global_exhausted_nodes=exhausted_nodes;
+                    this->mybackwardSearch(//pattern, // pattern to search for
                                            pattern.size() - 1 - actv_la , // index of next symbol to search for
                                            myrange, // SA interval
                                            chi_squared, // chi**2 sum
-                                           1,// matched count
-                                           actv_la, // missed count
-                                           occurrences,
-                                           exhausted_nodes); 
+                                           1, // matched count
+                                           actv_la); // missed count
+                                           //occurrences,
+                                           //exhausted_nodes); 
                 
                 
                 }
@@ -395,7 +406,7 @@ class BWASearch
         
     }
 
-    bool mybackwardSearch(const std::vector<usint>& pattern,  const unsigned int &pat_cursor, const pair_type &range, const double &chi_squared_sum, const unsigned int &matched_count, const unsigned int &missed_count, std::set<usint> &occurrence_set,                     std::set<work_t > &exhausted_nodes) const {
+    bool mybackwardSearch(/*const std::vector<usint>& pattern,*/  const unsigned int &pat_cursor, const pair_type &range, const double &chi_squared_sum, const unsigned int &matched_count, const unsigned int &missed_count/*, std::set<usint> &occurrence_set,                     std::set<work_t > &exhausted_nodes*/) const {
         // handle pat_cursor=0 to prevent underrun in the other branch
         if (pat_cursor == 0   || (matched_count >= MIN_MATCH_LEN && NU * matched_count - LAMBDA * missed_count >= 8.0)) { // stop the recurrsion
             float t_score = NU * matched_count - LAMBDA * missed_count;
@@ -407,7 +418,7 @@ class BWASearch
             for (std::vector<usint>::iterator mi = occurrences->begin(); mi != occurrences->end(); ++mi) {
                 //std::cout << "t-score: " << t_score <<  " chisqcdf: " << chisqcdf << " match found at: ";
                 //report_occurrence(*mi);
-                occurrence_set.insert(*mi);
+                global_occurrences.insert(*mi);
             }
             delete occurrences;
         } else {
@@ -425,13 +436,13 @@ class BWASearch
                 for (int j = 0; j <= actv_la; ++j) {
                     int index = pat_cursor - 1 - j;
                     assert(index >= 0);
-                    c += pattern[index];
+                    c += global_pattern[index];
                 }
 
                 //wt stuff
                 unsigned int delta = STDDEV_MULT * get_stddev(c) ;
                 unsigned long long interval_size = range.second - range.first;
-                double start2time = 0, finishtime = 0, starttime = CSA::readTimer() ;
+                double start2time = 0, finishtime = 0;//, starttime = CSA::readTimer() ;
                 const int WT_MIN = 750;
                 
                 std::vector<long unsigned int> hits;
@@ -452,9 +463,9 @@ class BWASearch
                 } else {
                     
                     //start2time = CSA::readTimer() ;
-                    hits2 = this->index.array_restricted_unique_range_values(range.first, range.second, 
+                    this->index.array_restricted_unique_range_values(range.first, range.second, 
                                                                              c <= delta ? 1 : c - delta, // if subtracting results in less than 1, use 1
-                                                                             c + delta);
+                                                                     c + delta, hits2);
                 }
                 //finishtime = CSA::readTimer() ;
 //                if (interval_size > MIN_BOTH) std::cout << "wt search = " << start2time - starttime << "; array scan = " << finishtime - start2time << "; interval = " << interval_size << "; query size = " << c << std::endl;
@@ -480,7 +491,8 @@ class BWASearch
                     long unsigned int subst_frag = *hit_itr;
                     int deviation = abs(subst_frag - c);
                     float chi_squared = std::pow((float)deviation / (float)get_stddev(uint_max(c, subst_frag)), 2);
-                    boost::math::chi_squared cs(matched_count + 1);
+                    //boost::math::chi_squared cs(matched_count + 1);
+                    boost::math::chi_squared_distribution<float, boost::math::policies::policy<boost::math::policies::digits10<3> >> cs(matched_count + 1);
                     double chisqcdf = boost::math::cdf(cs, chi_squared_sum + chi_squared);
 
                     if (chisqcdf <=   MAX_CHISQUARED_CDF) {
@@ -498,9 +510,9 @@ class BWASearch
 
                         work_t work(next_pat_cursor, new_range);
 
-                        if(exhausted_nodes.count(work) == 0) {
-                            this->mybackwardSearch(pattern, next_pat_cursor, new_range, chi_squared_sum + chi_squared, matched_count + 1, missed_count + actv_la + off_backbone_penalty, occurrence_set, exhausted_nodes);
-                            exhausted_nodes.insert(work);
+                        if(global_exhausted_nodes.count(work) == 0) {
+                            this->mybackwardSearch(/*pattern,*/ next_pat_cursor, new_range, chi_squared_sum + chi_squared, matched_count + 1, missed_count + actv_la + off_backbone_penalty/*, occurrence_set, exhausted_nodes*/);
+                            global_exhausted_nodes.insert(work);
 
                         }
                     }

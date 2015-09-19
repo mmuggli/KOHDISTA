@@ -18,9 +18,9 @@ namespace CSA
         return maxl;
     }
 
-    std::set<usint> CharVector::array_restricted_unique_range_values(usint l, usint r, usint min, usint max) const //FIXME: don't copy vector in return
+    void CharVector::array_restricted_unique_range_values(usint l, usint r, usint min, usint max, std::set<usint> &hits) const
     {
-        std::set<long unsigned int> hits; //fixme: change to a set or ensure only one copy of each somehow
+//        std::set<long unsigned int> hits; //fixme: change to a set or ensure only one copy of each somehow
         sdsl::bit_vector::select_1_type& b_sell = *b_sel;//(&inedgetest);
         usint mapped_l = b_sell(l+1) ;//lincoming_itr->select(l)
         usint mapped_r = b_sell(r+2)-1; //we want the subsequent node's 1 and then pack off one wt position //lincoming_itr->select(r);
@@ -29,7 +29,7 @@ namespace CSA
                 hits.insert(wt_data[i]);
             }
         }
-        return hits;
+//        return hits;
     }
     
     std::vector<usint> CharVector::restricted_unique_range_values(usint l, usint r, usint min, usint max) const //FIXME: don't copy vector in return

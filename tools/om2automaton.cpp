@@ -79,11 +79,12 @@ bool mislower(unsigned int lab)
     return false;
 }
 
-const int BIN_SIZE = 10;
+const int BIN_SIZE = 100;
 const int DESORPTION_THRESH = 1000;
 unsigned int quantize(unsigned int val)
 {
 //    return val;
+    printf("Quantizing with bin size %d\n", BIN_SIZE);
     unsigned int new_val = 0;
     if (val % BIN_SIZE < BIN_SIZE / 2.0)
         new_val = val - val % BIN_SIZE;

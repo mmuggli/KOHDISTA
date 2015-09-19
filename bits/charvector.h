@@ -25,7 +25,7 @@ public:
     usint reportSize() const;
 //    usint rank(usint c, usint num, bool at_least = false) const ;
     std::vector<usint> restricted_unique_range_values(usint l, usint r, usint min, usint max) const;//FIXME: don't copy vector in return
-    std::set<usint> array_restricted_unique_range_values(usint l, usint r, usint min, usint max) const;//FIXME: don't copy vector in return  
+    void array_restricted_unique_range_values(usint l, usint r, usint min, usint max, std::set<usint>& ) const;
     usint maxlength() const;
     void constructF(   sdsl::int_vector<1u> &a_inedgetest);
     void setwt(sdsl::int_vector<> &v);
