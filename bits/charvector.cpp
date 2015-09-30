@@ -225,7 +225,7 @@ namespace CSA
     bool  CharVector::Iterator::isSet(usint i){return itr->isSet(i);}
 
 
-    CharVector::Iterator *CharVector::newIterator(usint c, char *placement) const{return new Iterator(array.at(c)->newIterator(placement));}
+    CharVector::Iterator *CharVector::newIterator(usint c, char *placement, char *placement2) const{return new ((CharVector::Iterator*)placement2) Iterator(array.at(c)->newIterator(placement));}
     size_t CharVector::iterSize(usint c) const
     {
         return array.at(c)->iterSize();

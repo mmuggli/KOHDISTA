@@ -47,7 +47,7 @@ public:
         BitVector::Iterator *itr;
     };
 
-    Iterator *newIterator(usint c, char *) const;
+    Iterator *newIterator(usint c, char *, char *) const;
 
     size_t iterSize(usint c) const;
 private:

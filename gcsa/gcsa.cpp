@@ -562,7 +562,8 @@ GCSA::LF(pair_type range, usint c) const
 
     // Follow edges backward using BWT.
     char iterbufc[this->array.iterSize(c)];
-    CSA::CharVector::Iterator* array_iter = this->array.newIterator(c, iterbufc);
+    char iter2bufc[sizeof(CSA::CharVector::Iterator)];
+    CSA::CharVector::Iterator* array_iter = this->array.newIterator(c, iterbufc, iter2bufc);
   
     range.first = this->alphabet->cumulative(c) + array_iter->rank(range.first, true) - 1;
 
@@ -605,7 +606,9 @@ GCSA::getSuccessors(usint index) const
 
   // Find the corresponding incoming edges using BWT.
   char iterbufc[this->array.iterSize(c)];
-  CSA::CharVector::Iterator* array_iter = this->array.newIterator(c, iterbufc);
+  char iter2bufc[sizeof(CSA::CharVector::Iterator)];
+
+  CSA::CharVector::Iterator* array_iter = this->array.newIterator(c, iterbufc, iter2bufc);
   result->push_back(array_iter->select(index - this->alphabet->cumulative(c)));
   for(usint i = 1; i < successors; i++) { result->push_back(array_iter->selectNext()); }
   outgoing_iter->~Iterator();
@@ -614,9 +617,9 @@ GCSA::getSuccessors(usint index) const
 }
 
 CSA::CharVector::Iterator*
-GCSA::getIterator(usint c, char* placement) const
+GCSA::getIterator(usint c, char *placement, char *placement2) const
 {
-  if(c < CHARS && c > 0 && this->alphabet->hasChar(c)) { return this->array.newIterator(c, placement); }
+    if(c < CHARS && c > 0 && this->alphabet->hasChar(c)) { return this->array.newIterator(c, placement, placement2); }
   return 0;
 }
 
@@ -668,7 +671,9 @@ GCSA::Psi(usint index) const
 
   // Find the corresponding incoming edge using BWT.
   char iterbufc[this->array.iterSize(c)];
-  CSA::CharVector::Iterator* array_iter = this->array.newIterator(c, iterbufc);
+  char iter2bufc[sizeof(CSA::CharVector::Iterator)];
+
+  CSA::CharVector::Iterator* array_iter = this->array.newIterator(c, iterbufc, iter2bufc);
   index = array_iter->select(index - this->alphabet->cumulative(c));
   outgoing_iter->~Iterator();
   array_iter->~Iterator();
@@ -679,7 +684,9 @@ usint
 GCSA::LF(usint index, usint c) const
 {
   char iterbufc[this->array.iterSize(c)];
-	CSA::CharVector::Iterator* array_iter = this->array.newIterator(c, iterbufc);
+  char iter2bufc[sizeof(CSA::CharVector::Iterator)];
+
+  CSA::CharVector::Iterator* array_iter = this->array.newIterator(c, iterbufc, iter2bufc);
   index = this->alphabet->cumulative(c) + array_iter->rank(index) - 1;
   array_iter->~Iterator();
   char iterbuf[this->outgoing->iterSize()];
@@ -760,8 +767,9 @@ Backbone::Backbone(const GCSA& _gcsa, PathGraph& graph, Graph& parent, bool prin
           //std::cout << "\tcurr_node: " << curr_node << " of " << this->gcsa.getSize() - num_automata<< std::endl;
           bool found = false;
           pair_type edge_range = graph.getEdges(curr_node, false);
+          usint prev = 0;
           for(usint i = edge_range.first; i <= edge_range.second; i++) {
-              usint prev = graph.edges[i].from;
+              prev = graph.edges[i].from;
               //std::cout << "\t\tedge " << i << " of " << edge_range.second << " (prev " << prev << ")" <<std::endl;
               //std::cout << "\t\tpredicate: " << iter.isSet(graph.nodes[prev].from) << " " << graph.nodes[prev].value() << " " <<  graph.nodes[curr_node].value() - 1 << std::endl;
               if(iter.isSet(graph.nodes[prev].from) && graph.nodes[prev].value() == graph.nodes[curr_node].value() - 1) {
@@ -772,7 +780,14 @@ Backbone::Backbone(const GCSA& _gcsa, PathGraph& graph, Graph& parent, bool prin
               }
           }
           if(!found) {
-              std::cerr << "Error: Cannot find previous backbone node!" << std::endl;
+              std::cerr << "Error: Cannot find previous backbone node!"
+                        << "\tcurr_node: " << curr_node << "\tprev: " << prev
+                        << "\tedge_range.first: " << edge_range.first
+                        << "\tedge_range.second: " << edge_range.second <<std::endl;
+              if (iter.isSet(graph.nodes[prev].from)) {
+                  std::cerr << "graph.nodes[prev].value(): " << graph.nodes[prev].value()
+                            << "\tgraph.nodes[curr_node].value(): " << graph.nodes[curr_node].value() << std::endl;
+              }
               return;
           }
       }
@@ -947,7 +962,9 @@ Backbone::next(usint index) const
 
   // Find the corresponding incoming edge using BWT.
   char iterbufc[this->gcsa.array.iterSize(c)];
-  CSA::CharVector::Iterator* array_iter = this->gcsa.array.newIterator(c, iterbufc);
+  char iter2bufc[sizeof(CSA::CharVector::Iterator)];
+      
+  CSA::CharVector::Iterator* array_iter = this->gcsa.array.newIterator(c, iterbufc, iter2bufc);
   index = array_iter->select(index - this->gcsa.alphabet->cumulative(c));
   array_iter->~Iterator();
   return index;
@@ -967,8 +984,10 @@ Backbone::previous(usint index) const
     usint c = alpha->getTextChar(i);
 
     // If BWT[index] contains c, follow the corresponding edge backward.
-  char iterbufc[this->gcsa.array.iterSize(c)];
-    CSA::CharVector::Iterator* array_iter = this->gcsa.array.newIterator(c, iterbufc);
+    char iterbufc[this->gcsa.array.iterSize(c)];
+    char iter2bufc[sizeof(CSA::CharVector::Iterator)];
+
+    CSA::CharVector::Iterator* array_iter = this->gcsa.array.newIterator(c, iterbufc, iter2bufc);
     if(!(array_iter->isSet(index))) { continue; }
     index = array_iter->rank(index) - 1;
 
