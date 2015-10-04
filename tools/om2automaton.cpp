@@ -13,6 +13,9 @@
 #include <map>
 #include <iostream>
 #include <fstream>
+#include <sys/stat.h>
+#include <stdlib.h>
+
 class Node {
 public:
     Node(unsigned int _label, unsigned int _value, unsigned int _pos) { 
@@ -79,33 +82,47 @@ bool mislower(unsigned int lab)
     return false;
 }
 
-const int BIN_SIZE = 100;
+int bin_size = 1;
 const int DESORPTION_THRESH = 1000;
+
 unsigned int quantize(unsigned int val)
 {
-//    return val;
-    printf("Quantizing with bin size %d\n", BIN_SIZE);
     unsigned int new_val = 0;
-    if (val % BIN_SIZE < BIN_SIZE / 2.0)
-        new_val = val - val % BIN_SIZE;
+    if (val % bin_size < bin_size / 2.0)
+        new_val = val - val % bin_size;
     else
-        new_val = val - val % BIN_SIZE + BIN_SIZE;
+        new_val = val - val % bin_size + bin_size;
     return new_val;
 }
 
 
 int main(int argc, char** argv)
 {
-    if (argc < 3) {
-        printf("Usage: %s <binary optical map> <gcsa format graph>\n", argv[0]);
+
+
+    if (argc < 5) {
+        printf("Usage: %s <binary optical map> <gcsa format graph> <quantization bin size> <file prefix>\n", argv[0]);
         exit(1);
     }
-
+    bin_size = atol(argv[3]);
+    unsigned long long requested_elems = atoll(argv[4]);
+    printf("Quantizing with bin size %d\n", bin_size);
     std::map<unsigned int, unsigned int> counts;
-    unsigned int elems = 364876384 / 4;
+
+    
+
     int ifd = 0;
     char *addr = 0;
     char *ifname = argv[1];
+    struct stat stat_struct;
+    fstat(ifd, &stat_struct);
+    int file_size = stat_struct.st_size;
+    unsigned int elems = 0;
+    if (requested_elems == 0) {
+        elems = file_size / 4; //364876384 / 4;
+    }else{
+        elems = requested_elems;
+    }
     ifd = open(ifname, O_RDONLY);
 //printf("Attempting to mmap %d elements from %s\n", (elems - 1) * 4, fname);
     // // void *mmap(void *addr, size_t length, int prot, int flags,
@@ -131,7 +148,7 @@ int main(int argc, char** argv)
 
     for (i = 0; i < r / 4; ++i) {
 
-        unsigned int lab = mytoupper(((unsigned int *)addr)[i]);
+        unsigned int lab = mytoupper(quantize(((unsigned int *)addr)[i]));
 
         Node *n = new Node(lab, j, j);
         ++j;
@@ -214,9 +231,9 @@ int main(int argc, char** argv)
 
         // quantize, preserving backboniness
         if (myisupper(lab)) {
-            lab = mytoupper(quantize(lab));
+            lab = mytoupper((lab));
         } else {
-            lab = mytolower(quantize(lab));
+            lab = mytolower((lab));
         }
 //        lab = remap(lab);
         
