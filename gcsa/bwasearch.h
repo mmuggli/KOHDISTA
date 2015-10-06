@@ -219,9 +219,15 @@ class BWASearch
 
 
     void find(const std::vector<usint>& pattern) const {
+        const int MAX_DEPTH = 100;
+        unsigned long long branch_fact_sum[MAX_DEPTH];
+        unsigned long long branch_fact_count[MAX_DEPTH];
+        for (int i = 0; i < MAX_DEPTH; ++i) {
+            branch_fact_sum[i] = 0;
+            branch_fact_count[i] = 0;
+        }
 
-
-
+        
         std::cout << "backward searching matching orientation" << std::endl;
         std::set<usint> occurrences;
         global_occurrences = occurrences;
@@ -234,7 +240,7 @@ class BWASearch
                 pat.push_back(pattern[i]);
             }
             assert(pat.size() > 0);
-            find_one_dir(pat, occurrences);
+            find_one_dir(pat, occurrences, branch_fact_sum, branch_fact_count);
         }
         if (global_occurrences.size()) {
             std::cout << "Found " << global_occurrences.size() << ":" << std::endl;
@@ -257,7 +263,7 @@ class BWASearch
                 revpat.push_back(pattern[i]);
             }
             assert(revpat.size() > 0);
-            find_one_dir(revpat, revoccurrences);        
+            find_one_dir(revpat, revoccurrences, branch_fact_sum, branch_fact_count);        
         }
 
         if (global_occurrences.size()) {
@@ -267,6 +273,11 @@ class BWASearch
             }
         }
 
+        std::cout << "Branching factor stats:" << std::endl;
+        for (int i = 0; i < MAX_DEPTH and branch_fact_count[i]; ++i) {
+            std::cout << "depth: " << i << " mean: " << (float)branch_fact_sum[i] / (float)branch_fact_count[i] << " count: " << branch_fact_count[i] << std::endl;
+        }
+        
      
     }
     const float STDDEV_MULT = 3;
@@ -281,7 +292,7 @@ class BWASearch
 
 
     
-    pair_type find_one_dir(const std::vector<usint>& pattern, std::set<usint> &occurrences) const {
+    pair_type find_one_dir(const std::vector<usint>& pattern, std::set<usint> &occurrences, unsigned long long branch_fact_sum[], unsigned long long branch_fact_count[]) const {
 
         int pat_cursor = pattern.size() - 1;
 
@@ -337,7 +348,11 @@ class BWASearch
                 // }
 
                 std::set<work_t > exhausted_nodes;
-                    
+                int depth = 0;
+                branch_fact_sum[depth] += hits.size();
+                branch_fact_count[depth] += 1;
+
+                
                 for(std::vector<long unsigned int>::iterator hit_itr = hits.begin(); hit_itr != hits.end(); ++hit_itr) {
                     pair_type myrange = /*this->index.getSARange()*/ this->index.getCharRange(*hit_itr);
                     myrange.second += 1;
@@ -366,7 +381,7 @@ class BWASearch
                                            myrange, // SA interval
                                            chi_squared, // chi**2 sum
                                            1, // matched count
-                                           actv_la); // missed count
+                                           actv_la, branch_fact_sum, branch_fact_count, depth + 1/*depth*/); // missed count
                                            //occurrences,
                                            //exhausted_nodes); 
                 
@@ -379,7 +394,7 @@ class BWASearch
 
 
 
-    const double MAX_CHISQUARED_CDF = .9;
+    const double MAX_CHISQUARED_CDF = .1;
     const int MAX_LOOKAHEAD = 2;
     const int MIN_MATCH_LEN = 10;
     const float LAMBDA = 1.2;
@@ -406,7 +421,7 @@ class BWASearch
         
     }
 
-    bool mybackwardSearch(/*const std::vector<usint>& pattern,*/  const unsigned int &pat_cursor, const pair_type &range, const double &chi_squared_sum, const unsigned int &matched_count, const unsigned int &missed_count/*, std::set<usint> &occurrence_set,                     std::set<work_t > &exhausted_nodes*/) const {
+    bool mybackwardSearch(/*const std::vector<usint>& pattern,*/  const unsigned int &pat_cursor, const pair_type &range, const double &chi_squared_sum, const unsigned int &matched_count, const unsigned int &missed_count/*, std::set<usint> &occurrence_set,                     std::set<work_t > &exhausted_nodes*/, unsigned long long branch_fact_sum[], unsigned long long branch_fact_count[], int depth) const {
         // handle pat_cursor=0 to prevent underrun in the other branch
         if (pat_cursor == 0   || (matched_count >= MIN_MATCH_LEN && NU * matched_count - LAMBDA * missed_count >= 8.0)) { // stop the recurrsion
             float t_score = NU * matched_count - LAMBDA * missed_count;
@@ -485,6 +500,8 @@ class BWASearch
                 //     std::cout << "Alert! wt is of size " << hits.size() << " and array results are of size " << hits2.size() << std::endl;
                 // }
 
+                branch_fact_sum[depth] += hits2.size();
+                branch_fact_count[depth] += 1;
                 
                 for(std::set<long unsigned int>::iterator hit_itr = hits2.begin(); hit_itr != hits2.end(); ++hit_itr) {
                     // compute chi^2 score for putative substitute fragment in target
@@ -511,7 +528,7 @@ class BWASearch
                         work_t work(next_pat_cursor, new_range);
 
                         if(global_exhausted_nodes.count(work) == 0) {
-                            this->mybackwardSearch(/*pattern,*/ next_pat_cursor, new_range, chi_squared_sum + chi_squared, matched_count + 1, missed_count + actv_la + off_backbone_penalty/*, occurrence_set, exhausted_nodes*/);
+                            this->mybackwardSearch(/*pattern,*/ next_pat_cursor, new_range, chi_squared_sum + chi_squared, matched_count + 1, missed_count + actv_la + off_backbone_penalty/*, occurrence_set, exhausted_nodes*/, branch_fact_sum, branch_fact_count, depth + 1);
                             global_exhausted_nodes.insert(work);
 
                         }
