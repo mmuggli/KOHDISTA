@@ -204,7 +204,7 @@ RLCSA::RLCSA(RLCSA& index, RLCSA& increment, usint* positions, usint block_size,
   #ifdef MULTITHREAD_SUPPORT
   omp_set_num_threads(threads);
   #endif
-//  #pragma omp parallel for schedule(dynamic, 1)
+  #pragma omp parallel for schedule(dynamic, 1)
   for(int c = -2; c < (int)CHARS; c++)
   {
     if(c == -2)      { this->mergeEndPoints(index, increment); }
@@ -1536,7 +1536,7 @@ RLCSA::buildRLCSA(uchar* data, usint* ranks, usint bytes, usint block_size, usin
   {
     bytes++;
     sa = new short_pair[bytes];
-//    #pragma omp parallel for schedule(static)
+    #pragma omp parallel for schedule(static)
     for(usint i = 0; i < bytes - 1; i++) { sa[i].second = data[i] + 1; }
     sa[bytes - 1].second = 0;
     simpleSuffixSort(sa, bytes, threads);
@@ -1555,12 +1555,12 @@ RLCSA::buildRLCSA(uchar* data, usint* ranks, usint bytes, usint block_size, usin
 
 
   // Build Psi.
-//  #pragma omp parallel for schedule(static)
+  #pragma omp parallel for schedule(static)
   for(usint i = 0; i < bytes; i++) { sa[i].first = sa[(sa[i].first + 1) % bytes].second; }
 
 
   // Build RLCSA.
-//  #pragma omp parallel for schedule(dynamic, 1)
+  #pragma omp parallel for schedule(dynamic, 1)
   for(usint c = 0; c < CHARS; c++)
   {
     if(!(this->alphabet->hasChar(c))) { this->array[c] = 0; continue; }

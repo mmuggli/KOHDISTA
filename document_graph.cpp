@@ -82,7 +82,7 @@ main(int argc, char** argv)
   usint size = rlcsa.getSize();
   uint docs = rlcsa.getNumberOfSequences();
   usint* documents = new usint[size];
-//  #pragma omp parallel for schedule(static)
+  #pragma omp parallel for schedule(static)
   for(usint i = 0; i < size; i += MEGABYTE)
   {
     rlcsa.locate(pair_type(i, std::min(i + MEGABYTE, size - 1)), documents + i);
@@ -117,13 +117,13 @@ main(int argc, char** argv)
   std::cout << "LCP: " << (lcparray - locate) << " seconds" << std::endl;
 
   // Convert SA to document array.
-//  #pragma omp parallel for schedule(static)
+  #pragma omp parallel for schedule(static)
   for(usint i = 0; i < size; i += MEGABYTE)
   {
     rlcsa.getSequenceForPosition(documents + i, std::min(MEGABYTE, size - i));
   }
   // Change document array to be 1-based.
-//  #pragma omp parallel for schedule(static, MEGABYTE)
+  #pragma omp parallel for schedule(static, MEGABYTE)
   for(usint i = 0; i < size; i++) { documents[i]++; }
   double find = readTimer();
   std::cout << "Documents: " << (find - lcparray) << " seconds" << std::endl;
