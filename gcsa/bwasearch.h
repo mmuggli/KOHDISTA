@@ -4,8 +4,10 @@
 
 #include <algorithm>
 #include <vector>
+
 #include <assert.h>
 #include <misc/utils.h>
+
 #include <unordered_set>
 #include <set>
 #include <utility>
@@ -191,7 +193,7 @@ struct MatchInfoComparator
     std::vector<usint> global_pattern;
     std::set<usint> global_occurrences;
     std::set<work_t > global_exhausted_nodes;
-    
+
 template<class Index>
 class BWASearch
 {
@@ -227,12 +229,12 @@ class BWASearch
             branch_fact_count[i] = 0;
         }
 
-        
+
         std::cout << "backward searching matching orientation" << std::endl;
         std::set<usint> occurrences;
         global_occurrences = occurrences;
         for (unsigned int skip = 0; skip < 3; ++skip) {
-        
+
 
 
             std::vector<usint> pat;
@@ -352,7 +354,7 @@ class BWASearch
                 branch_fact_sum[depth] += hits.size();
                 branch_fact_count[depth] += 1;
 
-                
+
                 for(std::vector<long unsigned int>::iterator hit_itr = hits.begin(); hit_itr != hits.end(); ++hit_itr) {
                     pair_type myrange = /*this->index.getSARange()*/ this->index.getCharRange(*hit_itr);
                     myrange.second += 1;
@@ -384,8 +386,8 @@ class BWASearch
                                            actv_la, branch_fact_sum, branch_fact_count, depth + 1/*depth*/); // missed count
                                            //occurrences,
                                            //exhausted_nodes); 
-                
-                
+
+
                 }
                 std::cout << "find_one_dir (actv_la = " << actv_la << ") completed in " <<   CSA::readTimer() - search_start << " sec." << std::endl;
             }

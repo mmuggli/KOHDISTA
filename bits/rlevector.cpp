@@ -3,9 +3,10 @@
 #include "rlevector.h"
 #include "../misc/utils.h"
 
-//static char iterspace[sizeof(CSA::RLEVector::Iterator)];
+
 namespace CSA
 {
+
   BitVector::Iterator*  RLEVector::newIterator(char *placement)
   {
       //FIXME: this is unsafe, we're assuming that iterators are always cleaned up before reallocated somehwere else

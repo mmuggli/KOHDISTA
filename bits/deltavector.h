@@ -1,8 +1,6 @@
 #ifndef DELTAVECTOR_H
 #define DELTAVECTOR_H
 
-
-
 #include "bitvector.h"
 
 
@@ -60,6 +58,7 @@ class DeltaVector : public BitVector
 //--------------------------------------------------------------------------
     BitVector::Iterator* newIterator(char *);
     size_t iterSize();
+
     class Iterator : public BitVector::Iterator
     {
       public:
