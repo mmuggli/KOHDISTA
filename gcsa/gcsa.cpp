@@ -28,7 +28,6 @@ GCSA::GCSA(const std::string& base_name) :
   backbone(0)
 {
 
-    
   std::string index_name = base_name + GCSA_EXTENSION;
   std::ifstream input(index_name.c_str(), std::ios_base::binary);
   if(!input)
@@ -697,7 +696,6 @@ GCSA::locateUnsafe(usint index) const
 
 //--------------------------------------------------------------------------
 
-
 Backbone::Backbone(const GCSA& _gcsa, PathGraph& graph, Graph& parent, bool print) :
   gcsa(_gcsa),
   nodes(0), edges(0), original(0),
@@ -723,7 +721,6 @@ Backbone::Backbone(const GCSA& _gcsa, PathGraph& graph, Graph& parent, bool prin
     std::cout << "original(" << this->original->getNumberOfItems() << ") ";
     std::cout.flush();
   }
-
 
 
   // Use a kind of backward searching to find the backbone in PathGraph.

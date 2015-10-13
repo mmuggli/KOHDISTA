@@ -34,7 +34,6 @@ class Alphabet
     inline usint getDataSize() const { return this->size; }
     inline usint getAlphabetSize() const { return this->chars; }
 
-
     inline usint getFirstChar() const { return this->text_chars.at(0); }
     inline usint getTextChar(usint i) const { return this->text_chars.at(i); }
     inline std::map<usint, pair_type>::const_iterator begin() const { return index_ranges.begin();}

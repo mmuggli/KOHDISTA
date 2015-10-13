@@ -331,6 +331,7 @@ BitVector::Iterator::sampleForValue(usint value)
   return low;
 }
 
+//--------------------------------------------------------------------------
 
 VectorEncoder::VectorEncoder(usint block_bytes, usint superblock_size, bool _use_small_blocks) :
   size(0), items(0), blocks(0),
@@ -417,5 +418,4 @@ VectorEncoder::setFirstBit(usint value)
 }
 
 
-    
 } // namespace CSA

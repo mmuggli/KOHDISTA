@@ -229,8 +229,6 @@ RLEVector::Iterator::selectNextRun(usint max_length)
   return pair_type(value, len);
 }
 
-
-
 bool
 RLEVector::Iterator::isSet(usint value)
 {

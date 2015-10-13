@@ -36,11 +36,9 @@ RLCSA::RLCSA(const std::string& base_name, bool print) :
     return;
   }
 
-
 //  usint distribution[CHARS];
   std::map<usint,usint> distribution;
-  assert (!"FIXME: next comment line doesn't use new counts properly");
-
+  assert (!"FIXME: next comment line doesn't use new distribution properly");
 //  array_file.read((char*)distribution, CHARS * sizeof(usint));
   this->alphabet = new Alphabet(distribution); this->data_size = this->alphabet->getDataSize();
 
@@ -186,7 +184,7 @@ RLCSA::RLCSA(RLCSA& index, RLCSA& increment, usint* positions, usint block_size,
   // Build character tables etc.
 //  usint distribution[CHARS];
   std::map<usint,usint> distribution;
-  assert (!"FIXME: next comment line doesn't use new counts properly");
+  assert (!"FIXME: next comment line doesn't use new distribution properly");
 
   // for(usint c = 0; c < CHARS; c++)
   // {
@@ -1517,7 +1515,7 @@ RLCSA::buildRLCSA(uchar* data, usint* ranks, usint bytes, usint block_size, usin
   // Build character tables etc.
 //  usint distribution[CHARS];
   std::map<usint,usint> distribution;
-  assert (!"FIXME: next comment line doesn't use new counts properly");
+  assert (!"FIXME: next comment line doesn't use distribution counts properly");
 
 //  for(usint c = 0; c < CHARS; c++) { distribution[c] = 0; }
 //  for(usint i = 0; i < bytes; i++) { distribution[(usint)data[i]]++; }

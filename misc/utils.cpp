@@ -58,6 +58,7 @@ largeWrite(std::ofstream& file, char* data, std::streamoff size, std::streamoff 
 }
 
 //--------------------------------------------------------------------------
+
 usint
 readRows(const std::string& filename, std::vector<std::string>& rows, bool skip_empty_rows)
 {
@@ -302,6 +303,7 @@ initialSort(short_pair* pairs, uint* keys, std::vector<ss_range>& unsorted, uint
   parallelSort(pairs, pairs + n, key_comparator);
   unsorted.push_back(ss_range(0, n - 1));
   uint total = setRanks(pairs, keys, n, unsorted, threads, 1);
+//  std::cout << "Sorted with h = " << h << ", unsorted total = " << total << " (" << unsorted.size() << " ranges)" << std::endl;
   std::cout << "done initialSort(short_pair* pairs, uint* keys, std::vector<ss_range>& unsorted, uint n, uint threads, uint h) -- Sorted with h = " << h << ", unsorted total = " << total << " (" << unsorted.size() << " ranges)" << std::endl;
 
   return total;
