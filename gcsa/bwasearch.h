@@ -232,8 +232,8 @@ class BWASearch
         std::set<usint> occurrences;
         global_occurrences = occurrences;
         for (unsigned int skip = 0; skip < 3; ++skip) {
-        
-
+            std::cout << "skipping " << skip << " query symbols." << std::endl;
+            
 
             std::vector<usint> pat;
             for (usint i = 0; i < pattern.size() - skip; ++i) {
@@ -255,7 +255,7 @@ class BWASearch
         std::set<usint> revoccurrences;
         global_occurrences = revoccurrences;
         for (unsigned int skip = 0; skip < 3; ++skip) {
-        
+            std::cout << "skipping " << skip << " query symbols." << std::endl;
         
 
             std::vector<usint> revpat;
@@ -417,7 +417,7 @@ class BWASearch
         CSA::DeltaVector::Iterator rmap_iter(rmap_starts);
         unsigned int rmap_num = rmap_iter.rank(val) - 1;
         unsigned int offset = val - rmap_iter.select(rmap_num );
-        std::cout << "<" << frag2rmap[rmap_num].second << "+" <<offset << ">" << std::endl;;
+        std::cout << "<(rmap #" << rmap_num << ")" << frag2rmap[rmap_num].second << "+" <<offset << ">" << std::endl;;
         
     }
 
