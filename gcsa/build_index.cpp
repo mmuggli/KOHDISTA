@@ -8,10 +8,8 @@
 #include <misc/utils.h>
 
 
-//using namespace CSA;
 typedef CSA::usint usint;
 
-//typedef CSA::pair_type pair_type;
 
 int
 main(int argc, char** argv)

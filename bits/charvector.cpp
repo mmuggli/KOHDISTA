@@ -8,7 +8,6 @@ namespace CSA
     usint CharVector::maxlength() const
     {
         usint maxl = 0;
-//        for(usint i = 1; i < 256/*FIXME:CHARS*/; i++)
         for(std::map<usint, CSA::BitVector*>::const_iterator itr = array.begin(); itr != array.end(); ++itr)
         {
             usint i = itr->first;

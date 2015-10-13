@@ -5,6 +5,7 @@
 #include <assert.h>  
 
 
+
 namespace CSA
 {
 
@@ -19,9 +20,7 @@ namespace CSA
 Alphabet::Alphabet(std::ifstream& file) :
   ok(false)
 {
-//  usint counts[CHARS];
   std::map<usint,usint> counts;
-//  assert (!"FIXME: next comment line doesn't use new counts properly");
   while (1) {
       usint key = 0;
       usint val = 0;
@@ -30,7 +29,6 @@ Alphabet::Alphabet(std::ifstream& file) :
       if (key==0 && val == 0) break;
       counts[key] = val;
   }
-  //file.read((char*)counts, CHARS * sizeof(usint));
   this->initialize(counts);
 }
 
@@ -38,10 +36,7 @@ Alphabet::Alphabet(FILE* file) :
   ok(false)
 {
   if(file == 0) { return; }
-  //usint counts[CHARS];
   std::map<usint,usint> counts;
-  //assert (!"FIXME: next comment line doesn't use new counts properly");
-//  if(!std::fread(counts, CHARS * sizeof(usint), 1, file)) { return; }
   while (1) {
       usint key = 0;
       usint val = 0;
@@ -50,7 +45,6 @@ Alphabet::Alphabet(FILE* file) :
       if (key==0 && val == 0) break;
       counts[key] = val;
   }
-
   this->initialize(counts);
 }
 
@@ -60,7 +54,6 @@ Alphabet::initialize(const std::map<usint, usint>& counts)
     if(counts.empty()) { return; }
 
   this->size = 0; this->chars = 0;
-  //for(usint c = 0; c < CHARS; c++)
   int symcnt = 0;
   for(std::map<usint, usint>::const_iterator mapiter = counts.begin(); mapiter != counts.end(); ++mapiter)
   {
@@ -77,7 +70,7 @@ Alphabet::initialize(const std::map<usint, usint>& counts)
     }
     size += mapiter->second;
   }
-  this->index_rate = std::max((this->size + counts.size() /*CHARS*/ - 1) / counts.size() /*CHARS*/, (usint)1);
+  this->index_rate = std::max((this->size + counts.size() - 1) / counts.size(), (usint)1);
 
   std::cout << "Alphabet::index_rate: " << this->index_rate << std::endl;
   usint current = 0;
@@ -100,7 +93,6 @@ Alphabet::initialize(const std::map<usint, usint>& counts)
 void
 Alphabet::writeTo(std::ofstream& file) const
 {
-//    for(usint c = 0; c < 256/*FIXME:CHARS*/; c++) {
     for( std::map<usint, pair_type>::const_iterator itr = this->begin(); itr != this->end(); ++itr){
         usint c = itr->first;
         usint temp = this->countOf(c);
@@ -113,12 +105,6 @@ Alphabet::writeTo(std::ofstream& file) const
     //write a centinel map[0]=0 entry
     file.write((char*)&zero, sizeof(zero));//FIXME: possibly not portable wrt endianness
     file.write((char*)&zero, sizeof(zero));//FIXME: possibly not portable wrt endianness
-  
-  // for(usint c = 0; c < CHARS; c++)
-  // {
-  //   usint temp = this->countOf(c);
-    
-  // }
 }
 
 void
@@ -136,13 +122,6 @@ Alphabet::writeTo(FILE* file) const
         //write a centinel map[0]=0 entry
     std::fwrite((char*)&zero, sizeof(zero), 1, file);//FIXME: possibly not portable wrt endianness
     std::fwrite((char*)&zero, sizeof(zero),1, file);//FIXME: possibly not portable wrt endianness
-  
-
-        // for(usint c = 0; c < CHARS; c++)
- //  {
- //    usint temp = this->countOf(c);
- //    std::fwrite(&temp, sizeof(temp), 1, file);
- //  }
 }
 
 usint

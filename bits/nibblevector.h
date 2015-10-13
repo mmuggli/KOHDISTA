@@ -58,6 +58,7 @@ class NibbleVector : public BitVector
 {
   public:
     typedef NibbleEncoder Encoder;
+
     BitVector::Iterator* newIterator(char *);
     size_t iterSize();
     explicit NibbleVector(std::ifstream& file);

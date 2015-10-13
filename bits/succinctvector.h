@@ -48,6 +48,7 @@ class SuccinctVector : public BitVector
     const static usint SHORT_RANGE = 16;  // Should be at least 2.
 
     typedef SuccinctEncoder Encoder;
+
     BitVector::Iterator* newIterator(char *);
     size_t iterSize();
     explicit SuccinctVector(std::ifstream& file);
