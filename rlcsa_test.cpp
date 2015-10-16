@@ -329,7 +329,7 @@ int main(int argc, char** argv)
   #endif
   double start = readTimer();
 
-//  #pragma omp parallel for schedule(dynamic, 1)
+  #pragma omp parallel for schedule(dynamic, 1)
   for(usint i = 0; i < patterns.size(); i++)
   {
     patterns[i].range = (use_sa ? sa->count(patterns[i].pattern) : rlcsa->count(patterns[i].pattern));
@@ -352,7 +352,7 @@ int main(int argc, char** argv)
 
       if(write)
       {
-//        #pragma omp critical
+        #pragma omp critical
         {
           if(use_sa) { for(usint j = 0; j < patterns[i].occ(); j++) { totals[sa_matches[j]] += patterns[i].weight; } }
           else       { for(usint j = 0; j < patterns[i].occ(); j++) { totals[matches[j]] += patterns[i].weight; } }

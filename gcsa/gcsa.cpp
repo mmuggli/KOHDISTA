@@ -27,10 +27,7 @@ GCSA::GCSA(const std::string& base_name) :
   alphabet(0),
   backbone(0)
 {
-//  this->array = (CSA::BitVector**)malloc(CHARS*sizeof(CSA::SDSLVector *));
-    //for(usint i = 0; i < CHARS; i++) { this->array[i] = 0; }
 
-    
   std::string index_name = base_name + GCSA_EXTENSION;
   std::ifstream input(index_name.c_str(), std::ios_base::binary);
   if(!input)
@@ -41,17 +38,17 @@ GCSA::GCSA(const std::string& base_name) :
   std::cout << "(position " << input.tellg() << ")" << std::endl;
   std::cout << "Loading alphabet from " << index_name << std::endl;
   this->alphabet = new CSA::Alphabet(input);
-//  for(usint i = 1; i < 256 /*FIXME:CHARS*/; i++)
+
   std::cout << "(position " << input.tellg() << ")" << std::endl;
   std::cout << "Loading BWT from " << index_name << std::endl;
   for( std::map<usint, pair_type>::const_iterator itr = this->alphabet->begin(); itr != this->alphabet->end(); ++itr)
   {
       usint i = itr->first;
       if (i == 0) continue;
-      //if (i % (CHARS/256) == 0) std::cout << "gcsa: processing symbol " << i << " -- (this->array[i] = new CSA::SDSLVector(input);)" << std::endl;
+
       if(this->alphabet->hasChar(i)) { this->array.populate(i, new CSA::DeltaVector(input)); }
 
-    //else { this->array[i] = 0; }
+
   }
   std::cout << "Loading array from " << index_name << std::endl;
   std::cout << "(position " << input.tellg() << ")" << std::endl;
@@ -98,24 +95,10 @@ GCSA::GCSA(PathGraph& graph, Graph& parent, bool print) :
   backbone(0)
 {
     if(graph.status != PathGraph::sorted || !(parent.ok)) { return; }
-    //this->array = (CSA::BitVector**)malloc(CHARS*sizeof(CSA::DeltaVector *));
-//  DeltaEncoder* array_encoders[CHARS];
     std::map<usint, CSA::DeltaEncoder*> array_encoders;
-    //DeltaEncoder** array_encoders = (DeltaEncoder**)malloc(CHARS);
     CSA::RLEEncoder outedges(OUTGOING_BLOCK_SIZE, CSA::KILOBYTE);
 
-    //usint *counts = (usint*)malloc(CHARS*sizeof(usint *));
     std::map<usint, usint> counts;
-//  usint counts[CHARS*CHARS];
-    // std::cout << "initializing array encoders..." << std::endl;
-    // for(usint i = 0; i < CHARS; i++)
-    // {
-    //     if (i % 1000 == 0) std::cout << i/1000 << " thousand initialized" << std::endl;
-    //     this->array[i] = 0;
-    //     counts[i] = 0;
-    //     array_encoders[i] = new DeltaEncoder(ARRAY_BLOCK_SIZE); // FIXME this uses a lot of memory
-    // }
-    // std::cout << "done initializing array encoders" << std::endl;
     if(print) { std::cout << "Generating edges... "; std::cout.flush(); }
     if(!graph.generateEdges(parent)) { return; }
     if(print) { std::cout << graph.edge_count << " edges." << std::endl; }
@@ -213,7 +196,6 @@ GCSA::GCSA(PathGraph& graph, Graph& parent, bool print) :
     CSA::Alphabet *thealphabet = new CSA::Alphabet(counts);
     this->alphabet = thealphabet;
     std::cout << "gcsa: Constructing array encoders and vectors" << std::endl;
-//    for(usint i = 1; i < 256/*FIXME:CHARS*/; i++) //     for(std::map<usint,  pair_type>::iterator mapiter = this->alphabet.begin(); mapiter != this->alphabet.end(); ++mapiter)     
     int symnumcntr = 0;
     for( std::map<usint, pair_type>::const_iterator itr = this->alphabet->begin(); itr != this->alphabet->end(); ++itr)
     {
@@ -227,7 +209,6 @@ GCSA::GCSA(PathGraph& graph, Graph& parent, bool print) :
                 std::cout << "alphabet has " << i << " but array_encoders does not!" << std::endl;
                 array_encoders[i] = new CSA::DeltaEncoder(ARRAY_BLOCK_SIZE); // FIXME this uses a lot of memory
             }
-            //this->array[i] = new CSA::DeltaVector(*(array_encoders[i]), offset);
             array.populate(i, array_encoders[i], offset);
         }
     }
@@ -312,8 +293,6 @@ GCSA::GCSA(PathGraph& graph, Graph& parent, bool print) :
         this->reportSize(true);
     }
     this->ok = true;
-    //free(array_encoders); //FIXME: switch to hash version
-    //free(counts);
 }
 
 GCSA::~GCSA()
@@ -328,7 +307,6 @@ GCSA::~GCSA()
   delete this->samples; this->samples = 0;
   delete this->alphabet; this->alphabet = 0;
   delete this->backbone; this->backbone = 0;
-//  free(array);
 }
 
 void
@@ -349,10 +327,6 @@ GCSA::writeTo(const std::string& base_name) const
   std::cout << "(position " << output.tellp() << ")" << std::endl;
   std::cout << "Writing BWT to " << index_name << std::endl;
   this->array.writeTo(output);
-  // for(usint i = 1; i < 256/*FIXME:CHARS*/; i++)
-  // {
-  //     if(this->alphabet->hasChar(i)) { this->array.at(i)->writeTo(output); }
-  // }
   std::cout << "(position " << output.tellp() << ")" << std::endl;
   std::cout << "Writing M to " << index_name << std::endl;
   this->outgoing->writeTo(output);
@@ -387,10 +361,6 @@ usint
 GCSA::reportSize(bool print) const
 {
     usint array_size = this->array.reportSize();
-  // for(usint i = 1; i < 256/*FIXME:CHARS*/; i++)
-  // {
-  //   if(this->alphabet->hasChar(i)) { array_size += this->array.at(i)->reportSize(); }
-  // }
 
   usint outedges = this->outgoing->reportSize();
 
@@ -726,7 +696,6 @@ GCSA::locateUnsafe(usint index) const
 
 //--------------------------------------------------------------------------
 
-
 Backbone::Backbone(const GCSA& _gcsa, PathGraph& graph, Graph& parent, bool print) :
   gcsa(_gcsa),
   nodes(0), edges(0), original(0),
@@ -754,7 +723,6 @@ Backbone::Backbone(const GCSA& _gcsa, PathGraph& graph, Graph& parent, bool prin
     std::cout << "original(" << this->original->getNumberOfItems() << ") ";
     std::cout.flush();
   }
-
 
 
   // Use a kind of backward searching to find the backbone in PathGraph.

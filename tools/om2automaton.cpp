@@ -114,16 +114,19 @@ int main(int argc, char** argv)
     int ifd = 0;
     char *addr = 0;
     char *ifname = argv[1];
+    ifd = open(ifname, O_RDONLY);
     struct stat stat_struct;
     fstat(ifd, &stat_struct);
     int file_size = stat_struct.st_size;
+    printf("File size is %d\n", file_size);
     unsigned int elems = 0;
     if (requested_elems == 0) {
         elems = file_size / 4; //364876384 / 4;
     }else{
         elems = requested_elems;
     }
-    ifd = open(ifname, O_RDONLY);
+    printf("Reading %d frags from file\n", elems);
+
 //printf("Attempting to mmap %d elements from %s\n", (elems - 1) * 4, fname);
     // // void *mmap(void *addr, size_t length, int prot, int flags,
     // //            int ifd, off_t offset);

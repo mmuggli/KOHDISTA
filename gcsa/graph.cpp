@@ -733,14 +733,12 @@ PathGraph::generateEdges(Graph& parent)
   int nodecnt = 0;
   while(!CSA::isEmpty(pn_range) && !CSA::isEmpty(ge_range))
   {
-
     if(this->nodes[pn_range.first].from == parent.edges[ge_range.first].to)
     {
       for(usint node = pn_range.first; node <= pn_range.second; node++)
       {
         for(usint edge = ge_range.first; edge <= ge_range.second; edge++)
         {
-
           uint from = parent.edges[edge].from;
           this->edges.push_back(PathEdge(from, this->nodes[node].key.first, parent.nodes[from].label));
             nodecnt++;

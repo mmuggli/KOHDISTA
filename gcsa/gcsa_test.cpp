@@ -34,6 +34,7 @@ int main(int argc, char** argv)
   std::string f2rm_fname;
   f2rm_fname += handler.index_name; 
   f2rm_fname +=  ".frag2rmap";
+  std::cout << "Loading GCSA node to rmap#+offset mapping data from " << f2rm_fname << std::endl;
   std::ifstream f2rm_file(f2rm_fname.c_str());
   unsigned int rmapnum, fragnum;
   std::string rmapname;

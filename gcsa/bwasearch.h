@@ -4,8 +4,10 @@
 
 #include <algorithm>
 #include <vector>
+
 #include <assert.h>
 #include <misc/utils.h>
+
 #include <unordered_set>
 #include <set>
 #include <utility>
@@ -191,7 +193,7 @@ struct MatchInfoComparator
     std::vector<usint> global_pattern;
     std::set<usint> global_occurrences;
     std::set<work_t > global_exhausted_nodes;
-    
+
 template<class Index>
 class BWASearch
 {
@@ -227,13 +229,13 @@ class BWASearch
             branch_fact_count[i] = 0;
         }
 
-        
+
         std::cout << "backward searching matching orientation" << std::endl;
         std::set<usint> occurrences;
         global_occurrences = occurrences;
         for (unsigned int skip = 0; skip < 3; ++skip) {
-        
-
+            std::cout << "skipping " << skip << " query symbols." << std::endl;
+            
 
             std::vector<usint> pat;
             for (usint i = 0; i < pattern.size() - skip; ++i) {
@@ -255,7 +257,7 @@ class BWASearch
         std::set<usint> revoccurrences;
         global_occurrences = revoccurrences;
         for (unsigned int skip = 0; skip < 3; ++skip) {
-        
+            std::cout << "skipping " << skip << " query symbols." << std::endl;
         
 
             std::vector<usint> revpat;
@@ -352,7 +354,7 @@ class BWASearch
                 branch_fact_sum[depth] += hits.size();
                 branch_fact_count[depth] += 1;
 
-                
+
                 for(std::vector<long unsigned int>::iterator hit_itr = hits.begin(); hit_itr != hits.end(); ++hit_itr) {
                     pair_type myrange = /*this->index.getSARange()*/ this->index.getCharRange(*hit_itr);
                     myrange.second += 1;
@@ -384,8 +386,8 @@ class BWASearch
                                            actv_la, branch_fact_sum, branch_fact_count, depth + 1/*depth*/); // missed count
                                            //occurrences,
                                            //exhausted_nodes); 
-                
-                
+
+
                 }
                 std::cout << "find_one_dir (actv_la = " << actv_la << ") completed in " <<   CSA::readTimer() - search_start << " sec." << std::endl;
             }
@@ -417,7 +419,7 @@ class BWASearch
         CSA::DeltaVector::Iterator rmap_iter(rmap_starts);
         unsigned int rmap_num = rmap_iter.rank(val) - 1;
         unsigned int offset = val - rmap_iter.select(rmap_num );
-        std::cout << "<" << frag2rmap[rmap_num].second << "+" <<offset << ">" << std::endl;;
+        std::cout << "<(rmap #" << rmap_num << ")" << frag2rmap[rmap_num].second << "+" <<offset << ">" << std::endl;;
         
     }
 
