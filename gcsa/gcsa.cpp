@@ -741,6 +741,8 @@ Backbone::Backbone(const GCSA& _gcsa, PathGraph& graph, Graph& parent, bool prin
 
   CSA::SuccinctEncoder original_encoder(NODE_BLOCK_SIZE, CSA::MEGABYTE);
   CSA::SuccinctVector::Iterator iter(*(parent.backbone));
+  // effectively copy the original vector from the graph backbone to the GCSA::Backbone member
+  // fixme: explore c++11/14 move semantics here?
   for(usint i = 0; i < graph.node_count; i++)
   {
     if(iter.isSet(graph.nodes[i].from)) { original_encoder.addBit(i); }
@@ -807,35 +809,30 @@ Backbone::Backbone(const GCSA& _gcsa, PathGraph& graph, Graph& parent, bool prin
   usint offset = edge_iter->select(0);
 
   graph.sortEdges(true, true);
-  for(usint i = 0; i < graph.node_count; i++)
-  {
-    if(graph.nodes[i].isBackbone())
-    {
-      node_encoder.addBit(i); this->size++;
-      if(i >= num_automata)
-      {
-        bool found = false;
-        pair_type successors = graph.getEdges(i, true);
-        for(usint j = successors.first; j <= successors.second; j++)
-        {
-          usint to = graph.edges[j].rank;
-          if(graph.nodes[to].isBackbone() && graph.nodes[to].value() == graph.nodes[i].value() + 1)
-          {
-            offset += j - successors.first;
-            found = true; break;
+  for(usint i = 0; i < graph.node_count; i++) {
+      if(graph.nodes[i].isBackbone()) {
+          node_encoder.addBit(i); 
+          this->size++;
+          if(i >= num_automata) {
+              bool found = false;
+              pair_type successors = graph.getEdges(i, true);
+              for(usint j = successors.first; j <= successors.second; j++) {
+                  usint to = graph.edges[j].rank;
+                  if(graph.nodes[to].isBackbone() && graph.nodes[to].value() == graph.nodes[i].value() + 1) {
+                      offset += j - successors.first;
+                      found = true; break;
+                  }
+              }
+              if(!found) {
+                  std::cerr << "Error: Cannot find next backbone node!" << std::endl;
+                  std::cerr << "       i = " << i << ", from = " << graph.nodes[i].from << ", value = "
+                            << graph.nodes[i].value() << std::endl;
+                  return;
+              }
           }
-        }
-        if(!found)
-        {
-          std::cerr << "Error: Cannot find next backbone node!" << std::endl;
-          std::cerr << "       i = " << i << ", from = " << graph.nodes[i].from << ", value = "
-                    << graph.nodes[i].value() << std::endl;
-          return;
-        }
       }
-    }
-    edge_encoder.addBit(offset);
-    offset = edge_iter->selectNext();
+      edge_encoder.addBit(offset);
+      offset = edge_iter->selectNext();
   }
 
   node_encoder.flush(); edge_encoder.flush();
