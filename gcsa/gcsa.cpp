@@ -123,7 +123,7 @@ GCSA::GCSA(PathGraph& graph, Graph& parent, bool print) :
     // for (std::vector<PathEdge>::iterator edge = graph.edges.begin(); edge != graph.edges.end(); ++edge)
     //     num2lab[edge->from] = edge->label;
     unsigned current_rank = 0;
-    int nodecntr = 0;
+    usint nodecntr = 0;
     for(std::vector<PathNode>::iterator node = graph.nodes.begin(); node != graph.nodes.end(); ++node)
     {
         nodecntr++;
