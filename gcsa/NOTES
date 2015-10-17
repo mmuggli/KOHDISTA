@@ -147,3 +147,19 @@ struct PathEdge
 
   PathEdge(usint _from, usint _rank, uint _label) : from(_from), rank(_rank), label(_label) {}
 };
+
+
+
+///// backbone stuff /////
+from readme:
+  SuccinctVector marking the nodes of the backbone
+  RLEVector marking the edges used to move forward in the backbone
+  SuccinctVector marking the nodes corresponding to the backbone of the original automaton
+
+
+    CSA::SuccinctVector* nodes;
+    CSA::RLEVector*   edges;
+
+    CSA::SuccinctVector* original;
+
+there are two backbone members, one in the graph which is a SuccinctVector instance, and one in the GCSA which is a Backbone instance.
