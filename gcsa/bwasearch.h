@@ -190,9 +190,9 @@ struct MatchInfoComparator
 
 //--------------------------------------------------------------------------
     typedef std::pair<unsigned int, pair_type> work_t;
-    std::vector<usint> global_pattern;
-    std::set<usint> global_occurrences;
-    std::set<work_t > global_exhausted_nodes;
+    // std::vector<usint> global_pattern;
+    // std::set<usint> global_occurrences;
+    // std::set<work_t > global_exhausted_nodes;
 
 template<class Index>
 class BWASearch
@@ -232,7 +232,6 @@ class BWASearch
 
         std::cout << "backward searching matching orientation" << std::endl;
         std::set<usint> occurrences;
-        global_occurrences = occurrences;
         for (unsigned int skip = 0; skip < 3; ++skip) {
             std::cout << "skipping " << skip << " query symbols." << std::endl;
             
@@ -244,9 +243,9 @@ class BWASearch
             assert(pat.size() > 0);
             find_one_dir(pat, occurrences, branch_fact_sum, branch_fact_count);
         }
-        if (global_occurrences.size()) {
-            std::cout << "Found " << global_occurrences.size() << ":" << std::endl;
-            for(std::set<usint>::iterator oi = global_occurrences.begin(); oi != global_occurrences.end(); ++oi) {
+        if (occurrences.size()) {
+            std::cout << "Found " << occurrences.size() << ":" << std::endl;
+            for(std::set<usint>::iterator oi = occurrences.begin(); oi != occurrences.end(); ++oi) {
                 report_occurrence(*oi);
             }
         }
@@ -255,7 +254,6 @@ class BWASearch
 
         std::cout << "backward searching reverse orientation" << std::endl;
         std::set<usint> revoccurrences;
-        global_occurrences = revoccurrences;
         for (unsigned int skip = 0; skip < 3; ++skip) {
             std::cout << "skipping " << skip << " query symbols." << std::endl;
         
@@ -268,9 +266,9 @@ class BWASearch
             find_one_dir(revpat, revoccurrences, branch_fact_sum, branch_fact_count);        
         }
 
-        if (global_occurrences.size()) {
-            std::cout << "Found " << global_occurrences.size() << ":" << std::endl;
-            for(std::set<usint>::iterator oi = global_occurrences.begin(); oi != global_occurrences.end(); ++oi) {
+        if (revoccurrences.size()) {
+            std::cout << "Found " << revoccurrences.size() << ":" << std::endl;
+            for(std::set<usint>::iterator oi = revoccurrences.begin(); oi != revoccurrences.end(); ++oi) {
                 report_occurrence(*oi);
             }
         }
@@ -376,16 +374,15 @@ class BWASearch
                     std::vector<pair_type> ranges;
 
 
-                    global_pattern = pattern;
-                    global_exhausted_nodes=exhausted_nodes;
-                    this->mybackwardSearch(//pattern, // pattern to search for
+                    
+                    this->mybackwardSearch(pattern, // pattern to search for
                                            pattern.size() - 1 - actv_la , // index of next symbol to search for
                                            myrange, // SA interval
                                            chi_squared, // chi**2 sum
                                            1, // matched count
-                                           actv_la, branch_fact_sum, branch_fact_count, depth + 1/*depth*/); // missed count
-                                           //occurrences,
-                                           //exhausted_nodes); 
+                                           actv_la, // missed count
+                                           occurrences,
+                                           exhausted_nodes, branch_fact_sum, branch_fact_count, depth + 1/*depth*/); 
 
 
                 }
@@ -423,7 +420,7 @@ class BWASearch
         
     }
 
-    bool mybackwardSearch(/*const std::vector<usint>& pattern,*/  const unsigned int &pat_cursor, const pair_type &range, const double &chi_squared_sum, const unsigned int &matched_count, const unsigned int &missed_count/*, std::set<usint> &occurrence_set,                     std::set<work_t > &exhausted_nodes*/, unsigned long long branch_fact_sum[], unsigned long long branch_fact_count[], int depth) const {
+    bool mybackwardSearch(const std::vector<usint>& pattern, const unsigned int &pat_cursor, const pair_type &range, const double &chi_squared_sum, const unsigned int &matched_count, const unsigned int &missed_count, std::set<usint> &occurrence_set,                     std::set<work_t > &exhausted_nodes, unsigned long long branch_fact_sum[], unsigned long long branch_fact_count[], int depth) const {
         // handle pat_cursor=0 to prevent underrun in the other branch
         if (pat_cursor == 0   || (matched_count >= MIN_MATCH_LEN && NU * matched_count - LAMBDA * missed_count >= 8.0)) { // stop the recurrsion
             float t_score = NU * matched_count - LAMBDA * missed_count;
@@ -435,7 +432,7 @@ class BWASearch
             for (std::vector<usint>::iterator mi = occurrences->begin(); mi != occurrences->end(); ++mi) {
                 //std::cout << "t-score: " << t_score <<  " chisqcdf: " << chisqcdf << " match found at: ";
                 //report_occurrence(*mi);
-                global_occurrences.insert(*mi);
+                occurrence_set.insert(*mi);
             }
             delete occurrences;
         } else {
@@ -453,7 +450,7 @@ class BWASearch
                 for (int j = 0; j <= actv_la; ++j) {
                     int index = pat_cursor - 1 - j;
                     assert(index >= 0);
-                    c += global_pattern[index];
+                    c += pattern[index];
                 }
 
                 //wt stuff
@@ -529,9 +526,9 @@ class BWASearch
 
                         work_t work(next_pat_cursor, new_range);
 
-                        if(global_exhausted_nodes.count(work) == 0) {
-                            this->mybackwardSearch(/*pattern,*/ next_pat_cursor, new_range, chi_squared_sum + chi_squared, matched_count + 1, missed_count + actv_la + off_backbone_penalty/*, occurrence_set, exhausted_nodes*/, branch_fact_sum, branch_fact_count, depth + 1);
-                            global_exhausted_nodes.insert(work);
+                        if(exhausted_nodes.count(work) == 0) {
+                            this->mybackwardSearch(pattern, next_pat_cursor, new_range, chi_squared_sum + chi_squared, matched_count + 1, missed_count + actv_la + off_backbone_penalty, occurrence_set, exhausted_nodes, branch_fact_sum, branch_fact_count, depth + 1);
+                            exhausted_nodes.insert(work);
 
                         }
                     }
