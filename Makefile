@@ -33,6 +33,7 @@ VPATH = bits:misc:utils
 
 LFLAGS =  #-pie
 all: default
+	$(MAKE) -C om_set1
 	$(MAKE) -C gcsa
 	$(MAKE) -C tools
 
@@ -110,6 +111,7 @@ clean:
 	rm -f $(PROGRAMS)
 	rm -f *.o bits/*.o misc/*.o utils/*.o
 	$(MAKE) -C gcsa clean
+	$(MAKE) -C om_set1 clean
 	$(MAKE) -C tools clean
 
 package:

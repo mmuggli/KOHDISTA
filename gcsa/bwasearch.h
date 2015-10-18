@@ -13,6 +13,14 @@
 #include <utility>
 #include <boost/math/distributions/chi_squared.hpp>
 #include <math.h>
+
+// valuev stuff
+// #include "./../om_set1/msfl.cpp"
+// #include "./../om_set1/m_read.cpp"
+// #include "./../om_set1/scoring.cpp"
+// #include "./../om_set1/alignment.cpp"
+#include "./../om_set1/scoring.h"
+
 namespace GCSA
 {
 	typedef CSA::pair_type pair_type;
@@ -202,9 +210,11 @@ class BWASearch
     const static usint INITIAL_STEP = 8;  // Should be >= log(n) / 4.
 
     BWASearch(const Index& _index,  const CSA::DeltaVector &_rmap_starts, const std::vector<std::pair<unsigned int, std::string> > _frag2rmap) :
-      index(_index), rmap_starts(_rmap_starts), frag2rmap(_frag2rmap), ALPHABET("ACGTN"), COMPLEMENT("TGCAN")
+        index(_index), rmap_starts(_rmap_starts), frag2rmap(_frag2rmap), ALPHABET("ACGTN"), COMPLEMENT("TGCAN")
     {
     }
+
+
     unsigned int get_stddev(const unsigned int frag_bp) const {
         double sigma_kbp = .58;
         double frag_kbp = (double)frag_bp / 1000.0;
@@ -453,8 +463,10 @@ class BWASearch
                      qi != query_match_frags.end() &&  fi != target_match_frags.end() && ri != target_match_ranges.end();
                      ++qi, ++fi, ++ri) {
                     std::cout << "[ ";
+                    usint querytotal = 0;
                     for (std::vector<usint>::iterator qfpi = qi->begin(); qfpi != qi->end(); ++ qfpi) {
                         std::cout << *qfpi;
+                        querytotal += *qfpi;
                         if (qfpi + 1 != qi->end()) {
                             std::cout << ", ";
                         }
@@ -483,7 +495,9 @@ class BWASearch
                             std::cout << ( (this->index.getBackbone()->originalContains(sai)) ? "O" : ".");
                             std::cout << " " << sai ;
                     }
-                    std::cout << " ]" << std::endl;
+                    std::cout << " ]" ;
+                    scoring_params sp(.2,1.2,.9,3,17.43,0.58, 0.0015, 0.8, 1, 3);//fixme: instantiate just once
+                    std::cout << " s: " << sp.opt_size_score((double)querytotal/1000, (double)*fi/1000, (int)qi->size(), 1) << std::endl;
                 }
                 // std::cout << std::endl;
                 // std::cout << "Matched frag sequence in target: " << std::endl;
@@ -832,6 +846,9 @@ class BWASearch
   private:
     const Index& index;
     const CSA::DeltaVector& rmap_starts;
+    //valuev stuff
+    
+
     const std::vector<std::pair<unsigned int, std::string> > frag2rmap;
     const std::string ALPHABET;
     const std::string COMPLEMENT;

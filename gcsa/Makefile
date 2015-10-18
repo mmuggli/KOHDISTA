@@ -62,7 +62,7 @@ build_index: build_index.o $(LIBRARIES)
 	$(CXX) $(CXXFLAGS) -o build_index build_index.o $(LIBRARIES)
 
 gcsa_test: gcsa_test.o gcsa.a $(LIBRARIES)
-	$(CXX) $(CXXFLAGS) -o gcsa_test gcsa_test.o $(LIBRARIES)
+	$(CXX) $(CXXFLAGS) -o gcsa_test gcsa_test.o $(LIBRARIES) ../om_set1/scoringlib.o
 
 rlcsa_test: rlcsa_test.o gcsa.a $(LIBRARIES)
 	$(CXX) $(CXXFLAGS) -o rlcsa_test rlcsa_test.o $(LIBRARIES)
