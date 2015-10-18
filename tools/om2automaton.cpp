@@ -139,7 +139,8 @@ int main(int argc, char** argv)
     if (r != 4*elems) { printf("Incomplete read ERROR!\n");}
 
     int j = 0;
-    Node *start = new Node(-2, 0, 0);
+    int lab = -2; // initial node must have largest label
+    Node *start = new Node(lab, 0, 0);
     ++j;
     Node *current = start;
     std::vector<Node *> nodes;
@@ -151,7 +152,7 @@ int main(int argc, char** argv)
 
     for (i = 0; i < r / 4; ++i) {
 
-        unsigned int lab = mytoupper(quantize(((unsigned int *)addr)[i]));
+        lab = mytoupper(quantize(((unsigned int *)addr)[i]));
 
         Node *n = new Node(lab, j, j);
         ++j;
@@ -161,8 +162,8 @@ int main(int argc, char** argv)
         current = n;
     }
 
-
-    Node *end = new Node(0, j, j);
+    lab = 0; // final node must have 0 label
+    Node *end = new Node(lab, j, j);
     int end_value = j;
     std::cout <<"end node value is " <<end_value << std::endl;
     j++;
@@ -182,7 +183,7 @@ int main(int argc, char** argv)
         // add order 1 skip nodes
         unsigned int lab = mytolower(nodes[i+1]->label + nodes[i+2]->label);
 
-        Node *sumnode = new Node(lab, nodes[i+1]->value + end_value, j); //j+1 means non-backbone none and no alignment which we can hopefully detect somehow 
+        Node *sumnode = new Node(lab, nodes[i+1]->value /*+ end_value*/, j); //j+1 means non-backbone none and no alignment which we can hopefully detect somehow 
         //std::cout << "o1 skip node lab=" << lab << " val_and_pos=" << j << std::endl;
         ++j;
         nodes.push_back(sumnode);
@@ -196,7 +197,7 @@ int main(int argc, char** argv)
         if (i  < r / 4 - 4) {
             unsigned int lab = mytolower(nodes[i+1]->label + nodes[i+2]->label + nodes[i+3]->label);
 
-            Node *sumnode = new Node(lab, nodes[i+1]->value + end_value, j); //j+1 means non-backbone none and no alignment
+            Node *sumnode = new Node(lab, nodes[i+1]->value /*+ end_value*/, j); //j+1 means non-backbone none and no alignment
             ++j;
             nodes.push_back(sumnode);
             Edge *e1 = new Edge(nodes[i], sumnode);
@@ -222,6 +223,9 @@ int main(int argc, char** argv)
     char *ofname = argv[2];
     printf("writing file %s\n", ofname);
     //int ofd = open(ofname, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+    std::string textdump = ofname;
+    textdump += ".textdump";
+    std::ofstream oftd(textdump.c_str());
     std::ofstream ofd(ofname, std::ofstream::binary);
     //if (ofd == -1) printf("problem opening file to write ERROR!\n");
     unsigned int numnodes = nodes.size();
@@ -239,7 +243,7 @@ int main(int argc, char** argv)
             lab = mytolower((lab));
         }
 //        lab = remap(lab);
-        
+        oftd << (*ni)->value << " " << lab << std::endl;
         counts[lab] += 1;
         ofd.write((char*)&lab, 4);
         ofd.write((char*)&((*ni)->value), 4);
@@ -257,6 +261,6 @@ int main(int argc, char** argv)
      // for(std::map<unsigned int, unsigned int>::iterator ci = counts.begin(); ci != counts.end(); ++ci) {
      //     std::cout << "counts[" << ci->first << "] = " << ci->second << std::endl;
      // }
-
+    oftd.close();
     ofd.close();
 }
