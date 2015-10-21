@@ -319,7 +319,7 @@ GCSA::writeTo(const std::string& base_name) const
     std::cerr << "Error opening output file (" << index_name << ")!" << std::endl;
     return;
   }
-  unsigned lastpos = output.tellp();
+  //unsigned lastpos = output.tellp();
   std::cout << "(position " << output.tellp() << ")" << std::endl;
 
   std::cout << "Writing alphabet to " << index_name << std::endl;

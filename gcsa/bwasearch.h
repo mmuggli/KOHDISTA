@@ -503,7 +503,7 @@ class BWASearch
 
                         pair_type new_range;
                         if (pat_cursor == pattern.size()) {
-                            new_range = this->index.getCharRange(*hit_itr);
+                            new_range = this->index.getCharRange(subst_frag);
                             new_range.second += 1; //fixme: what is this for?  is it in original algo?
                         } else {
                             new_range = this->index.LF(range, subst_frag);
