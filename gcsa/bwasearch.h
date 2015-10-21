@@ -447,7 +447,71 @@ class BWASearch
         std::cout << "<(rmap #" << rmap_num << ")" << frag2rmap[rmap_num].second << "+" <<offset << ">" << std::endl;;
         
     }
+    void report_valuev_alignment(std::vector<usint> &target_match_frags,
+                          std::vector<std::vector<usint> > &query_match_frags,
+                                 std::vector<pair_type> &target_match_ranges, scoring_params &sp,const unsigned int &matched_count,const unsigned int &missed_count) const
+        {
+            std::cout << "query -> target alignment: " << std::endl;
+            std::vector<pair_type>::iterator ri; // range iterator
+            std::vector<usint>::iterator fi; // frag iterator
+            std::vector<std::vector<usint> >::iterator qi; // query iterator
+            float s_tot = 0.0;
+            for (qi = query_match_frags.begin(), fi = target_match_frags.begin(), ri = target_match_ranges.begin();
+                 qi != query_match_frags.end() &&  fi != target_match_frags.end() && ri != target_match_ranges.end();
+                 ++qi, ++fi, ++ri) {
+                std::cout << "[ ";
+                usint querytotal = 0;
+                for (std::vector<usint>::iterator qfpi = qi->begin(); qfpi != qi->end(); ++ qfpi) {
+                    std::cout << *qfpi;
+                    querytotal += *qfpi;
+                    if (qfpi + 1 != qi->end()) {
+                        std::cout << ", ";
+                    }
+                }
+                std::cout << " ]->[ ";
+                std::cout << *fi << " ";
 
+                for (usint sai = ri->first; sai <= ri->second && ri->second - ri->first < 6; ++sai) {
+                    std::cout << ( (this->index.getBackbone()->contains(sai)) ? "C" : ".");
+                    std::cout << ( (this->index.getBackbone()->originalContains(sai)) ? "O" : ".");
+//                            std::cout << " " << sai << " ";
+                }
+
+                std::cout << " :: " ;
+
+                std::vector<usint>* mr_occurrences = this->index.locateRange(*ri); //match (sa) range
+                const int MAX_RANGES = 5;
+                if (mr_occurrences->size() <= 5) {
+                    std::cout << " ";
+                    for (std::vector<usint>::iterator mi = mr_occurrences->begin(); mi != mr_occurrences->end(); ++mi) {
+                        // std::cout << ( (this->index.getBackbone()->contains(*mi)) ? "C" : ".");
+                        // std::cout << ( (this->index.getBackbone()->originalContains(*mi)) ? "O" : ".");
+                        std::cout << " " << *mi << " ";
+                    }
+                } else {
+                    std::cout << " (|SA| = " << mr_occurrences->size() << " > " << MAX_RANGES << ") ";
+                }
+                    
+                delete mr_occurrences;
+
+                std::cout << " ]" ;
+
+                float s_score = sp.opt_size_score((double)querytotal/1000, (double)*fi/1000, (int)qi->size(), 1);
+                s_tot += s_score;
+                std::cout << " s: " << s_tot << " incr_s: " << s_score << std::endl;
+
+            }
+            // std::cout << std::endl;
+            // std::cout << "Matched frag sequence in target: " << std::endl;
+            // for (std::vector<usint>::iterator fi = target_match_frags.begin(); fi != target_match_frags.end(); ++fi) {
+            //     std::cout << *fi << " ";
+            // }
+            // std::cout << std::endl;
+            std::cout << "s-score:" << s_tot << std::endl;
+            float t_score = NU * matched_count - LAMBDA * missed_count;
+            std::cout << "t-score: " << t_score << std::endl;
+
+        }            
 
     // [ 10:24.782 ]->[ 5:14.06, 6:20.276 ] s: 7.62454
     bool mybackwardSearch(const std::vector<usint>& pattern, const unsigned int &pat_cursor, const pair_type &range, const double &chi_squared_sum, const unsigned int &matched_count, const unsigned int &missed_count, std::set<usint> &occurrence_set,                     std::set<work_t > &exhausted_nodes, unsigned long long branch_fact_sum[], unsigned long long branch_fact_count[], unsigned int depth,
@@ -463,66 +527,9 @@ class BWASearch
 
             std::vector<usint>* occurrences = this->index.locateRange(range);
             if (occurrences->size() > 0) {
-                std::cout << "query -> target alignment: " << std::endl;
-                std::vector<pair_type>::iterator ri; // range iterator
-                std::vector<usint>::iterator fi; // frag iterator
-                std::vector<std::vector<usint> >::iterator qi; // query iterator
-                float s_tot = 0.0;
-                for (qi = query_match_frags.begin(), fi = target_match_frags.begin(), ri = target_match_ranges.begin();
-                     qi != query_match_frags.end() &&  fi != target_match_frags.end() && ri != target_match_ranges.end();
-                     ++qi, ++fi, ++ri) {
-                    std::cout << "[ ";
-                    usint querytotal = 0;
-                    for (std::vector<usint>::iterator qfpi = qi->begin(); qfpi != qi->end(); ++ qfpi) {
-                        std::cout << *qfpi;
-                        querytotal += *qfpi;
-                        if (qfpi + 1 != qi->end()) {
-                            std::cout << ", ";
-                        }
-                    }
-                    std::cout << " ]->[ ";
-                    std::cout << *fi << " ";
-
-                    for (usint sai = ri->first; sai <= ri->second && ri->second - ri->first < 6; ++sai) {
-                            std::cout << ( (this->index.getBackbone()->contains(sai)) ? "C" : ".");
-                            std::cout << ( (this->index.getBackbone()->originalContains(sai)) ? "O" : ".");
-//                            std::cout << " " << sai << " ";
-                    }
-
-                    std::cout << " :: " ;
-
-                    std::vector<usint>* mr_occurrences = this->index.locateRange(*ri); //match (sa) range
-                    const int MAX_RANGES = 5;
-                    if (mr_occurrences->size() <= 5) {
-                        std::cout << " ";
-                        for (std::vector<usint>::iterator mi = mr_occurrences->begin(); mi != mr_occurrences->end(); ++mi) {
-                            // std::cout << ( (this->index.getBackbone()->contains(*mi)) ? "C" : ".");
-                            // std::cout << ( (this->index.getBackbone()->originalContains(*mi)) ? "O" : ".");
-                            std::cout << " " << *mi << " ";
-                        }
-                    } else {
-                        std::cout << " (|SA| = " << mr_occurrences->size() << " > " << MAX_RANGES << ") ";
-                    }
-                    
-                    delete mr_occurrences;
-
-                    std::cout << " ]" ;
-
-                    float s_score = sp.opt_size_score((double)querytotal/1000, (double)*fi/1000, (int)qi->size(), 1);
-                    s_tot += s_score;
-                    std::cout << " s: " << s_tot << " incr_s: " << s_score << std::endl;
-
-                }
-                // std::cout << std::endl;
-                // std::cout << "Matched frag sequence in target: " << std::endl;
-                // for (std::vector<usint>::iterator fi = target_match_frags.begin(); fi != target_match_frags.end(); ++fi) {
-                //     std::cout << *fi << " ";
-                // }
-                // std::cout << std::endl;
-                std::cout << "s-score:" << s_tot << std::endl;
-                std::cout << "t-score: " << t_score << std::endl;
+                report_valuev_alignment(target_match_frags, query_match_frags, target_match_ranges, sp, matched_count, missed_count);
                 std::cout <<  "chisqcdf: " << chisqcdf << " matches found at: " << std::endl;
-                
+
                 for (std::vector<usint>::iterator mi = occurrences->begin(); mi != occurrences->end(); ++mi) {
                     // usint val = *mi;
                     // CSA::DeltaVector::Iterator rmap_iter(rmap_starts);
