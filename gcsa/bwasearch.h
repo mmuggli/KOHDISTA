@@ -394,12 +394,13 @@ class BWASearch
                     std::vector<pair_type> target_match_ranges;
                     target_match_ranges.push_back(myrange);
                     
-                    float s_score = sp.opt_size_score((double)subst_frag/1000, (double)c/1000, 1, 1);
-                    float expected_avg_s_score = lenwise_s_cutoffs[0];
-//                    if (chisqcdf <=   MAX_CHISQUARED_CDF) {
-                    if (s_score >= expected_avg_s_score) {
-                        
-                        this->mybackwardSearch(pattern, // pattern to search for
+                    float s_score = 0;
+                    // sp.opt_size_score((double)subst_frag/1000, (double)c/1000, 1, 1);
+                    // float expected_avg_s_score = lenwise_s_cutoffs[0];
+
+                    // if (s_score >= expected_avg_s_score) {
+                    // if (chisqcdf <=   MAX_CHISQUARED_CDF) {           D             
+                    this->mybackwardSearch(pattern, // pattern to search for
                                                pattern.size() - 1 - actv_la , // index of next symbol to search for
                                                myrange, // SA interval
                                                chi_squared, // chi**2 sum
@@ -410,7 +411,7 @@ class BWASearch
                                                target_match_frags,
                                                query_match_frags,
                                                target_match_ranges, sp, s_score);
-                    }
+                        //}
 
 
                 }
@@ -527,8 +528,8 @@ class BWASearch
 
             std::vector<usint>* occurrences = this->index.locateRange(range);
             if (occurrences->size() > 0) {
-                report_valuev_alignment(target_match_frags, query_match_frags, target_match_ranges, sp, matched_count, missed_count);
-                std::cout <<  "chisqcdf: " << chisqcdf << " matches found at: " << std::endl;
+
+
 
                 for (std::vector<usint>::iterator mi = occurrences->begin(); mi != occurrences->end(); ++mi) {
                     // usint val = *mi;
@@ -537,10 +538,16 @@ class BWASearch
                     // unsigned int offset = val - rmap_iter.select(rmap_num );
                     //std::cout << "<(rmap #" << rmap_num << ")" << frag2rmap[rmap_num].second << "+" <<offset << ">" << std::endl;;
                 
-                    report_occurrence(*mi);
 
 
-//                    occurrence_set.insert(*mi);
+                    unsigned size = occurrence_set.size();
+                    occurrence_set.insert(*mi);
+                    if (occurrence_set.size() > size) {
+                        report_valuev_alignment(target_match_frags, query_match_frags, target_match_ranges, sp, matched_count, missed_count);
+
+                        std::cout <<  "chisqcdf: " << chisqcdf << " matches found at: " << std::endl;
+                        report_occurrence(*mi);
+                    }
                 }
             }
             delete occurrences;
@@ -622,12 +629,13 @@ class BWASearch
                     boost::math::chi_squared_distribution<float, boost::math::policies::policy<boost::math::policies::digits10<3> >> cs(matched_count + 1);
                     double chisqcdf = boost::math::cdf(cs, chi_squared_sum + chi_squared);
 
-                    float s_score = sp.opt_size_score((double)c/1000, (double)subst_frag/1000, 1, 1);
-                    float avg_s_score = (s_score_sum + s_score) / (depth + 1);
-                    float expected_avg_s_score = 1.0;
-                    if (depth + 1 <= expected_s_lut_size) {
-                        expected_avg_s_score = lenwise_s_cutoffs[depth + 1 /* for this piece */ - 1 /* b/c 0 based indexed */];
-                    }
+                    float s_score = 0.0;
+                    // s_score = sp.opt_size_score((double)c/1000, (double)subst_frag/1000, 1, 1);
+                    // float avg_s_score = (s_score_sum + s_score) / (depth + 1);
+                    // float expected_avg_s_score = 1.0;
+                    // if (depth + 1 <= expected_s_lut_size) {
+                    //     expected_avg_s_score = lenwise_s_cutoffs[depth + 1 /* for this piece */ - 1 /* b/c 0 based indexed */];
+                    // }
                     if (chisqcdf <=   MAX_CHISQUARED_CDF) {
 //                    if (avg_s_score >= expected_avg_s_score) {
                         pair_type new_range = this->index.LF(range, subst_frag); 
