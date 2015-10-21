@@ -93,18 +93,22 @@ int main(int argc, char** argv)
 
     // Always start with exact matching.
     double row_start = CSA::readTimer();
-
-    std::cout << "Finding row " << i << "(" << frag2rmap[i].second << "):" <<std::endl;
-    for (std::vector<usint>::iterator ri = rows[i].begin(); ri != rows[i].end(); ++ri) {
-        std::cout << *ri << ", ";
-    }
-    std::cout << std::endl;
+    if (rows[i].size() < 10 ) {
+        std::cout << "Skipping row " << i << " because size() < 10" << std::endl;
+    } else {
+        std::cout << "Finding row " << i << "(" << frag2rmap[i].second << "):" <<std::endl;
+        for (std::vector<usint>::iterator ri = rows[i].begin(); ri != rows[i].end(); ++ri) {
+            std::cout << *ri << ", ";
+        }
+        std::cout << std::endl;
 
         
-    bwasearch.find(rows[i]);
+        bwasearch.find(rows[i]);
 
     
-    std::cout << "Find (row = " << i << ") completed in " <<   CSA::readTimer() - row_start << " seconds." << std::endl;
+        std::cout << "Find (row = " << i << ") completed in " <<   CSA::readTimer() - row_start << " seconds." << std::endl;
+    }
+  }
     //disabled as we now run find in backward search
     //    usint temp = bwasearch.handleOccurrences(result, handler.locate, handler.max_matches);
   //   if(temp > 0)
@@ -147,7 +151,7 @@ int main(int argc, char** argv)
   //     }
   //     bwasearch.deleteResults(results);
   //   }
-  }
+
   double time = CSA::readTimer() - start;
   double megabases = total / (double)CSA::MILLION;
 
