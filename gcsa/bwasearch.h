@@ -35,7 +35,9 @@ const float OM_STDDEV = 2.45884783995 * 1000.0; // based on ~23k valuev paired c
 /*
   This uses the RANGES part of external module interface.
 */
-
+    const float lenwise_s_cutoffs[] = {-0.951583, 0.0793565, 0.43825000000000003, 0.5934475, 0.712202, 0.7915783333333333, 0.8361042857142857, 0.87324875, 0.8987633333333334, 0.9227270000000001, 0.9556363636363637, 0.9755583333333333, 0.9923230769230769};
+    const unsigned int expected_s_lut_size = 13;
+    
 //--------------------------------------------------------------------------
 
 struct MatchInfo
@@ -238,7 +240,7 @@ class BWASearch
             branch_fact_sum[i] = 0;
             branch_fact_count[i] = 0;
         }
-
+        scoring_params sp(.2,1.2,.9,3,17.43,0.58, 0.0015, 0.8, 1, 3);//fixme: instantiate just once
 
         std::cout << "backward searching matching orientation" << std::endl;
         std::set<usint> occurrences;
@@ -251,7 +253,7 @@ class BWASearch
                 pat.push_back(pattern[i]);
             }
             assert(pat.size() > 0);
-            find_one_dir(pat, occurrences, branch_fact_sum, branch_fact_count);
+            find_one_dir(pat, occurrences, branch_fact_sum, branch_fact_count, sp);
         }
         if (occurrences.size()) {
             std::cout << "Found " << occurrences.size() << ":" << std::endl;
@@ -273,7 +275,7 @@ class BWASearch
                 revpat.push_back(pattern[i]);
             }
             assert(revpat.size() > 0);
-            find_one_dir(revpat, revoccurrences, branch_fact_sum, branch_fact_count);        
+            find_one_dir(revpat, revoccurrences, branch_fact_sum, branch_fact_count, sp);        
         }
 
         if (revoccurrences.size()) {
@@ -302,7 +304,7 @@ class BWASearch
 
 
     //fixme: abstract away the differences between the initial and subsequent frag matches, rational: don't repeat yourself
-    pair_type find_one_dir(const std::vector<usint>& pattern, std::set<usint> &occurrences, unsigned long long branch_fact_sum[], unsigned long long branch_fact_count[]) const {
+    pair_type find_one_dir(const std::vector<usint>& pattern, std::set<usint> &occurrences, unsigned long long branch_fact_sum[], unsigned long long branch_fact_count[], scoring_params &sp) const {
 
         int pat_cursor = pattern.size() - 1;
 
@@ -332,17 +334,17 @@ class BWASearch
 
                 pair_type myinitrange = this->index.getSARange();
                 unsigned int delta = get_stddev(c) * STDDEV_MULT;
-                double starttime = CSA::readTimer() ;
+                //double starttime = CSA::readTimer() ;
                 std::vector<long unsigned int> hits;
                 local_restricted_unique_range_values(myinitrange.first, myinitrange.second, 
                                                      c <= delta ? 1 : c - delta, // if subtracting results in less than 1, use 1
                                                      c + delta,
                                                      hits);
-                double start2time = CSA::readTimer() ;
+                //double start2time = CSA::readTimer() ;
                 // std::set<long unsigned int> hits2 = this->index.array_restricted_unique_range_values(myinitrange.first, myinitrange.second, 
                 //                                                                                  c <= delta ? 1 : c - delta, // if subtracting results in less than 1, use 1
                 //                                                                                  c + delta);
-                double finishtime = CSA::readTimer() ;
+                //double finishtime = CSA::readTimer() ;
 //                std::cout << "wt search = " << start2time - starttime << "; array scan = " << finishtime - start2time << "; interval = " << myinitrange.second - myinitrange.first << "; query size = " << c << std::endl;
                 // ensure new methods gives equivalent results
                 // for(std::set<long unsigned int>::iterator h2i = hits2.begin(); h2i != hits2.end(); ++h2i) {
@@ -359,7 +361,7 @@ class BWASearch
                 // }
 
                 std::set<work_t > exhausted_nodes;
-                int depth = 0;
+                unsigned int depth = 0;
                 branch_fact_sum[depth] += hits.size();
                 branch_fact_count[depth] += 1;
 
@@ -392,17 +394,23 @@ class BWASearch
                     std::vector<pair_type> target_match_ranges;
                     target_match_ranges.push_back(myrange);
                     
-                    this->mybackwardSearch(pattern, // pattern to search for
-                                           pattern.size() - 1 - actv_la , // index of next symbol to search for
-                                           myrange, // SA interval
-                                           chi_squared, // chi**2 sum
-                                           1, // matched count
-                                           actv_la, // missed count
-                                           occurrences,
-                                           exhausted_nodes, branch_fact_sum, branch_fact_count, depth + 1/*depth*/,
-                                           target_match_frags,
-                                           query_match_frags,
-                                           target_match_ranges); 
+                    float s_score = sp.opt_size_score((double)subst_frag/1000, (double)c/1000, 1, 1);
+                    float expected_avg_s_score = lenwise_s_cutoffs[0];
+//                    if (chisqcdf <=   MAX_CHISQUARED_CDF) {
+                    if (s_score >= expected_avg_s_score) {
+                        
+                        this->mybackwardSearch(pattern, // pattern to search for
+                                               pattern.size() - 1 - actv_la , // index of next symbol to search for
+                                               myrange, // SA interval
+                                               chi_squared, // chi**2 sum
+                                               1, // matched count
+                                               actv_la, // missed count
+                                               occurrences,
+                                               exhausted_nodes, branch_fact_sum, branch_fact_count, depth + 1/*depth*/,
+                                               target_match_frags,
+                                               query_match_frags,
+                                               target_match_ranges, sp, s_score);
+                    }
 
 
                 }
@@ -415,7 +423,7 @@ class BWASearch
 
     const double MAX_CHISQUARED_CDF = .1;
     const int MAX_LOOKAHEAD = 2;
-    const int MIN_MATCH_LEN = 10;
+    const unsigned int MIN_MATCH_LEN = 10;
     const float LAMBDA = 1.2;
     const float NU = 0.9;
     //TODO: convert this to recursive call
@@ -442,10 +450,10 @@ class BWASearch
 
 
     // [ 10:24.782 ]->[ 5:14.06, 6:20.276 ] s: 7.62454
-    bool mybackwardSearch(const std::vector<usint>& pattern, const unsigned int &pat_cursor, const pair_type &range, const double &chi_squared_sum, const unsigned int &matched_count, const unsigned int &missed_count, std::set<usint> &occurrence_set,                     std::set<work_t > &exhausted_nodes, unsigned long long branch_fact_sum[], unsigned long long branch_fact_count[], int depth,
+    bool mybackwardSearch(const std::vector<usint>& pattern, const unsigned int &pat_cursor, const pair_type &range, const double &chi_squared_sum, const unsigned int &matched_count, const unsigned int &missed_count, std::set<usint> &occurrence_set,                     std::set<work_t > &exhausted_nodes, unsigned long long branch_fact_sum[], unsigned long long branch_fact_count[], unsigned int depth,
                           std::vector<usint> &target_match_frags,
                           std::vector<std::vector<usint> > &query_match_frags,
-                    std::vector<pair_type> &target_match_ranges) const {
+                          std::vector<pair_type> &target_match_ranges, scoring_params &sp, const float &s_score_sum) const {
         // handle pat_cursor=0 to prevent underrun in the other branch
         if (pat_cursor == 0   || (matched_count >= MIN_MATCH_LEN && NU * matched_count - LAMBDA * missed_count >= 8.0)) { // stop the recurrsion
             float t_score = NU * matched_count - LAMBDA * missed_count;
@@ -459,6 +467,7 @@ class BWASearch
                 std::vector<pair_type>::iterator ri; // range iterator
                 std::vector<usint>::iterator fi; // frag iterator
                 std::vector<std::vector<usint> >::iterator qi; // query iterator
+                float s_tot = 0.0;
                 for (qi = query_match_frags.begin(), fi = target_match_frags.begin(), ri = target_match_ranges.begin();
                      qi != query_match_frags.end() &&  fi != target_match_frags.end() && ri != target_match_ranges.end();
                      ++qi, ++fi, ++ri) {
@@ -472,32 +481,37 @@ class BWASearch
                         }
                     }
                     std::cout << " ]->[ ";
-                    std::cout << *fi;
+                    std::cout << *fi << " ";
+
+                    for (usint sai = ri->first; sai <= ri->second && ri->second - ri->first < 6; ++sai) {
+                            std::cout << ( (this->index.getBackbone()->contains(sai)) ? "C" : ".");
+                            std::cout << ( (this->index.getBackbone()->originalContains(sai)) ? "O" : ".");
+//                            std::cout << " " << sai << " ";
+                    }
+
+                    std::cout << " :: " ;
 
                     std::vector<usint>* mr_occurrences = this->index.locateRange(*ri); //match (sa) range
                     const int MAX_RANGES = 5;
                     if (mr_occurrences->size() <= 5) {
                         std::cout << " ";
                         for (std::vector<usint>::iterator mi = mr_occurrences->begin(); mi != mr_occurrences->end(); ++mi) {
-                            std::cout << ( (this->index.getBackbone()->contains(*mi)) ? "C" : ".");
-                            std::cout << ( (this->index.getBackbone()->originalContains(*mi)) ? "O" : ".");
-                            std::cout << " " << *mi ;
+                            // std::cout << ( (this->index.getBackbone()->contains(*mi)) ? "C" : ".");
+                            // std::cout << ( (this->index.getBackbone()->originalContains(*mi)) ? "O" : ".");
+                            std::cout << " " << *mi << " ";
                         }
                     } else {
-                        std::cout << " (|SA| > " << MAX_RANGES << ") ";
+                        std::cout << " (|SA| = " << mr_occurrences->size() << " > " << MAX_RANGES << ") ";
                     }
                     
                     delete mr_occurrences;
 
-                    std::cout << " :: " ;
-                    for (usint sai = ri->first; sai <= ri->second && ri->second - ri->first < 6; ++sai) {
-                            std::cout << ( (this->index.getBackbone()->contains(sai)) ? "C" : ".");
-                            std::cout << ( (this->index.getBackbone()->originalContains(sai)) ? "O" : ".");
-                            std::cout << " " << sai ;
-                    }
                     std::cout << " ]" ;
-                    scoring_params sp(.2,1.2,.9,3,17.43,0.58, 0.0015, 0.8, 1, 3);//fixme: instantiate just once
-                    std::cout << " s: " << sp.opt_size_score((double)querytotal/1000, (double)*fi/1000, (int)qi->size(), 1) << std::endl;
+
+                    float s_score = sp.opt_size_score((double)querytotal/1000, (double)*fi/1000, (int)qi->size(), 1);
+                    s_tot += s_score;
+                    std::cout << " s: " << s_tot << " incr_s: " << s_score << std::endl;
+
                 }
                 // std::cout << std::endl;
                 // std::cout << "Matched frag sequence in target: " << std::endl;
@@ -505,19 +519,21 @@ class BWASearch
                 //     std::cout << *fi << " ";
                 // }
                 // std::cout << std::endl;
-                std::cout << "t-score: " << t_score <<  " chisqcdf: " << chisqcdf << " matches found at: " << std::endl;
+                std::cout << "s-score:" << s_tot << std::endl;
+                std::cout << "t-score: " << t_score << std::endl;
+                std::cout <<  "chisqcdf: " << chisqcdf << " matches found at: " << std::endl;
                 
                 for (std::vector<usint>::iterator mi = occurrences->begin(); mi != occurrences->end(); ++mi) {
-                    usint val = *mi;
-                    CSA::DeltaVector::Iterator rmap_iter(rmap_starts);
-                    unsigned int rmap_num = rmap_iter.rank(val) - 1;
-                    unsigned int offset = val - rmap_iter.select(rmap_num );
-                    std::cout << "<(rmap #" << rmap_num << ")" << frag2rmap[rmap_num].second << "+" <<offset << ">" << std::endl;;
+                    // usint val = *mi;
+                    // CSA::DeltaVector::Iterator rmap_iter(rmap_starts);
+                    // unsigned int rmap_num = rmap_iter.rank(val) - 1;
+                    // unsigned int offset = val - rmap_iter.select(rmap_num );
+                    //std::cout << "<(rmap #" << rmap_num << ")" << frag2rmap[rmap_num].second << "+" <<offset << ">" << std::endl;;
                 
-                    //report_occurrence(*mi);
+                    report_occurrence(*mi);
 
 
-                    //occurrence_set.insert(*mi);
+//                    occurrence_set.insert(*mi);
                 }
             }
             delete occurrences;
@@ -543,7 +559,7 @@ class BWASearch
                 //wt stuff
                 unsigned int delta = STDDEV_MULT * get_stddev(c) ;
                 unsigned long long interval_size = range.second - range.first;
-                double start2time = 0, finishtime = 0;//, starttime = CSA::readTimer() ;
+                //double start2time = 0, finishtime = 0;//, starttime = CSA::readTimer() ;
                 const int WT_MIN = 750;
                 
                 std::vector<long unsigned int> hits;
@@ -599,7 +615,14 @@ class BWASearch
                     boost::math::chi_squared_distribution<float, boost::math::policies::policy<boost::math::policies::digits10<3> >> cs(matched_count + 1);
                     double chisqcdf = boost::math::cdf(cs, chi_squared_sum + chi_squared);
 
+                    float s_score = sp.opt_size_score((double)c/1000, (double)subst_frag/1000, 1, 1);
+                    float avg_s_score = (s_score_sum + s_score) / (depth + 1);
+                    float expected_avg_s_score = 1.0;
+                    if (depth + 1 <= expected_s_lut_size) {
+                        expected_avg_s_score = lenwise_s_cutoffs[depth + 1 /* for this piece */ - 1 /* b/c 0 based indexed */];
+                    }
                     if (chisqcdf <=   MAX_CHISQUARED_CDF) {
+//                    if (avg_s_score >= expected_avg_s_score) {
                         pair_type new_range = this->index.LF(range, subst_frag); 
                         unsigned int next_pat_cursor = pat_cursor - 1 - actv_la;
 
@@ -618,7 +641,7 @@ class BWASearch
                             target_match_frags.push_back(subst_frag);
                             target_match_ranges.push_back(new_range);
                             query_match_frags.push_back(query_match_frag);
-                            this->mybackwardSearch(pattern, next_pat_cursor, new_range, chi_squared_sum + chi_squared, matched_count + 1, missed_count + actv_la + off_backbone_penalty, occurrence_set, exhausted_nodes, branch_fact_sum, branch_fact_count, depth + 1, target_match_frags, query_match_frags, target_match_ranges);
+                            this->mybackwardSearch(pattern, next_pat_cursor, new_range, chi_squared_sum + chi_squared, matched_count + 1, missed_count + actv_la + off_backbone_penalty, occurrence_set, exhausted_nodes, branch_fact_sum, branch_fact_count, depth + 1, target_match_frags, query_match_frags, target_match_ranges, sp, s_score_sum + s_score);
                             target_match_frags.pop_back();
                             query_match_frags.pop_back();
                             target_match_ranges.pop_back();
@@ -847,7 +870,7 @@ class BWASearch
     const Index& index;
     const CSA::DeltaVector& rmap_starts;
     //valuev stuff
-    
+
 
     const std::vector<std::pair<unsigned int, std::string> > frag2rmap;
     const std::string ALPHABET;
