@@ -37,6 +37,10 @@ const float OM_STDDEV = 2.45884783995 * 1000.0; // based on ~23k valuev paired c
 */
     const float lenwise_s_cutoffs[] = {-0.951583, 0.0793565, 0.43825000000000003, 0.5934475, 0.712202, 0.7915783333333333, 0.8361042857142857, 0.87324875, 0.8987633333333334, 0.9227270000000001, 0.9556363636363637, 0.9755583333333333, 0.9923230769230769};
     const unsigned int expected_s_lut_size = 13;
+
+    const float lenwise_t_cutoffs[] = { -1.5, -0.5999999999999999, 0.30000000000000027, 1.2000000000000002, 2.1, 3.0000000000000004, 3.9, 4.800000000000001, 5.699999999999999, 6.6, 7.5, 8.4, 9.3};
+    const unsigned int expected_t_lut_size = 13;
+        
     
 //--------------------------------------------------------------------------
 
@@ -257,7 +261,7 @@ class BWASearch
                 pat.push_back(pattern[i]);
             }
             assert(pat.size() > 0);
-            std::set<work_t > exhausted_nodes;
+            std::map<work_t, std::pair<float, float> > exhausted_nodes;
             this->mybackwardSearch(pat, // pattern to search for
                                pat.size(), // index of next symbol to search for
                                this->index.getSARange(), // SA interval
@@ -292,7 +296,7 @@ class BWASearch
             }
             assert(revpat.size() > 0);
             //find_one_dir(revpat, revoccurrences, branch_fact_sum, branch_fact_count, sp);
-            std::set<work_t > exhausted_nodes;
+            std::map<work_t, std::pair<float, float> > exhausted_nodes;
             this->mybackwardSearch(revpat, // pattern to search for
                                revpat.size(), // index of next symbol to search for
                                this->index.getSARange(), // SA interval
@@ -328,7 +332,7 @@ class BWASearch
     }
 
 
-    const double MAX_CHISQUARED_CDF = .1;
+    const double MAX_CHISQUARED_CDF = .9;
     const int MAX_LOOKAHEAD = 2;
     const unsigned int MIN_MATCH_LEN = 10;
     const float LAMBDA = 1.2;
@@ -422,7 +426,7 @@ class BWASearch
         }            
 
     // [ 10:24.782 ]->[ 5:14.06, 6:20.276 ] s: 7.62454
-    bool mybackwardSearch(const std::vector<usint>& pattern, const int &pat_cursor, const pair_type &range, const double &chi_squared_sum, const unsigned int &matched_count, const unsigned int &missed_count, std::set<usint> &occurrence_set,                     std::set<work_t > &exhausted_nodes, unsigned long long branch_fact_sum[], unsigned long long branch_fact_count[], unsigned int depth,
+    bool mybackwardSearch(const std::vector<usint>& pattern, const int &pat_cursor, const pair_type &range, const double &chi_squared_sum, const unsigned int &matched_count, const unsigned int &missed_count, std::set<usint> &occurrence_set, std::map<work_t, std::pair<float, float> >  &exhausted_nodes, unsigned long long branch_fact_sum[], unsigned long long branch_fact_count[], unsigned int depth,
                           std::vector<usint> &target_match_frags,
                           std::vector<std::vector<usint> > &query_match_frags,
                           std::vector<pair_type> &target_match_ranges, scoring_params &sp) const {
@@ -510,17 +514,29 @@ class BWASearch
                         }
                         int next_pat_cursor = pat_cursor - 1 - actv_la;
                         work_t work(next_pat_cursor, new_range);
+                        int off_backbone_penalty = 0;
+                        if (new_range.first == new_range.second) {
+                            if (!this->index.getBackbone()->contains(new_range.first)) {
+                                off_backbone_penalty = 1;
+                            }
+                        }
+                        float new_t_score = NU * (matched_count + 1)- LAMBDA * (missed_count + actv_la + off_backbone_penalty);
+                        if (1 || matched_count  > expected_t_lut_size || new_t_score >= lenwise_t_cutoffs[matched_count ]) {
+                                std::map<work_t, std::pair<float, float> >::iterator prev_work = exhausted_nodes.find(work);
+                                if( prev_work == exhausted_nodes.end() || prev_work->second.first > chisqcdf || prev_work->second.second < new_t_score) {
+                                    target_match_frags.push_back(subst_frag);
+                                    target_match_ranges.push_back(new_range);
+                                    query_match_frags.push_back(query_match_frag);
+                                    this->mybackwardSearch(pattern, next_pat_cursor, new_range, chi_squared_sum + chi_squared, matched_count + 1, missed_count + actv_la + off_backbone_penalty, occurrence_set, exhausted_nodes, branch_fact_sum, branch_fact_count, depth + 1, target_match_frags, query_match_frags, target_match_ranges, sp);
+                                    target_match_frags.pop_back();
+                                    query_match_frags.pop_back();
+                                    target_match_ranges.pop_back();
+                                    std::pair<float, float> scores;
+                                    scores.first = chisqcdf;
+                                    scores.second = new_t_score;
+                                    exhausted_nodes[work] = scores;
 
-                        if(exhausted_nodes.count(work) == 0) {
-                            target_match_frags.push_back(subst_frag);
-                            target_match_ranges.push_back(new_range);
-                            query_match_frags.push_back(query_match_frag);
-                            this->mybackwardSearch(pattern, next_pat_cursor, new_range, chi_squared_sum + chi_squared, matched_count + 1, missed_count + actv_la, occurrence_set, exhausted_nodes, branch_fact_sum, branch_fact_count, depth + 1, target_match_frags, query_match_frags, target_match_ranges, sp);
-                            target_match_frags.pop_back();
-                            query_match_frags.pop_back();
-                            target_match_ranges.pop_back();
-                            exhausted_nodes.insert(work);
-
+                                }
                         }
                     }
 
