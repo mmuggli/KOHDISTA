@@ -85,7 +85,7 @@ int main(int argc, char** argv)
   double start = CSA::readTimer();
   std::cout << "Data load time:         " <<  start - appstart  << " seconds" << std::endl;
 
-//  for(usint i = 2/*0*/; i < 3/*n*/; i++)
+//  for(usint i = 0/*0*/; i < 2/*n*/; i++)
   for(usint i = 0; i < n; i++)
   {
     total += rows[i].size();
@@ -96,14 +96,15 @@ int main(int argc, char** argv)
     if (rows[i].size() < 10 ) {
         std::cout << "Skipping row " << i << " because size() < 10" << std::endl;
     } else {
-        std::cout << "Finding row " << i << "(" << frag2rmap[i].second << "):" <<std::endl;
+        std::string rmap_name = frag2rmap[i*2/*two entries in the automaton/map per every sequence, introduced in valuev2bin.py*/].second;
+        std::cout << "Finding row " << i << "(" << rmap_name<< "):" <<std::endl;
         for (std::vector<usint>::iterator ri = rows[i].begin(); ri != rows[i].end(); ++ri) {
             std::cout << *ri << ", ";
         }
         std::cout << std::endl;
 
         
-        bwasearch.find(rows[i]);
+        bwasearch.find(rows[i], rmap_name);
 
     
         std::cout << "Find (row = " << i << ") completed in " <<   CSA::readTimer() - row_start << " seconds." << std::endl;
