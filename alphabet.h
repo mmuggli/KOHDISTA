@@ -40,9 +40,10 @@ class Alphabet
     inline std::map<usint, pair_type>::const_iterator end() const { return index_ranges.end(); }
     inline usint charAt(usint i) const
     {
-        const usint* curr = &(this->text_chars.at(this->index_pointers.at(i / this->index_rate)));
-      while(i > this->index_ranges.at(*curr).second) { curr++; }
-      return *curr;
+        usint temp = this->index_pointers.at(i / this->index_rate);
+        const usint* curr = &(this->text_chars.at(temp));
+        while(i > this->index_ranges.at(*curr).second) { curr++; }
+        return *curr;
     }
 
   private:
@@ -50,6 +51,8 @@ class Alphabet
     std::map<usint, pair_type> index_ranges;
     usint size;
 
+    // this is an array of those charcters present, the nth ordinal character that is present will be stored
+    // in text_chars[n]
     std::map<usint, usint> text_chars;  // which characters are present in the text
     usint chars;
 

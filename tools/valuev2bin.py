@@ -47,11 +47,13 @@ for i,line in enumerate(open(sys.argv[1])):
         pos += len(frags) + 1
         
         # write the query file
-        query.write(item.pack(len(frags)))
+        QDESORPTIONTHRESH = .5
+        qfrags = [frag for frag in frags if float(frag) > QDESORPTIONTHRESH]
+        query.write(item.pack(len(qfrags)))
         #print("writting",len(fields) - 2,"frags: ",end=" ")
-        for frag in frags:
+        for qfrag in qfrags:
             #print(int(float(frag)*1000), end=" ")
-            query.write(item.pack(int(float(frag)*1000)))
+            query.write(item.pack(int(float(qfrag)*1000)))
         #print()
 print("Processed aprox",i/3,"rmaps")               
 

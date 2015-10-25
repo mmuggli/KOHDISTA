@@ -250,10 +250,10 @@ class BWASearch
         }
         scoring_params sp(.2,1.2,.9,3,17.43,0.58, 0.0015, 0.8, 1, 3);//fixme: instantiate just once
 
-        std::cout << "backward searching matching orientation" << std::endl;
+        std::cout << "=== backward searching matching orientation ===" << std::endl;
         std::set<usint> occurrences;
         for (unsigned int skip = 0; skip < 3; ++skip) {
-            std::cout << "skipping " << skip << " query symbols." << std::endl;
+            std::cout << "--- skipping " << skip << " query symbols. ---" << std::endl;
             
 
             std::vector<usint> pat;
@@ -284,7 +284,7 @@ class BWASearch
 
 
 
-        std::cout << "backward searching reverse orientation" << std::endl;
+        std::cout << "=== backward searching reverse orientation ===" << std::endl;
         std::set<usint> revoccurrences;
         for (unsigned int skip = 0; skip < 3; ++skip) {
             std::cout << "skipping " << skip << " query symbols." << std::endl;
@@ -332,7 +332,8 @@ class BWASearch
     }
 
 
-    const double MAX_CHISQUARED_CDF = .9;
+    const double MAX_CHISQUARED_CDF = .1;
+    const float MIN_T_SCORE = 8.1;
     const int MAX_LOOKAHEAD = 2;
     const unsigned int MIN_MATCH_LEN = 10;
     const float LAMBDA = 1.2;
@@ -439,7 +440,7 @@ class BWASearch
                           std::vector<pair_type> &target_match_ranges, scoring_params &sp, const std::string &rmap_name, const unsigned char direction, const int skip) const {
         // handle pat_cursor=0 to prevent underrun in the other branch
         float t_score = NU * matched_count - LAMBDA * missed_count;
-        if (pat_cursor == 0   || (matched_count >= MIN_MATCH_LEN && t_score >= 8.0)) { // stop the recurrsion
+        if (pat_cursor == 0   || (matched_count >= MIN_MATCH_LEN && t_score >= MIN_T_SCORE)) { // stop the recurrsion
         //if (matched_count >= MIN_MATCH_LEN) {
                 //if (t_score < 8.0) return false;
             boost::math::chi_squared cs(matched_count );
@@ -456,12 +457,12 @@ class BWASearch
 
                     unsigned size = occurrence_set.size();
                     occurrence_set.insert(*mi);
-                    if (occurrence_set.size() > size) {
-                        report_occurrence(*mi, rmap_name);
-                        report_valuev_alignment(target_match_frags, query_match_frags, target_match_ranges, sp, matched_count, missed_count, pattern, direction, skip);
-                        std::cout <<  "chisqcdf: " << chisqcdf << " matches found at: " << std::endl;
+                    // if (occurrence_set.size() > size) {
+                    //     report_occurrence(*mi, rmap_name);
+                    //     report_valuev_alignment(target_match_frags, query_match_frags, target_match_ranges, sp, matched_count, missed_count, pattern, direction, skip);
+                    //     std::cout <<  "chisqcdf: " << chisqcdf << " matches found at: " << std::endl;
 
-                    }
+                    // }
                 }
             }
             delete occurrences;
@@ -530,15 +531,15 @@ class BWASearch
 
 
                 
-                if ( pat_cursor == pattern.size() ||  (target_match_frags.size() > 1 && target_match_frags[0] == 3520 && target_match_frags[1] == 29830)) {
-                    for (int ijk=0; ijk < depth; ++ijk) std::cout << "    ";
-                    std::cout << "depth: " << depth << " substitutes for " << c <<": ";
-                    for(std::set<long unsigned int>::iterator hit_itr = hits2.begin(); hit_itr != hits2.end(); ++hit_itr) {
-                        std::cout << *hit_itr << " ";
+                // if ( pat_cursor == pattern.size() ||  (target_match_frags.size() > 1 && target_match_frags[0] == 3520 && target_match_frags[1] == 29830)) {
+                //     for (int ijk=0; ijk < depth; ++ijk) std::cout << "    ";
+                //     std::cout << "depth: " << depth << " substitutes for " << c <<": ";
+                //     for(std::set<long unsigned int>::iterator hit_itr = hits2.begin(); hit_itr != hits2.end(); ++hit_itr) {
+                //         std::cout << *hit_itr << " ";
                         
-                    }
-                    std::cout <<"t-score: " << t_score << std::endl;
-                }
+                //     }
+                //     std::cout <<"t-score: " << t_score << std::endl;
+                // }
                 
                 for(std::set<long unsigned int>::iterator hit_itr = hits2.begin(); hit_itr != hits2.end(); ++hit_itr) {
                     // compute chi^2 score for putative substitute fragment in target
