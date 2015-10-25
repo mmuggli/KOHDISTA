@@ -372,7 +372,7 @@ class BWASearch
             float s_tot = 0.0;
             int qfragnum = -1;
             if (direction==0) {
-                qfragnum = pattern.size() - skip;
+                qfragnum = pattern.size() - 1;
             } else {
                 qfragnum = 0 + skip;
             }
@@ -407,8 +407,8 @@ class BWASearch
                 std::cout << ":" << *fi / 1000.0;
 
                 for (usint sai = ri->first; sai <= ri->second && ri->second - ri->first < 6; ++sai) {
-                    std::cout << ( (this->index.getBackbone()->contains(sai)) ? "" : ", *");
-                    //std::cout << ( (this->index.getBackbone()->originalContains(sai)) ? "O" : ".");
+//                    std::cout << ( (this->index.getBackbone()->contains(sai)) ? "" : ", 0");
+                    std::cout << ( (this->index.getBackbone()->originalContains(sai)) ? "" : ", 0.0");
 //                            std::cout << " " << sai << " ";
                 }
 
@@ -440,8 +440,8 @@ class BWASearch
         // handle pat_cursor=0 to prevent underrun in the other branch
         float t_score = NU * matched_count - LAMBDA * missed_count;
         if (pat_cursor == 0   || (matched_count >= MIN_MATCH_LEN && t_score >= 8.0)) { // stop the recurrsion
-
-            if (t_score < 8.0) return false;
+        //if (matched_count >= MIN_MATCH_LEN) {
+                //if (t_score < 8.0) return false;
             boost::math::chi_squared cs(matched_count );
             double chisqcdf = boost::math::cdf(cs, chi_squared_sum);
 
@@ -467,6 +467,30 @@ class BWASearch
             delete occurrences;
         } else {
 
+            int goal[] = {3520,
+                          29830,
+                          15850,
+                          6830 + //13990
+                          950 + 
+                          6210,
+                          20530,
+                          22960 + 28380,
+                          21380,
+                          25250,
+            8160 + 5310 + 23110};
+
+            // int matchedgoal = -1;
+            // for (std::vector<usint>::iterator fi = target_match_frags.begin(); fi != target_match_frags.end(); ++fi) {
+            //     int fidepth = fi-target_match_frags.begin();
+            //     if (fidepth > 5) break;
+            //     int g = goal[fidepth];
+            //     if (g != *fi) {
+            //         matchedgoal = fidepth - 1;
+            //         break;
+            //     }
+            // }
+            // if (matchedgoal >3) {std::cout << "matched goal!!!!!!!!!!!!!!!!!" << std::endl;}
+            
             int lookahead = MAX_LOOKAHEAD;
             if (pat_cursor - 1 - lookahead < 0) {
                 lookahead = pat_cursor - 1; //trim lookahead to max remaining, preventing pattern underrun
@@ -504,14 +528,16 @@ class BWASearch
                 branch_fact_sum[depth] += hits2.size();
                 branch_fact_count[depth] += 1;
 
-                if (0 && pat_cursor == pattern.size()){// || (target_match_frags.size() > 0 && target_match_frags[0] == 55670)) {
+
+                
+                if ( pat_cursor == pattern.size() ||  (target_match_frags.size() > 1 && target_match_frags[0] == 3520 && target_match_frags[1] == 29830)) {
                     for (int ijk=0; ijk < depth; ++ijk) std::cout << "    ";
                     std::cout << "depth: " << depth << " substitutes for " << c <<": ";
                     for(std::set<long unsigned int>::iterator hit_itr = hits2.begin(); hit_itr != hits2.end(); ++hit_itr) {
                         std::cout << *hit_itr << " ";
                         
                     }
-                    std::cout << std::endl;
+                    std::cout <<"t-score: " << t_score << std::endl;
                 }
                 
                 for(std::set<long unsigned int>::iterator hit_itr = hits2.begin(); hit_itr != hits2.end(); ++hit_itr) {
@@ -534,7 +560,7 @@ class BWASearch
                         work_t work(next_pat_cursor, new_range);
                         int off_backbone_penalty = 0;
                         if (new_range.first == new_range.second) {
-                            if (!this->index.getBackbone()->contains(new_range.first)) {
+                            if (!this->index.getBackbone()->originalContains(new_range.first)) {
                                 off_backbone_penalty = 1;
                             }
                         }

@@ -98,7 +98,8 @@ unsigned int quantize(unsigned int val)
 
 int main(int argc, char** argv)
 {
-
+    unsigned skipedgecount = 0;
+    unsigned doubleskipedgecount = 0;
 
     if (argc < 5) {
         printf("Usage: %s <binary optical map> <gcsa format graph> <quantization bin size> <file prefix>\n", argv[0]);
@@ -207,15 +208,17 @@ int main(int argc, char** argv)
         }
 
         // add skip edges
-        if (nodes[i+1]->value < DESORPTION_THRESH) {
+        if (nodes[i+1]->label < DESORPTION_THRESH) {
             Edge *eskip = new Edge(nodes[i], nodes[i+2]);
             edges.push_back(eskip);
+            skipedgecount++;
         }
 
         // add double skip edges
-        if (nodes[i+1]->value < DESORPTION_THRESH && nodes[i+2]->value < DESORPTION_THRESH) {
+        if (nodes[i+1]->label < DESORPTION_THRESH && nodes[i+2]->label < DESORPTION_THRESH) {
             Edge *eskip = new Edge(nodes[i], nodes[i+3]);
             edges.push_back(eskip);
+            doubleskipedgecount++;
         }
 
 
@@ -263,4 +266,5 @@ int main(int argc, char** argv)
      // }
     oftd.close();
     ofd.close();
+    std::cout << "skip edges: " << skipedgecount << " double skip edges: " << doubleskipedgecount << std::endl;
 }

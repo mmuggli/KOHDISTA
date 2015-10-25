@@ -38,6 +38,12 @@ public:
     Node *to;
 };
 
+bool myisupper(unsigned int lab)
+{
+    if (lab & 0x1) return false;
+    return true;
+}
+
 
 std::vector<Node *> nodes;
 std::vector<Edge *> edges;
@@ -55,12 +61,19 @@ int main(int argc, char** argv)
     unsigned int max = 0;
     Node * min_node;
     Node * max_node;
-
+    std::vector<std::vector<int > > ranks;
     for (int i = 0; i < num_nodes; ++i) {
         unsigned int label;
         unsigned int value;
         read(fd, &label, 4);
         read(fd, &value, 4);
+        if (value > 0 && value < 10000){
+            while (value +1 > ranks.size()) {
+                std::vector<int> empty;
+                ranks.push_back(empty);
+            }
+            ranks[value].push_back(i);
+        }
         Node * n = new Node(label, value, i);
         if (label > max) {
             max = label;
@@ -87,12 +100,27 @@ int main(int argc, char** argv)
     // loading should be done here.
 
     std::cout << "digraph G {" << std::endl;
+    std::cout << "    rankdir=LR;" << std::endl;
+    std::cout << "    ordering=out;" << std::endl;
     for (std::vector<Node *>::iterator ni = nodes.begin(); ni != nodes.end(); ++ni) {
-        std::cout << "    n" << (*ni)->pos << " [label=\"" << (*ni)->label << "\"];" << std::endl;
+        std::cout << "    n" << (*ni)->pos << " [label=\"" << (*ni)->label / 1000.0 << "\"";
+        if (!myisupper((*ni)->label)) std::cout <<  ",style=dotted";
+             std::cout << "];" << std::endl;
     }
 
     for (std::vector<Edge *>::iterator ei = edges.begin(); ei != edges.end(); ++ei) {
-        std::cout << "    n" <<  (*ei)->from->pos << " -> n" << (*ei)->to->pos << ";" << std::endl;
+        std::cout << "    n" <<  (*ei)->from->pos << " -> n" << (*ei)->to->pos ;
+        if (myisupper((*ei)->from->label) && myisupper((*ei)->to->label)) std::cout << " [style=bold]";
+        std::cout << ";" << std::endl;
+    }
+    for (std::vector<std::vector<int> >::iterator ri = ranks.begin(); ri != ranks.end(); ++ri) {
+        if (ri->size()) {
+            std::cout << "{ rank = same";
+            for (std::vector<int>::iterator rii = ri->begin(); rii != ri->end(); ++rii) {
+                std::cout << "; n" << *rii << " ";
+            }
+            std::cout << "}" << std::endl;
+        }
     }
     std::cout << "}" << std::endl;
 }
