@@ -23,7 +23,7 @@ class ParameterHandler
     bool  indels, locate, penalties, reverse_complement, verbose, write, binary_patterns;
     char* index_name;
     char* patterns_name;
-    usint k, skip, max_matches;
+    usint k, skip, max_matches, begin = 0, end = 0;
 };
 
 };  // namespace CSA

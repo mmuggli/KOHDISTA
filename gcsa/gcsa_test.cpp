@@ -4,6 +4,7 @@
 #include <vector>
 #include <set>
 #include <misc/utils.h>
+#include "getRSS.c"
 
 #include "gcsa.h"
 #include "bwasearch.h"
@@ -86,7 +87,12 @@ int main(int argc, char** argv)
   std::cout << "Data load time:         " <<  start - appstart  << " seconds" << std::endl;
 
 //  for(usint i = 0/*0*/; i < 2/*n*/; i++)
-  for(usint i = 0; i < n; i++)
+  if (handler.end != 0) {
+      if (handler.end < n) {
+          n = handler.end;
+      }
+  }
+  for(usint i = handler.begin; i < n; i++)
   {
     total += rows[i].size();
     //bool match = false;
@@ -184,6 +190,7 @@ int main(int argc, char** argv)
 
   std::cout << "Time:         " << time << " seconds" << std::endl;
   std::cout << std::endl;
+  std::cout << " (peak RSS " << getPeakRSS() << ")" <<std::endl;
 
   if(handler.verbose)
   {
@@ -215,3 +222,4 @@ int main(int argc, char** argv)
 
   return 0;
 }
+

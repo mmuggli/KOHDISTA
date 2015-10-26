@@ -37,7 +37,14 @@ GCSA::ParameterHandler::ParameterHandler(int argc, char** argv, bool _rlcsa, std
         case 'b':
           this->binary_patterns = true; break;
         case 's':
-          if(this->rlcsa) { this->skip = atoi(argv[i] + 2); break; } // Fall through.
+            if(this->rlcsa) { this->skip = atoi(argv[i] + 2); break; } // Fall through.
+      case 'S':
+          this->begin = atoi(argv[i] + 2);
+           break; 
+      case 'E':
+          this->end = atoi(argv[i] + 2);
+           break; 
+
         default:
           std::cout << "Invalid option: " << argv[i] << std::endl << std::endl;
           this->ok = false;
