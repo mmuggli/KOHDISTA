@@ -440,9 +440,9 @@ class BWASearch
                           std::vector<pair_type> &target_match_ranges, scoring_params &sp, const std::string &rmap_name, const unsigned char direction, const int skip) const {
         // handle pat_cursor=0 to prevent underrun in the other branch
         float t_score = NU * matched_count - LAMBDA * missed_count;
-        if (pat_cursor == 0   || (matched_count >= MIN_MATCH_LEN && t_score >= MIN_T_SCORE)) { // stop the recurrsion
+        if (pat_cursor == 0   || (matched_count >= MIN_MATCH_LEN) ){// && t_score >= MIN_T_SCORE)) { // stop the recurrsion
         //if (matched_count >= MIN_MATCH_LEN) {
-                //if (t_score < 8.0) return false;
+            //if (t_score < 7.0) return false;
             boost::math::chi_squared cs(matched_count );
             double chisqcdf = boost::math::cdf(cs, chi_squared_sum);
 
