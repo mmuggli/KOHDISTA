@@ -243,6 +243,7 @@ class BWASearch
         std::vector<usint> target_match_frags;
         std::vector<std::vector<usint> > query_match_frags;
         std::vector<pair_type> target_match_ranges;
+        std::set<unsigned int> already_reported; // only report the first alignment between two rmaps to save output disk space
         
         for (int i = 0; i < MAX_DEPTH; ++i) {
             branch_fact_sum[i] = 0;
@@ -278,7 +279,7 @@ class BWASearch
         if (occurrences.size()) {
             std::cout << "Found " << occurrences.size() << ":" << std::endl;
             for(std::set<usint>::iterator oi = occurrences.begin(); oi != occurrences.end(); ++oi) {
-                report_occurrence(*oi, rmap_name);
+                report_occurrence(*oi, rmap_name, already_reported);
             }
         }
 
@@ -314,7 +315,7 @@ class BWASearch
         if (revoccurrences.size()) {
             std::cout << "Found " << revoccurrences.size() << ":" << std::endl;
             for(std::set<usint>::iterator oi = revoccurrences.begin(); oi != revoccurrences.end(); ++oi) {
-                report_occurrence(*oi, rmap_name);
+                report_occurrence(*oi, rmap_name, already_reported);
             }
         }
 
@@ -342,7 +343,7 @@ class BWASearch
     //TODO: convert this to recursive call
     //TODO: use sigma*length as stddev
 
-    void report_occurrence(unsigned int val, const std::string &rmap_name) const {
+    void report_occurrence(unsigned int val, const std::string &rmap_name, std::set<unsigned int> &already_reported) const {
      
         bool backbone = true;
         if (val > this->index.getBackbone()->getSize()-1) {
@@ -356,10 +357,13 @@ class BWASearch
         // lookup the name
         CSA::DeltaVector::Iterator rmap_iter(rmap_starts);
         unsigned int rmap_num = rmap_iter.rank(val) - 1;
-        unsigned int offset = val - rmap_iter.select(rmap_num );
-        std::string target_rmap_name = frag2rmap[rmap_num].second;
-        std::cout << "<(rmap #" << rmap_num << ")" << target_rmap_name << "+" <<offset << ">" << std::endl;;
-        std::cout << "alignment for " << rmap_name << " and " << target_rmap_name << std::endl;
+        if (already_reported.find(rmap_num) == already_reported.end()) {
+            unsigned int offset = val - rmap_iter.select(rmap_num );
+            std::string target_rmap_name = frag2rmap[rmap_num].second;
+            std::cout << "<(rmap #" << rmap_num << ")" << target_rmap_name << "+" <<offset << ">" << std::endl;;
+            already_reported.insert(rmap_num);
+        }
+        //std::cout << "alignment for " << rmap_name << " and " << target_rmap_name << std::endl;
         
     }
     void report_valuev_alignment(std::vector<usint> &target_match_frags,
