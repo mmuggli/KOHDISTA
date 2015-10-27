@@ -1,3 +1,24 @@
+DOPPELGANGER - Find restriction maps (Rmaps) that look alike (align)
+
+You must first compile and install sdsl-lite to use this software.
+
+If your Valouev et al. formatted data reside in plum.maps, you can find pairwise alignments with these commands:
+
+python doppelganger/tools/valuev2bin.py plum.maps plum.bin plum_pat.bin 
+doppelganger/tools/om2automaton plum.bin plum.automaton 100 0
+doppelganger/gcsa/determinize -b plum.automaton plum_base
+doppelganger/gcsa/build_index -b  plum_base
+cp plum.bin.frag2rmap plum_base.frag2rmap
+doppelganger/gcsa/gcsa_test plum_base plum_pat.bin  -b -l
+
+
+
+
+
+
+
+
+
 General Information
 ===================
 
