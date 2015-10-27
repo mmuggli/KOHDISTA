@@ -621,8 +621,8 @@ GCSA::convertToNodeRange(pair_type edge_range) const
   //               << " " << array.outgoing_rank(edge_range.second) << std::endl;
   // }
 
-  // edge_range.first = outgoing_iter->rank(edge_range.first) - 1;
-  // edge_range.second = outgoing_iter->rank(edge_range.second) - 1;
+   // edge_range.first = outgoing_iter->rank(edge_range.first) - 1;
+   // edge_range.second = outgoing_iter->rank(edge_range.second) - 1;
   edge_range.first = array.outgoing_rank(edge_range.first) - 1;
   edge_range.second = array.outgoing_rank(edge_range.second) - 1;
   outgoing_iter->~Iterator();
