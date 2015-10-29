@@ -13,8 +13,10 @@
 #include <utility>
 #include <boost/math/distributions/chi_squared.hpp>
 #include <math.h>
+#include "parameter_handler.h"
 
-// valuev stuff
+
+// valouev stuff
 // #include "./../om_set1/msfl.cpp"
 // #include "./../om_set1/m_read.cpp"
 // #include "./../om_set1/scoring.cpp"
@@ -27,9 +29,9 @@ namespace GCSA
 	typedef CSA::uchar uchar;
 	typedef CSA::sint sint;
 	typedef CSA::usint usint;
-const float OM_STDDEV = 2.45884783995 * 1000.0; // based on ~23k valuev paired cutsite alignments 
-//const float OM_STDDEV = 2.28463258304 * 1000.0; // based on ~16k valuev 1:1 frag alignment
-//const float OM_STDDEV = 0.150 * 1000.0; // based on ~16k valuev 1:1 frag alignment
+const float OM_STDDEV = 2.45884783995 * 1000.0; // based on ~23k valouev paired cutsite alignments 
+//const float OM_STDDEV = 2.28463258304 * 1000.0; // based on ~16k valouev 1:1 frag alignment
+//const float OM_STDDEV = 0.150 * 1000.0; // based on ~16k valouev 1:1 frag alignment
     //const uint DELTA = OM_STDDEV *  3.0;
 
 /*
@@ -215,8 +217,8 @@ class BWASearch
 
     const static usint INITIAL_STEP = 8;  // Should be >= log(n) / 4.
 
-    BWASearch(const Index& _index,  const CSA::DeltaVector &_rmap_starts, const std::vector<std::pair<unsigned int, std::string> > _frag2rmap) :
-        index(_index), rmap_starts(_rmap_starts), frag2rmap(_frag2rmap), ALPHABET("ACGTN"), COMPLEMENT("TGCAN")
+    BWASearch(const Index& _index,  const CSA::DeltaVector &_rmap_starts, const std::vector<std::pair<unsigned int, std::string> > _frag2rmap, class ParameterHandler &_handler) :
+        index(_index), rmap_starts(_rmap_starts), frag2rmap(_frag2rmap), ALPHABET("ACGTN"), COMPLEMENT("TGCAN"), handler(_handler)
     {
     }
 
@@ -225,7 +227,7 @@ class BWASearch
         double sigma_kbp = .58;
         double frag_kbp = (double)frag_bp / 1000.0;
         double variance_kbp = powf(sigma_kbp, 2);
-        double expect_var_kbp = 2* variance_kbp * frag_kbp; // FIXME: do we need to double this? or does valuev .58 already account for noise in both frags
+        double expect_var_kbp = 2* variance_kbp * frag_kbp; // FIXME: do we need to double this? or does valouev .58 already account for noise in both frags
         double expect_stddev_kbp = sqrt(expect_var_kbp);
         double expect_stddev_bp = expect_stddev_kbp * 1000.0;
 //        return OM_STDDEV;
@@ -366,10 +368,17 @@ class BWASearch
         //std::cout << "alignment for " << rmap_name << " and " << target_rmap_name << std::endl;
         
     }
-    void report_valuev_alignment(std::vector<usint> &target_match_frags,
+    void report_valouev_alignment(std::vector<usint> &target_match_frags,
                           std::vector<std::vector<usint> > &query_match_frags,
-                                 std::vector<pair_type> &target_match_ranges, scoring_params &sp,const unsigned int &matched_count,const unsigned int &missed_count, const std::vector<usint>& pattern, const unsigned char direction, const int skip) const
+                                  std::vector<pair_type> &target_match_ranges, scoring_params &sp,const unsigned int &matched_count,const unsigned int &missed_count, const std::vector<usint>& pattern, const unsigned char direction, const int skip, usint suffix_array_index, const std::string &rmap_name) const
         {
+            CSA::DeltaVector::Iterator rmap_iter(rmap_starts);
+            unsigned int rmap_num = rmap_iter.rank(suffix_array_index) - 1;
+            usint rmap_start = rmap_iter.select(rmap_num);
+            std::cout << "rmap # " << rmap_num << " starts at GCSA index " << rmap_start << std::endl;
+            std::string target_rmap_name = frag2rmap[rmap_num].second;
+            std::cout << "alignment for " << rmap_name << " and " << target_rmap_name << std::endl;
+
 
             std::vector<pair_type>::iterator ri; // range iterator
             std::vector<usint>::iterator fi; // frag iterator
@@ -401,7 +410,7 @@ class BWASearch
                 const int MAX_RANGES = 5;
                 if (mr_occurrences->size() <= 5) {
                     for (std::vector<usint>::iterator mi = mr_occurrences->begin(); mi != mr_occurrences->end(); ++mi) {
-                        std::cout << " " << *mi ;
+                        std::cout << " " << *mi - rmap_start;
                     }
                 } else {
                     std::cout << " (|SA| = " << mr_occurrences->size() << " > " << MAX_RANGES << ") ";
@@ -413,7 +422,7 @@ class BWASearch
 
                 for (usint sai = ri->first; sai <= ri->second && ri->second - ri->first < 6; ++sai) {
 //                    std::cout << ( (this->index.getBackbone()->contains(sai)) ? "" : ", 0");
-                    std::cout << ( (this->index.getBackbone()->originalContains(sai)) ? "" : ", 0.0");
+                    std::cout << ( (this->index.getBackbone()->originalContains(sai)) ? "" : ", -1:0.0");
 //                            std::cout << " " << sai << " ";
                 }
 
@@ -422,7 +431,7 @@ class BWASearch
 
                 float s_score = sp.opt_size_score((double)querytotal/1000, (double)*fi/1000, (int)qi->size(), 1);
                 s_tot += s_score;
-                std::cout << " s: " << s_tot << " incr_s: " << s_score << std::endl;
+                std::cout << " s: " << s_tot  /* << " incr_s: " << s_score */  << std::endl;
 
             }
             // std::cout << std::endl;
@@ -461,12 +470,14 @@ class BWASearch
 
                     unsigned size = occurrence_set.size();
                     occurrence_set.insert(*mi);
-                    // if (occurrence_set.size() > size) {
-                    //     report_occurrence(*mi, rmap_name);
-                    //     report_valuev_alignment(target_match_frags, query_match_frags, target_match_ranges, sp, matched_count, missed_count, pattern, direction, skip);
-                    //     std::cout <<  "chisqcdf: " << chisqcdf << " matches found at: " << std::endl;
+                    if (handler.detailed) {
+                        if (occurrence_set.size() > size) {
+                            //report_occurrence(*mi, rmap_name);
+                            report_valouev_alignment(target_match_frags, query_match_frags, target_match_ranges, sp, matched_count, missed_count, pattern, direction, skip, *mi, rmap_name);
+                            std::cout <<  "chisqcdf: " << chisqcdf << " matches found at: " << std::endl;
 
-                    // }
+                        }
+                    }
                 }
             }
             delete occurrences;
@@ -808,10 +819,11 @@ class BWASearch
   private:
     const Index& index;
     const CSA::DeltaVector& rmap_starts;
-    //valuev stuff
+    //valouev stuff
 
 
     const std::vector<std::pair<unsigned int, std::string> > frag2rmap;
+    ParameterHandler &handler;
     const std::string ALPHABET;
     const std::string COMPLEMENT;
     static const usint ALPHABET_SIZE = 5;

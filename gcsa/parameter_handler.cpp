@@ -8,7 +8,7 @@
 
 GCSA::ParameterHandler::ParameterHandler(int argc, char** argv, bool _rlcsa, std::string _usage) :
   ok(true), rlcsa(_rlcsa), usage(_usage),
-  indels(false), locate(false), penalties(false), reverse_complement(false), verbose(false), write(false), binary_patterns(false),
+  indels(false), locate(false), penalties(false), reverse_complement(false), verbose(false), write(false), binary_patterns(false), detailed(false),
   index_name(0), patterns_name(0),
   k(0), skip(0), max_matches(0)
 {
@@ -18,6 +18,8 @@ GCSA::ParameterHandler::ParameterHandler(int argc, char** argv, bool _rlcsa, std
     {
       switch(argv[i][1])
       {
+      case 'd':
+          this->detailed = true; break;
         case 'i':
           this->indels = true; break;
         case 'k':

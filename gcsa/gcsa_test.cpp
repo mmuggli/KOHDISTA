@@ -60,7 +60,7 @@ int main(int argc, char** argv)
 
 
   if(handler.patterns_name == 0) { return 0; }
-  GCSA::BWASearch<GCSA::GCSA> bwasearch(gcsa, *rmap_starts, frag2rmap);
+  GCSA::BWASearch<GCSA::GCSA> bwasearch(gcsa, *rmap_starts, frag2rmap, handler);
 
   std::ifstream patterns(handler.patterns_name, std::ios_base::binary);
   std::cout << "Reading patterns from file: " << handler.patterns_name << std::endl;
