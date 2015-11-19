@@ -1,4 +1,6 @@
 import Text.ParserCombinators.Parsec
+import System.IO
+import System.Environment
 
 valouevFile :: GenParser Char st [(String, String, String, [Float])]
 valouevFile =
@@ -35,3 +37,10 @@ parseOM input = parse valouevFile "(unknown)" input
 floatify :: String -> Float
 floatify s = read s
 
+
+main = do
+  args <- getArgs
+  let fname = (head args)
+  hdl <- openFile fname ReadMode 
+  contents <- hGetContents hdl
+  print $ show $ parseOM contents
