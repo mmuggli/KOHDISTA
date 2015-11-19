@@ -11,8 +11,7 @@ valouevFile =
 record :: GenParser Char st (String, String, String, [Float])
 record = do map_name <- fieldContent
             eol
-            char '\t'
-            enz_name <- fieldContent
+            enz_name <- parseEnzyme
             char '\t'
             enz_acr_name <- fieldContent
             char '\t'
@@ -21,7 +20,11 @@ record = do map_name <- fieldContent
             eol
             return (map_name, enz_name, enz_acr_name, fmap floatify frags)
 
-
+parseEnzyme :: GenParser Char st String
+parseEnzyme = do (char '\t' >> fieldContent)
+                 <|>
+                 fieldContent
+                 
 
 
 fieldContent :: GenParser Char st String
