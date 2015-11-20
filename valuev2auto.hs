@@ -9,16 +9,10 @@ valouevFile =
                 return result
 
 record :: GenParser Char st (String, String, String, [Float])
-record = do map_name <- fieldContent
+record = do map_name <- fieldContent ; eol
+            enz_name <- parseEnzyme ; char '\t'; enz_acr_name <- fieldContent; char '\t'; frags <- sepBy fieldContent (char '\t'); eol
             eol
-            enz_name <- parseEnzyme
-            char '\t'
-            enz_acr_name <- fieldContent
-            char '\t'
-            frags <- sepBy fieldContent (char '\t')
-            eol
-            eol
-            return (map_name, enz_name, enz_acr_name, fmap floatify frags)
+            return (map_name, enz_name, enz_acr_name, fmap read frags)
 
 parseEnzyme :: GenParser Char st String
 parseEnzyme = do (char '\t' >> fieldContent)
@@ -37,8 +31,15 @@ eol = char '\n'
             
 parseOM input = parse valouevFile "(unknown)" input
 
-floatify :: String -> Float
-floatify s = read s
+mylen :: [a] -> Int
+mylen [] = 0
+mylen (x:xs) = 1 + mylen xs
+
+joinem :: [(String, String, String, [Float])] -> [Float]
+joinem [] = []
+joinem (r:rs) = let (name, enz_name, enz_acr, frags) = r
+              in frags ++ [1000000] ++ (joinem rs) -- let (name, enz_name, enz_acr, frags) = r
+--
 
 
 main = do
@@ -46,4 +47,7 @@ main = do
   let fname = (head args)
   hdl <- openFile fname ReadMode 
   contents <- hGetContents hdl
-  print $ show $ parseOM contents
+  case parseOM contents of
+   Left x -> print $ show $ x
+   Right x -> print $ show $ joinem $ x
+  
