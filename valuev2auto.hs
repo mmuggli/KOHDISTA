@@ -1,6 +1,7 @@
 import Text.ParserCombinators.Parsec
 import System.IO
 import System.Environment
+import Data.List
 
 valouevFile :: GenParser Char st [(String, String, String, [Float])]
 valouevFile =
@@ -40,7 +41,11 @@ joinem [] = []
 joinem (r:rs) = let (name, enz_name, enz_acr, frags) = r
               in frags ++ [1000000] ++ (joinem rs) -- let (name, enz_name, enz_acr, frags) = r
 --
+extract_frags :: (String, String, String, [Float]) -> [Float]
+extract_frags (_, _, _, frags) = frags
 
+frag_delim :: [Float]
+frag_delim = [100000.0]
 
 main = do
   args <- getArgs
@@ -49,5 +54,5 @@ main = do
   contents <- hGetContents hdl
   case parseOM contents of
    Left x -> print $ show $ x
-   Right x -> print $ show $ joinem $ x
+   Right x -> print $ show $ intercalate frag_delim $ fmap extract_frags x
   
