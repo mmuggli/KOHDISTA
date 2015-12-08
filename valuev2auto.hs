@@ -32,15 +32,8 @@ eol = char '\n'
             
 parseOM input = parse valouevFile "(unknown)" input
 
-mylen :: [a] -> Int
-mylen [] = 0
-mylen (x:xs) = 1 + mylen xs
 
-joinem :: [(String, String, String, [Float])] -> [Float]
-joinem [] = []
-joinem (r:rs) = let (name, enz_name, enz_acr, frags) = r
-              in frags ++ [1000000] ++ (joinem rs) -- let (name, enz_name, enz_acr, frags) = r
---
+
 extract_frags :: (String, String, String, [Float]) -> [Float]
 extract_frags (_, _, _, frags) = frags
 
@@ -54,5 +47,11 @@ main = do
   contents <- hGetContents hdl
   case parseOM contents of
    Left x -> print $ show $ x
-   Right x -> print $ show $ intercalate frag_delim $ fmap extract_frags x
+   Right x -> print $ show $ nth_skipnodes 2 $intercalate frag_delim $ fmap extract_frags x
   
+
+-- thanks to http://stackoverflow.com/questions/27726739/implementing-an-efficient-sliding-window-algorithm-in-haskell
+windows :: Int -> [a] -> [[a]]
+windows m = transpose . take m . tails
+
+nth_skipnodes n nodes  = fmap sum $ windows n nodes
