@@ -2,7 +2,9 @@ import Text.ParserCombinators.Parsec
 import System.IO
 import System.Environment
 import Data.List
-
+import qualified Data.ByteString.Lazy as BL
+import Data.Binary.Put
+        
 valouevFile :: GenParser Char st [(String, String, String, [Float])]
 valouevFile =
             do  result <- many record
@@ -40,18 +42,31 @@ extract_frags (_, _, _, frags) = frags
 frag_delim :: [Float]
 frag_delim = [100000.0]
 
+serialiseSomething :: [[Float]] -> Put
+serialiseSomething skip_nodes = do
+  let num_nodes = fromIntegral $ sum $ fmap length skip_nodes
+  putWord32host num_nodes
+
+             
 main = do
   args <- getArgs
   let fname = (head args)
+  let ofname = (last args)
   hdl <- openFile fname ReadMode 
+  ohdl <- openFile ofname WriteMode
   contents <- hGetContents hdl
   case parseOM contents of
    Left x -> print $ show $ x
-   Right x -> print $ show $ nth_skipnodes 2 $intercalate frag_delim $ fmap extract_frags x
-  
+   Right x -> print $ show $ intercalate frag_delim $ fmap extract_frags x
+  case parseOM contents of
+   Left x -> print $ show $ x
+   Right x -> print $ show $ intercalate frag_delim $ fmap extract_frags x
+  BL.hPut ohdl $ runPut $ serialiseSomething [[1,2], [2,3]]
+  hClose ohdl  
 
 -- thanks to http://stackoverflow.com/questions/27726739/implementing-an-efficient-sliding-window-algorithm-in-haskell
 windows :: Int -> [a] -> [[a]]
 windows m = transpose . take m . tails
 
 nth_skipnodes n nodes  = fmap sum $ windows n nodes
+
