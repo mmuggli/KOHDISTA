@@ -42,12 +42,14 @@ extract_frags (_, _, _, frags) = frags
 frag_delim :: [Float]
 frag_delim = [100000.0]
 
-serialiseSomething :: [[Float]] -> Put
-serialiseSomething skip_nodes = do
+dumpNodes :: [[Float]] -> Put
+dumpNodes skip_nodes = do
   let num_nodes = fromIntegral $ sum $ fmap length skip_nodes
   putWord32host num_nodes
 
-             
+
+max_skipnode = 3
+               
 main = do
   args <- getArgs
   let fname = (head args)
@@ -60,8 +62,10 @@ main = do
    Right x -> print $ show $ intercalate frag_delim $ fmap extract_frags x
   case parseOM contents of
    Left x -> print $ show $ x
-   Right x -> print $ show $ intercalate frag_delim $ fmap extract_frags x
-  BL.hPut ohdl $ runPut $ serialiseSomething [[1,2], [2,3]]
+   Right x -> BL.hPut ohdl $ runPut $ dumpNodes $ fmap skipnode_list [1..max_skipnode]
+              where  nodes = intercalate frag_delim $ fmap extract_frags x
+                     skipnode_list n = nth_skipnodes n nodes
+  
   hClose ohdl  
 
 -- thanks to http://stackoverflow.com/questions/27726739/implementing-an-efficient-sliding-window-algorithm-in-haskell
