@@ -1,13 +1,14 @@
-import Text.ParserCombinators.Parsec
+import Text.ParserCombinators.Parsec as PS
 import System.IO
 import System.Environment
 import Data.List
 import qualified Data.ByteString.Lazy as BL
 import Data.Binary.Put
-        
+import Control.Applicative as A
+    
 valouevFile :: GenParser Char st [(String, String, String, [Float])]
 valouevFile =
-            do  result <- many record
+            do  result <- PS.many record
                 eof
                 return result
 
@@ -19,13 +20,13 @@ record = do map_name <- fieldContent ; eol
 
 parseEnzyme :: GenParser Char st String
 parseEnzyme = do (char '\t' >> fieldContent)
-                 <|>
+                 PS.<|>
                  fieldContent
                  
 
 
 fieldContent :: GenParser Char st String
-fieldContent = many (noneOf "\t\n")
+fieldContent = PS.many (noneOf "\t\n")
 
 
 -- The end of line character is \n
@@ -42,12 +43,28 @@ extract_frags (_, _, _, frags) = frags
 frag_delim :: [Float]
 frag_delim = [100000.0]
 
+dumpnode :: (Float, Int) -> Put
+dumpnode (label, value) = do
+  putWord32host $ round label
+  putWord32host $ fromIntegral value
+
+enumerate :: [Float] -> [(Float, Int)]
+enumerate order_list = (zip order_list [1..])
+                       
+dumpOrderList :: [Float] -> Put
+dumpOrderList order_list = do
+  let enumerated = enumerate order_list
+  let actions = fmap dumpnode enumerated  -- broken, need to do full list, not just first element
+  sequence actions
+  return ()
+                           
 dumpNodes :: [[Float]] -> Put
 dumpNodes skip_nodes = do
   let num_nodes = fromIntegral $ sum $ fmap length skip_nodes
   putWord32host num_nodes
-
-
+  fmap dumpOrderList skip_nodes -- broken, need to do full list, not just first element
+  return ()
+         
 max_skipnode = 3
                
 main = do
