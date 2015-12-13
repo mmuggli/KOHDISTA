@@ -79,12 +79,26 @@ main = do
    Right x -> print $ show $ intercalate frag_delim $ fmap extract_frags x
   case parseOM contents of
    Left x -> print $ show $ x
-   Right x -> BL.hPut ohdl $ runPut $ dumpNodes $ fmap skipnode_list [1..max_skipnode]
+   Right x -> BL.hPut ohdl $ runPut $ dumpNodes $ all_skipnodes
               where  nodes = intercalate frag_delim $ fmap extract_frags x
                      skipnode_list n = nth_skipnodes n nodes
+                     all_skipnodes = fmap skipnode_list [1..max_skipnode]
   
   hClose ohdl  
 
+
+-- can probably generate the middle portion of the left and right ends of edges using: take, drop, and transpose
+
+-- takes a list of skip lists and returns a list of heads; assumes shortest list first
+lefts :: [[a]] -> [[a]]
+lefts [] = []
+lefts [[]] = []
+lefts ([]:skip_lists) = fmap head skip_lists : lefts ( fmap tail skip_lists )
+lefts skip_lists = fmap head skip_lists : lefts ( fmap tail skip_lists )
+
+-- FIXME: rights is inefficient, as it forces the construction and retension of intermediate lists, this could be done lazily and allow the used heads to be GC'd
+rights :: [[a]] -> [[a]]
+rights skip_lists = reverse $ lefts $ fmap reverse skip_lists
 -- thanks to http://stackoverflow.com/questions/27726739/implementing-an-efficient-sliding-window-algorithm-in-haskell
 windows :: Int -> [a] -> [[a]]
 windows m = transpose . take m . tails
