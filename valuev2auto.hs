@@ -62,9 +62,19 @@ dumpNodes :: [[Float]] -> Put
 dumpNodes skip_nodes = do
   let num_nodes = fromIntegral $ sum $ fmap length skip_nodes
   putWord32host num_nodes
-  fmap dumpOrderList skip_nodes -- broken, need to do full list, not just first element
+  fmap dumpOrderList skip_nodes 
   return ()
-         
+
+ -- this attaches numbers in the same order as they are written to disk, FIXME: figure out a way to assign these numbers at the time they are written 
+enumerateOrderList :: (Int, [a]) -> [(a, Int)]
+enumerateOrderList (start, list) = zip list [start..]
+
+enumerateNodes :: [[a]] -> [[(a, Int)]]
+enumerateNodes skip_nodes = let lengths = fmap length skip_nodes
+                                prefixes = scanl (+) 1 lengths
+                                prefix_list_pairs = zip prefixes skip_nodes in
+                            fmap enumerateOrderList prefix_list_pairs
+                                
 max_skipnode = 3
                
 main = do
@@ -82,12 +92,14 @@ main = do
    Right x -> BL.hPut ohdl $ runPut $ dumpNodes $ all_skipnodes
               where  nodes = intercalate frag_delim $ fmap extract_frags x
                      skipnode_list n = nth_skipnodes n nodes
-                     all_skipnodes = fmap skipnode_list [1..max_skipnode]
+                     all_skipnodes = fmap skipnode_list [max_skipnode..1]
+                     all_enumerated_skipnodes = enumerateNodes all_skipnodes
   
   hClose ohdl  
 
 
 -- can probably generate the middle portion of the left and right ends of edges using: take, drop, and transpose
+-- 'sequence' will form the cartesian product of lists of lists
 
 -- takes a list of skip lists and returns a list of heads; assumes shortest list first
 lefts :: [[a]] -> [[a]]
