@@ -54,15 +54,19 @@ enumerate order_list = (zip order_list [1..])
 dumpOrderList :: [Float] -> Put
 dumpOrderList order_list = do
   let enumerated = enumerate order_list
-  let actions = fmap dumpnode enumerated  -- broken, need to do full list, not just first element
+  let actions = fmap dumpnode enumerated   -- broken, need to do full list, not just first element
   sequence actions
   return ()
-                           
+
+         
 dumpNodes :: [[Float]] -> Put
 dumpNodes skip_nodes = do
   let num_nodes = fromIntegral $ sum $ fmap length skip_nodes
-  putWord32host num_nodes
-  fmap dumpOrderList skip_nodes 
+  putWord32host $ fromIntegral $ num_nodes + 2 -- for initial and final
+  dumpnode initnode
+  let actions = fmap dumpOrderList skip_nodes
+  sequence actions
+  dumpnode finalnode
   return ()
 
  -- this attaches numbers in the same order as they are written to disk, FIXME: figure out a way to assign these numbers at the time they are written 
@@ -76,7 +80,26 @@ enumerateNodes skip_nodes = let lengths = fmap length skip_nodes
                             fmap enumerateOrderList prefix_list_pairs
                                 
 max_skipnode = 3
-               
+initnode = (0.0, 2100000000) -- fixme, should be 2**32 - 1 but not sure if unsigned clean
+finalnode = (0.0, 0)
+
+--FIXME Edge and Node should probably be types
+dumpEdgePiece :: (Float, Int) -> Put
+dumpEdgePiece (label, pos) = do putWord32host $ fromIntegral pos
+
+dumpEdge :: [(Float, Int)] -> Put
+dumpEdge enum_nodes = do let actions = fmap dumpEdgePiece enum_nodes
+                         sequence actions
+                         return ()
+                                                                   
+dumpEdges :: [[(Float, Int)]] -> Put
+dumpEdges edge_list = do putWord32host $ fromIntegral $ length edge_list
+                         sequence $ fmap dumpEdge edge_list
+                         return ()
+
+dumpGraph all_skipnodes edges = do dumpNodes all_skipnodes
+                                   dumpEdges edges -- FIXME: TODO
+
 main = do
   args <- getArgs
   let fname = (head args)
@@ -89,11 +112,18 @@ main = do
    Right x -> print $ show $ intercalate frag_delim $ fmap extract_frags x
   case parseOM contents of
    Left x -> print $ show $ x
-   Right x -> BL.hPut ohdl $ runPut $ dumpNodes $ all_skipnodes
+   Right x -> BL.hPut ohdl $ runPut $ dumpGraph all_skipnodes edges
               where  nodes = intercalate frag_delim $ fmap extract_frags x
                      skipnode_list n = nth_skipnodes n nodes
                      all_skipnodes = fmap skipnode_list [max_skipnode..1]
                      all_enumerated_skipnodes = enumerateNodes all_skipnodes
+                     num_all_nodes = length $ concat all_enumerated_skipnodes
+                     enumerated_initnode = (0.0, 0)
+                     enumerated_finalnode = (0.0, num_all_nodes)
+                     junction_nodes_pair = zip ([[enumerated_initnode]] ++  (rights all_enumerated_skipnodes)) ((lefts all_enumerated_skipnodes) ++ [[enumerated_finalnode]]) -- FIXME need start and end nodes
+                     product (left, right) = sequence left right
+                     products a = concat $ map product a 
+                     edges = concat $ fmap product  junction_nodes_pair
   
   hClose ohdl  
 
@@ -101,7 +131,8 @@ main = do
 -- can probably generate the middle portion of the left and right ends of edges using: take, drop, and transpose
 -- 'sequence' will form the cartesian product of lists of lists
 
--- takes a list of skip lists and returns a list of heads; assumes shortest list first
+-- takes a list of skip lists and returns a list of heads; assumes shortest list first : FIXME: check for or eliminate this assumption
+-- lefts means all the skipnodes have their left edge aligned, which actually means they form the right side of a junction
 lefts :: [[a]] -> [[a]]
 lefts [] = []
 lefts [[]] = []
