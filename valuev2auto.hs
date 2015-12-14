@@ -45,7 +45,7 @@ frag_delim = [100000.0]
 
 dumpnode :: (Float, Int) -> Put
 dumpnode (label, value) = do
-  putWord32host $ round label
+  putWord32host $ round label * 1000
   putWord32host $ fromIntegral value
 
 enumerate :: [Float] -> [(Float, Int)]
@@ -120,10 +120,18 @@ main = do
                      num_all_nodes = length $ concat all_enumerated_skipnodes
                      enumerated_initnode = (0.0, 0)
                      enumerated_finalnode = (0.0, num_all_nodes)
-                     junction_nodes_pair = zip ([[enumerated_initnode]] ++  (rights all_enumerated_skipnodes)) ((lefts all_enumerated_skipnodes) ++ [[enumerated_finalnode]]) -- FIXME need start and end nodes
-                     product (left, right) = sequence left right
+                     all_rights :: [[(Float, Int)]]
+                     all_rights = ([[enumerated_initnode]] ++  (rights all_enumerated_skipnodes))
+                     all_lefts :: [[(Float, Int)]]
+                     all_lefts = ((lefts all_enumerated_skipnodes) ++ [[enumerated_finalnode]]) 
+                     junction_nodes_pair :: [     ([(Float, Int)], [(Float, Int)])    ]
+                     junction_nodes_pair = zip all_rights all_lefts
+                     product ::  ([(Float, Int)], [(Float, Int)])   -> [[(Float, Int)]]
+                     product (left, right) = sequence [left, right]
                      products a = concat $ map product a 
-                     edges = concat $ fmap product  junction_nodes_pair
+                     edge_lists :: [[[(Float, Int)]]]
+                     edge_lists = fmap product  junction_nodes_pair
+                     edges = concat $ edge_lists
   
   hClose ohdl  
 
