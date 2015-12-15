@@ -13,9 +13,9 @@ valouevFile =
                 return result
 
 record :: GenParser Char st (String, String, String, [Float])
-record = do map_name <- fieldContent ; eol
-            enz_name <- parseEnzyme ; char '\t'; enz_acr_name <- fieldContent; char '\t'; frags <- sepBy fieldContent (char '\t'); eol
-            eol
+record = do map_name <- fieldContent ; _ <- eol
+            enz_name <- parseEnzyme ; _ <- char '\t'; enz_acr_name <- fieldContent; _ <- char '\t'; frags <- sepBy fieldContent (char '\t'); _ <- eol
+            _ <- eol
             return (map_name, enz_name, enz_acr_name, fmap read frags)
 
 parseEnzyme :: GenParser Char st String
@@ -32,7 +32,8 @@ fieldContent = PS.many (noneOf "\t\n")
 -- The end of line character is \n
 eol :: GenParser Char st Char
 eol = char '\n'
-            
+
+parseOM :: [Char] -> Either ParseError [(String, String, String, [Float])]  
 parseOM input = parse valouevFile "(unknown)" input
 
 
@@ -45,7 +46,7 @@ frag_delim = [100000.0]
 
 dumpnode :: (Float, Int) -> Put
 dumpnode (label, value) = do
-  putWord32host $ round label * 1000
+  putWord32host $ fromIntegral $ quantize $ round label * 1000
   putWord32host $ fromIntegral value
 
 enumerate :: [Float] -> [(Float, Int)]
@@ -55,8 +56,8 @@ dumpOrderList :: [Float] -> Put
 dumpOrderList order_list = do
   let enumerated = enumerate order_list
   let actions = fmap dumpnode enumerated   -- broken, need to do full list, not just first element
-  sequence actions
-  return ()
+  sequence_ actions
+  
 
          
 dumpNodes :: [[Float]] -> Put
@@ -65,9 +66,9 @@ dumpNodes skip_nodes = do
   putWord32host $ fromIntegral $ num_nodes + 2 -- for initial and final
   dumpnode initnode
   let actions = fmap dumpOrderList skip_nodes
-  sequence actions
+  sequence_ actions
   dumpnode finalnode
-  return ()
+  --return ()
 
  -- this attaches numbers in the same order as they are written to disk, FIXME: figure out a way to assign these numbers at the time they are written 
 enumerateOrderList :: (Int, [a]) -> [(a, Int)]
@@ -78,6 +79,14 @@ enumerateNodes skip_nodes = let lengths = fmap length skip_nodes
                                 prefixes = scanl (+) 1 lengths
                                 prefix_list_pairs = zip prefixes skip_nodes in
                             fmap enumerateOrderList prefix_list_pairs
+
+bin_size :: Int
+bin_size = 100
+
+quantize :: Int -> Int
+quantize val = if (val `mod` bin_size) < (bin_size `quot` 2)
+               then val - (val `mod` bin_size)
+               else val - (val `mod` bin_size) + bin_size
                                 
 max_skipnode = 3
 initnode = (0.0, 2100000000) -- fixme, should be 2**32 - 1 but not sure if unsigned clean
@@ -89,14 +98,15 @@ dumpEdgePiece (label, pos) = do putWord32host $ fromIntegral pos
 
 dumpEdge :: [(Float, Int)] -> Put
 dumpEdge enum_nodes = do let actions = fmap dumpEdgePiece enum_nodes
-                         sequence actions
-                         return ()
+                         sequence_ actions
+                         --return ()
                                                                    
 dumpEdges :: [[(Float, Int)]] -> Put
 dumpEdges edge_list = do putWord32host $ fromIntegral $ length edge_list
-                         sequence $ fmap dumpEdge edge_list
-                         return ()
+                         sequence_ $ fmap dumpEdge edge_list
+                         --return ()
 
+dumpGraph :: [[Float]] -> [[(Float, Int)]] -> Put
 dumpGraph all_skipnodes edges = do dumpNodes all_skipnodes
                                    dumpEdges edges -- FIXME: TODO
 
@@ -128,7 +138,7 @@ main = do
                      junction_nodes_pair = zip all_rights all_lefts
                      product ::  ([(Float, Int)], [(Float, Int)])   -> [[(Float, Int)]]
                      product (left, right) = sequence [left, right]
-                     products a = concat $ map product a 
+                     --products a = concat $ map product a 
                      edge_lists :: [[[(Float, Int)]]]
                      edge_lists = fmap product  junction_nodes_pair
                      edges = concat $ edge_lists
