@@ -90,7 +90,7 @@ quantize val = if (val `mod` bin_size) < (bin_size `quot` 2)
                else val - (val `mod` bin_size) + bin_size
 
 max_skipnode :: Int                                
-max_skipnode = 5
+max_skipnode = 4
 
 initnode :: (Float, Int)
 initnode = (0.0, 2100000000) -- fixme, should be 2**32 - 1 but not sure if unsigned clean
@@ -130,7 +130,7 @@ main = do
   case parseOM contents of
    Left x -> print $ show $ x
    Right x -> sequence_ [show_stats,  dump_file ]
-              where  show_stats = print $ "nodes: " ++ (show num_all_nodes) ++ " edges: " ++ (show (length edges)) 
+              where  show_stats = print $ "nodes: " ++ (show num_all_nodes) ++ " lefts: " ++ (show (junction_nodes_pair)) ++ " rights: " ++ (show (all_rights)) 
                      dump_file = BL.hPut ohdl $ runPut $ dumpGraph all_skipnodes edges
                      nodes = intercalate frag_delim $ fmap extract_frags x
                      skipnode_list n = take ((length nodes) - (n - 1)) $ nth_skipnodes n nodes
@@ -138,7 +138,7 @@ main = do
                      all_enumerated_skipnodes = enumerateNodes all_skipnodes
                      num_all_nodes = length $ concat all_enumerated_skipnodes
                      enumerated_initnode = (0.0, 0)
-                     enumerated_finalnode = (0.0, num_all_nodes)
+                     enumerated_finalnode = (0.0, num_all_nodes + 1)
                      
                      all_rights :: [[(Float, Int)]]
                      all_rights = [[enumerated_initnode]] ++ (rights all_enumerated_skipnodes)
@@ -168,7 +168,7 @@ main = do
 -- lefts means all the skipnodes have their left edge aligned, which actually means they form the right side of a junction
 lefts :: [[a]] -> [[a]]
 lefts [] = []
-lefts [[]] = [[]]
+lefts [[]] = []
 lefts ([]:skip_lists) =  fmap head skip_lists : lefts ( fmap tail skip_lists )
 lefts skip_lists =  fmap head skip_lists : lefts ( fmap tail skip_lists )
 
@@ -182,3 +182,4 @@ windows m = transpose . take m . tails
 nth_skipnodes :: Num b => Int -> [b] -> [b]
 nth_skipnodes n nodes  = fmap sum $ windows n nodes
 
+--TODO: mark backbone specially
