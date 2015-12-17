@@ -45,28 +45,41 @@ extract_frags (_, _, _, frags) = frags
 frag_delim :: [Float]
 frag_delim = [100000.0]
 
-dumpnode :: (Float, Int) -> Put
-dumpnode (lab, value) = do
-  putWord32host $ fromIntegral $ quantize $ round lab * 1000
-  putWord32host $ fromIntegral value
+dumpnode :: (Int, Int) -> Put
+dumpnode (lab, value) = do putWord32host $ fromIntegral lab
+                           putWord32host $ fromIntegral value
 
-enumerate :: [Float] -> [(Float, Int)]
-enumerate order_list = (zip order_list [1..])
+enumerate :: [a] -> [(a, Int)]
+enumerate list = (zip list [1..])
                        
-dumpOrderList :: [Float] -> Put
+dumpOrderList :: [Int] -> Put
 dumpOrderList order_list = do
   let enumerated = enumerate order_list
   let actions = fmap dumpnode enumerated   -- broken, need to do full list, not just first element
   sequence_ actions
-  
 
+make_skipnode n = n
+make_backbone n = n
+
+process_backbone_node :: Float -> Int                  
+process_backbone_node = (\lab -> fromIntegral $ make_backbone $ quantize $ round lab * 1000)
+
+process_backbone_nodes :: [Float] -> [Int]
+process_backbone_nodes labs = fmap process_backbone_node labs
+
+process_actual_skipnode :: Float -> Int
+process_actual_skipnode = (\lab -> fromIntegral $ make_skipnode $ quantize $ round lab * 1000)                              
+process_actual_skipnodes :: [Float] -> [Int]                             
+process_actual_skipnodes labs = fmap process_actual_skipnode labs
          
 dumpNodes :: [[Float]] -> Put
 dumpNodes skip_nodes = do
   let num_nodes = fromIntegral $ sum $ fmap length skip_nodes
   putWord32host $ fromIntegral $ num_nodes + 2 -- for initial and final
   dumpnode initnode
-  let actions = fmap dumpOrderList skip_nodes
+  let actual_skipnodes = take ((length skip_nodes) - 1) skip_nodes
+  let backbone = [last skip_nodes]
+  let actions = (fmap dumpOrderList (fmap process_actual_skipnodes actual_skipnodes)) ++ (fmap dumpOrderList (fmap process_backbone_nodes backbone))
   sequence_ actions
   dumpnode finalnode
   --return ()
@@ -89,14 +102,15 @@ quantize val = if (val `mod` bin_size) < (bin_size `quot` 2)
                then val - (val `mod` bin_size)
                else val - (val `mod` bin_size) + bin_size
 
+-- the order of the automaton.  This counts the backbone as a degenerate case of skip nodes, you might call it the 0th order skip nodes.  So an automaton with a backbone and skipnodes that sum two consecutive nodes in the backbone for each skipnode would have a value of 2.                    
 max_skipnode :: Int                                
-max_skipnode = 4
+max_skipnode = 3
 
-initnode :: (Float, Int)
-initnode = (0.0, 2100000000) -- fixme, should be 2**32 - 1 but not sure if unsigned clean
+initnode :: (Int, Int)
+initnode = (process_backbone_node 0.0, 2100000000) -- fixme, should be 2**32 - 1 but not sure if unsigned clean
 
-finalnode :: (Float, Int)
-finalnode = (0.0, 0)
+finalnode :: (Int, Int)
+finalnode = (process_backbone_node 0.0, 0)
 
 --FIXME Edge and Node should probably be types
 dumpEdgePiece :: (Float, Int) -> Put
