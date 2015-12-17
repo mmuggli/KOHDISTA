@@ -58,8 +58,13 @@ dumpOrderList order_list = do
   let actions = fmap dumpnode enumerated   -- broken, need to do full list, not just first element
   sequence_ actions
 
-make_skipnode n = n
-make_backbone n = n
+make_skipnode n = if even n
+                  then n + 1
+                  else n
+                       
+make_backbone n = if odd n
+                  then n - 1
+                  else n
 
 process_backbone_node :: Float -> Int                  
 process_backbone_node = (\lab -> fromIntegral $ make_backbone $ quantize $ round lab * 1000)
