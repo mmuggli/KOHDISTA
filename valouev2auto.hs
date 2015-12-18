@@ -67,22 +67,28 @@ make_backbone n = if odd n
                   else n
 
 process_backbone_node :: Float -> Int                  
-process_backbone_node = (\lab -> fromIntegral $ make_backbone $ quantize $ round lab * 1000)
+process_backbone_node = (\lab -> fromIntegral $ make_backbone $  round lab * 1000)
 
 process_backbone_nodes :: [Float] -> [Int]
 process_backbone_nodes labs = fmap process_backbone_node labs
 
 process_actual_skipnode :: Float -> Int
-process_actual_skipnode = (\lab -> fromIntegral $ make_skipnode $ quantize $ round lab * 1000)                              
+process_actual_skipnode = (\lab -> fromIntegral $ make_skipnode $ round lab * 1000)                              
 process_actual_skipnodes :: [Float] -> [Int]                             
 process_actual_skipnodes labs = fmap process_actual_skipnode labs
          
-dumpNodes :: [[Float]] -> Put
-dumpNodes skip_nodes = do
+--dumpNodes :: [[Float]] -> Put
+dumpNodes skip_nodes nodes = do
   let num_nodes = fromIntegral $ sum $ fmap length skip_nodes
   putWord32host $ fromIntegral $ num_nodes + 2 -- for initial and final
+  --initnode :: (Int, Int)
+  let initnode = (2100000000, 0) -- fixme, should be 2**32 - 1 but not sure if unsigned clean
+
+  --finalnode :: (Int, Int)
+  let finalnode = (process_backbone_node 0.0, (length nodes) + 1)
+
   dumpnode initnode
-  let actual_skipnodes = take ((length skip_nodes) - 1) skip_nodes
+  let actual_skipnodes = init  skip_nodes
   let backbone = [last skip_nodes]
   let actions = (fmap dumpOrderList (fmap process_actual_skipnodes actual_skipnodes)) ++ (fmap dumpOrderList (fmap process_backbone_nodes backbone))
   sequence_ actions
@@ -107,15 +113,12 @@ quantize val = if (val `mod` bin_size) < (bin_size `quot` 2)
                then val - (val `mod` bin_size)
                else val - (val `mod` bin_size) + bin_size
 
+float_quantize :: Float -> Float
+float_quantize val = (fromIntegral (quantize (1000 * round val))) / 1000.0
 -- the order of the automaton.  This counts the backbone as a degenerate case of skip nodes, you might call it the 0th order skip nodes.  So an automaton with a backbone and skipnodes that sum two consecutive nodes in the backbone for each skipnode would have a value of 2.                    
 max_skipnode :: Int                                
 max_skipnode = 3
 
-initnode :: (Int, Int)
-initnode = (process_backbone_node 0.0, 2100000000) -- fixme, should be 2**32 - 1 but not sure if unsigned clean
-
-finalnode :: (Int, Int)
-finalnode = (process_backbone_node 0.0, 0)
 
 --FIXME Edge and Node should probably be types
 dumpEdgePiece :: (Float, Int) -> Put
@@ -131,9 +134,9 @@ dumpEdges edge_list = do putWord32host $ fromIntegral $ length edge_list
                          sequence_ $ fmap dumpEdge edge_list
                          --return ()
 
-dumpGraph :: [[Float]] -> [[(Float, Int)]] -> Put
-dumpGraph all_skipnodes edges = do dumpNodes all_skipnodes
-                                   dumpEdges edges -- FIXME: TODO
+--dumpGraph :: [[Float]] -> [[(Float, Int)]] -> Put
+dumpGraph all_skipnodes edges nodes = do dumpNodes all_skipnodes nodes
+                                         dumpEdges edges -- FIXME: TODO
 
 main :: IO ()
 main = do
@@ -143,18 +146,18 @@ main = do
   hdl <- openFile fname ReadMode 
   ohdl <- openFile ofname WriteMode
   contents <- hGetContents hdl
-  case parseOM contents of
-   Left x -> print $ show $ x
-   Right x -> print $ show $ intercalate frag_delim $ fmap extract_frags x
+  -- case parseOM contents of
+  --  Left x -> print $ show $ x
+  --  Right x -> print $ show $ intercalate frag_delim $ fmap extract_frags x
   case parseOM contents of
    Left x -> print $ show $ x
    Right x -> sequence_ [show_stats,  dump_file ]
-              where  show_stats = print $ "nodes: " ++ (show num_all_nodes) ++ " lefts: " ++ (show (junction_nodes_pair)) ++ " rights: " ++ (show (all_rights)) 
-                     dump_file = BL.hPut ohdl $ runPut $ dumpGraph all_skipnodes edges
-                     nodes = intercalate frag_delim $ fmap extract_frags x
+              where  show_stats = print $ "nodes: " ++ (show num_all_nodes) ++ " edges: " ++ (show (length edges))
+                     dump_file = BL.hPut ohdl $ runPut $ dumpGraph all_skipnodes edges nodes
+                     nodes = fmap float_quantize $ intercalate frag_delim $ fmap extract_frags x
                      skipnode_list n = take ((length nodes) - (n - 1)) $ nth_skipnodes n nodes
                      all_skipnodes = fmap skipnode_list $ reverse [1..max_skipnode]
-                     all_enumerated_skipnodes = enumerateNodes all_skipnodes
+                     all_enumerated_skipnodes = enumerateNodes all_skipnodes -- this enumeration is file position, not backbone position
                      num_all_nodes = length $ concat all_enumerated_skipnodes
                      enumerated_initnode = (0.0, 0)
                      enumerated_finalnode = (0.0, num_all_nodes + 1)
