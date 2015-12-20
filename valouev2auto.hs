@@ -1,4 +1,4 @@
---import Debug.Trace
+-- import Debug.Trace
 import Text.ParserCombinators.Parsec as PS
 import System.IO
 import System.Environment
@@ -6,7 +6,15 @@ import Data.List
 import qualified Data.ByteString.Lazy as BL
 import Data.Binary.Put
 --import Control.Applicative as A
-    
+bin_size :: Int
+bin_size = 100
+
+max_skipnode :: Int                                
+max_skipnode = 2
+               
+desorption_thresh :: Float
+desorption_thresh = 1.0
+                    
 valouevFile :: GenParser Char st [(String, String, String, [Float])]
 valouevFile =
             do  result <- PS.many record
@@ -105,8 +113,6 @@ enumerateNodes skip_nodes = let lengths = fmap length skip_nodes
                                 prefix_list_pairs = zip prefixes skip_nodes in
                             fmap enumerateOrderList prefix_list_pairs
 
-bin_size :: Int
-bin_size = 100
 
 quantize :: Int -> Int
 quantize val = if (val `mod` bin_size) < (bin_size `quot` 2)
@@ -116,8 +122,6 @@ quantize val = if (val `mod` bin_size) < (bin_size `quot` 2)
 float_quantize :: Float -> Float
 float_quantize val = (fromIntegral (quantize (1000 * round val))) / 1000.0
 -- the order of the automaton.  This counts the backbone as a degenerate case of skip nodes, you might call it the 0th order skip nodes.  So an automaton with a backbone and skipnodes that sum two consecutive nodes in the backbone for each skipnode would have a value of 2.                    
-max_skipnode :: Int                                
-max_skipnode = 3
 
 
 --FIXME Edge and Node should probably be types
@@ -152,7 +156,7 @@ main = do
   case parseOM contents of
    Left x -> print $ show $ x
    Right x -> sequence_ [show_stats,  dump_file ]
-              where  show_stats = print $ "nodes: " ++ (show num_all_nodes) ++ " edges: " ++ (show (length edges))
+              where  show_stats = print $ "nodes: " ++ (show num_all_nodes) ++ " edges: " ++ (show (length edges)) ++ " skip edge bundles: " ++ (show (length skip_edge_list))
                      dump_file = BL.hPut ohdl $ runPut $ dumpGraph all_skipnodes edges nodes
                      nodes = fmap float_quantize $ intercalate frag_delim $ fmap extract_frags x
                      skipnode_list n = take ((length nodes) - (n - 1)) $ nth_skipnodes n nodes
@@ -177,11 +181,32 @@ main = do
                      --products a = concat $ map product a 
                      edge_lists :: [[[(Float, Int)]]]
                      edge_lists = fmap product  junction_nodes_pair
-
-                     edges = concat $ edge_lists
+                     edge_skipable :: [([(Float, Int)], [(Float, Int)])]
+                     edge_skipable = zip (all_rights ++ [[enumerated_finalnode]]) ([[enumerated_initnode]] ++ all_lefts)
+                     actual_skip = skip_edge_pairs edge_skipable
+                     skip_edge_list = fmap product $ fmap productable actual_skip
+                     edges :: [[(Float, Int)]]
+                     edges =  (concat  edge_lists) ++ (concat skip_edge_list) 
   
   hClose ohdl  
 
+productable :: (([(Float, Int)], [(Float, Int)]), ([(Float, Int)], [(Float, Int)])) -> ([(Float, Int)], [(Float, Int)])
+productable ((a,b), (c,d)) = (a,d)
+
+skip_edge_pairs :: [([(Float, Int)], [(Float, Int)])] -> [(([(Float, Int)], [(Float, Int)]), ([(Float, Int)], [(Float, Int)]))]
+skip_edge_pairs (x:y:[]) = []
+skip_edge_pairs (x:xs) = if small $ head xs
+                         then skip_edge_run x xs
+                         else skip_edge_pairs xs
+
+skip_edge_run :: ([(Float, Int)], [(Float, Int)]) -> [([(Float, Int)], [(Float, Int)])] -> [(([(Float, Int)], [(Float, Int)]), ([(Float, Int)], [(Float, Int)]))]
+skip_edge_run x (y:[]) = []
+skip_edge_run x xs = if small $ head xs
+                     then (x, head (tail xs)) : skip_edge_run x (tail xs)
+                     else skip_edge_pairs xs
+
+small :: ([(Float, Int)], [(Float, Int)]) -> Bool
+small (rights, lefts) =  case (last rights) of (label, pos) ->  label < desorption_thresh
 
 -- can probably generate the middle portion of the left and right ends of edges using: take, drop, and transpose
 -- 'sequence' will form the cartesian product of lists of lists
