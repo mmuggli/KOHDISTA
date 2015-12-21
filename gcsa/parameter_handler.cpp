@@ -46,6 +46,12 @@ GCSA::ParameterHandler::ParameterHandler(int argc, char** argv, bool _rlcsa, std
       case 'E':
           this->end = atoi(argv[i] + 2);
            break; 
+      case 'C':
+          this->chi2cdf_thresh = atof(argv[i] + 2);
+           break; 
+      case 'O':
+          this->min_overlap = atoi(argv[i] + 2);
+           break; 
 
         default:
           std::cout << "Invalid option: " << argv[i] << std::endl << std::endl;
@@ -91,6 +97,10 @@ GCSA::ParameterHandler::printUsage() const
   std::cout << "  -m#  Try to locate at most # matches (requires -l)." << std::endl;
   std::cout << "  -p   Use different penalties for different edit operations (requires -k)." << std::endl;
   std::cout << "  -r   Search also for the reverse complements of the patterns." << std::endl;
+  std::cout << "  -S#  Start pattern to search" << std::endl;
+  std::cout << "  -E#  End pattern to search" << std::endl;
+  std::cout << "  -C#.#  Chi^2 CDF threshold" << std::endl;
+  std::cout << "  -O#  minimum overlap" << std::endl;  
   if(this->rlcsa)
   {
     std::cout << "  -s#  Skip first # characters of the pattern (requires k = 0)." << std::endl;

@@ -234,7 +234,6 @@ int main(int argc, char** argv)
     unsigned int numnodes = nodes.size();
     unsigned int numedges = edges.size();
     ofd.write((char*)&numnodes, 4);
-    ofd.write((char*)&numedges, 4);
     for (std::vector<Node *>::iterator ni = nodes.begin(); ni != nodes.end(); ++ni) {
         unsigned int lab = ((*ni)->label);
         if (lab == 0) std::cout << "0 lab at node " << (*ni)->value <<  " pos " << (*ni)->pos << std::endl;
@@ -251,6 +250,7 @@ int main(int argc, char** argv)
         ofd.write((char*)&lab, 4);
         ofd.write((char*)&((*ni)->value), 4);
     }
+    ofd.write((char*)&numedges, 4);
 
     std::cout << "Number of nodes: " << numnodes << std::endl;
     std::cout << "largest node pos: " << (*(nodes.end() - 1))->pos << std::endl;

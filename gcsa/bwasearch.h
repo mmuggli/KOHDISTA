@@ -335,7 +335,7 @@ class BWASearch
     }
 
 
-    const double MAX_CHISQUARED_CDF = .1;
+    const double MAX_CHISQUARED_CDF = .08;
     const float MIN_T_SCORE = 8.1;
     const int MAX_LOOKAHEAD = 2;
     const unsigned int MIN_MATCH_LEN = 10;
@@ -453,7 +453,7 @@ class BWASearch
                           std::vector<pair_type> &target_match_ranges, scoring_params &sp, const std::string &rmap_name, const unsigned char direction, const int skip) const {
         // handle pat_cursor=0 to prevent underrun in the other branch
         float t_score = NU * matched_count - LAMBDA * missed_count;
-        if (pat_cursor == 0   || (matched_count >= MIN_MATCH_LEN) ){// && t_score >= MIN_T_SCORE)) { // stop the recurrsion
+        if (pat_cursor == 0   || (matched_count >= handler.min_overlap) ){// && t_score >= MIN_T_SCORE)) { // stop the recurrsion
         //if (matched_count >= MIN_MATCH_LEN) {
             //if (t_score < 7.0) return false;
             boost::math::chi_squared cs(matched_count );
@@ -563,7 +563,7 @@ class BWASearch
                     float chi_squared = std::pow((float)deviation / (float)get_stddev(uint_max(c, subst_frag)), 2);
                     boost::math::chi_squared cs(matched_count + 1);
                     double chisqcdf = boost::math::cdf(cs, chi_squared_sum + chi_squared);
-                    if (chisqcdf <= MAX_CHISQUARED_CDF) {
+                    if (chisqcdf <= handler.chi2cdf_thresh) {
 
                         pair_type new_range;
                         if (pat_cursor == pattern.size()) {

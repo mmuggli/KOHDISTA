@@ -726,10 +726,13 @@ Backbone::Backbone(const GCSA& _gcsa, PathGraph& graph, Graph& parent, bool prin
 
 
   // Use a kind of backward searching to find the backbone in PathGraph.
+  // In graph.nodes, all final nodes will be sorted to the left (0) end
+  //    and all initial nodes will be sorted at the right (len - num automata) end
+  // 
   usint bb_nodes = 0;
   const unsigned int num_automata = this->gcsa.getNumberOfAutomata();
   for(usint j = 0; j < num_automata; j++) {
-      std::cout << "processing automata " << j << " of " <<  num_automata  << std::endl;
+      std::cout << "processing automata " << (j + 1) << " of " <<  num_automata  << std::endl;
       usint curr_node = j;  // Final node of automaton j.
       graph.nodes[curr_node].setBackbone(); 
       bb_nodes++;
@@ -737,25 +740,30 @@ Backbone::Backbone(const GCSA& _gcsa, PathGraph& graph, Graph& parent, bool prin
           //std::cout << "\tcurr_node: " << curr_node << " of " << this->gcsa.getSize() - num_automata<< std::endl;
           bool found = false;
           pair_type edge_range = graph.getEdges(curr_node, false);
-          usint prev = 0;
+          usint prev_node = 0;
           for(usint i = edge_range.first; i <= edge_range.second; i++) {
-              prev = graph.edges[i].from;
-              //std::cout << "\t\tedge " << i << " of " << edge_range.second << " (prev " << prev << ")" <<std::endl;
-              //std::cout << "\t\tpredicate: " << iter.isSet(graph.nodes[prev].from) << " " << graph.nodes[prev].value() << " " <<  graph.nodes[curr_node].value() - 1 << std::endl;
-              if(iter.isSet(graph.nodes[prev].from) && graph.nodes[prev].value() == graph.nodes[curr_node].value() - 1) {
-                  graph.nodes[prev].setBackbone(); 
+              prev_node = graph.edges[i].from;
+              //std::cout << "\t\tedge " << i << " of " << edge_range.second << " (prev_node " << prev_node << ")" <<std::endl;
+              //std::cout << "\t\tpredicate: " << iter.isSet(graph.nodes[prev_node].from) << " " << graph.nodes[prev_node].value() << " " <<  graph.nodes[curr_node].value() - 1 << std::endl;
+              if(iter.isSet(graph.nodes[prev_node].from) && graph.nodes[prev_node].value() == graph.nodes[curr_node].value() - 1) {
+                  graph.nodes[prev_node].setBackbone(); 
                   bb_nodes++;
-                  curr_node = prev;
+                  curr_node = prev_node;
                   found = true; break;
               }
           }
           if(!found) {
               std::cerr << "Error: Cannot find previous backbone node!"
-                        << "\tcurr_node: " << curr_node << "\tprev: " << prev
+                        << "\tcurr_node: " << curr_node << "\tprev_node: " << prev_node
                         << "\tedge_range.first: " << edge_range.first
                         << "\tedge_range.second: " << edge_range.second <<std::endl;
-              if (iter.isSet(graph.nodes[prev].from)) {
-                  std::cerr << "graph.nodes[prev].value(): " << graph.nodes[prev].value()
+              std::cerr << "Candidates:" << std::endl;
+              for(usint j = edge_range.first; j <= edge_range.second; j++) {
+                  usint cand_prev_node = graph.edges[j].from;
+                  std:: cout << "\t" << "iter.isSet(graph.nodes[cand_prev_node].from): " << iter.isSet(graph.nodes[cand_prev_node].from) << " graph.nodes[cand_prev_node].value(): " <<  graph.nodes[cand_prev_node].value() << " graph.nodes[curr_node].value(): " <<  graph.nodes[curr_node].value() << std::endl;
+              }
+              if (iter.isSet(graph.nodes[prev_node].from)) {
+                  std::cerr << "graph.nodes[prev_node].value(): " << graph.nodes[prev_node].value()
                             << "\tgraph.nodes[curr_node].value(): " << graph.nodes[curr_node].value() << std::endl;
               }
               return;

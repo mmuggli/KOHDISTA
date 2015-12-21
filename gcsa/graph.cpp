@@ -60,13 +60,13 @@ Graph::Graph(const std::string& base_name, bool is_full_name) :
   }
 
   infile.read((char*)&(this->node_count), sizeof(this->node_count));
-  infile.read((char*)&(this->edge_count), sizeof(this->edge_count));
   std::cout << "Allocating/reading " << this->node_count << " nodes." << std::endl;
   this->nodes = new GraphNode[this->node_count];
   infile.read((char*)(this->nodes), this->node_count * sizeof(GraphNode));
   // for (unsigned int ijk = 0; ijk < this->node_count; ++ijk) {
   //     //std::cout << base_name << " GraphNode " << ijk << " = label:" << this->nodes[ijk].label << " value:" << this->nodes[ijk].value << std::endl;
   // }
+  infile.read((char*)&(this->edge_count), sizeof(this->edge_count));
   std::cout << "Allocating/reading " << this->edge_count << " edges." << std::endl;
   this->edges = new GraphEdge[this->edge_count];
   // for (unsigned int ijk = 0; ijk < this->edge_count; ++ijk) {
@@ -102,8 +102,8 @@ Graph::write(const std::string& base_name, bool is_full_name)
   }
 
   outfile.write((char*)&(this->node_count), sizeof(this->node_count));
-  outfile.write((char*)&(this->edge_count), sizeof(this->edge_count));
   CSA::largeWrite(outfile, (char*)(this->nodes), this->node_count * sizeof(GraphNode), 1024);
+  outfile.write((char*)&(this->edge_count), sizeof(this->edge_count));
   CSA::largeWrite(outfile, (char*)(this->edges), this->edge_count * sizeof(GraphEdge), 1024);
 
   outfile.close();
@@ -674,8 +674,9 @@ PathGraph::PathGraph(PathGraph& previous) :
       pair_type pn_range = previous.getNodesFrom(left->to);
       new_nodes += CSA::length(pn_range);
     }
-    std::cout << "Trying to allocate space for " << new_nodes << " nodes." << std::endl;
+
   }
+  std::cout << "Trying to allocate space for " << new_nodes << " nodes." << std::endl;  
   this->nodes.reserve(new_nodes);
   nodecnt = 0; unsigned int pncnt = 0;
   for(nvector::iterator left = previous.nodes.begin(); left != previous.nodes.end(); ++left)

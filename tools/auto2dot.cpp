@@ -55,7 +55,7 @@ int main(int argc, char** argv)
     unsigned int num_nodes = 0;
     unsigned int num_edges = 0;
     read(fd, &num_nodes, 4);
-    read(fd, &num_edges, 4);
+
 
     unsigned int min = (unsigned int)-1;
     unsigned int max = 0;
@@ -85,6 +85,7 @@ int main(int argc, char** argv)
         }
         nodes.push_back(n);
     }
+    read(fd, &num_edges, 4);
     std::cout << "// Nodes: " << num_nodes << " Edges: " << num_edges << " Max label: " << max << " Min label: " << min << std::endl;
     for (int i = 0; i < num_edges; ++i) {    
         unsigned int from;
@@ -103,7 +104,7 @@ int main(int argc, char** argv)
     std::cout << "    rankdir=LR;" << std::endl;
     std::cout << "    ordering=out;" << std::endl;
     for (std::vector<Node *>::iterator ni = nodes.begin(); ni != nodes.end(); ++ni) {
-        std::cout << "    n" << (*ni)->pos << " [label=\"" << (*ni)->label / 1000.0 << "\"";
+        std::cout << "    n" << (*ni)->pos << " [label=\"" << (*ni)->value << ":" << (int) ((*ni)->label / 1000.0) <<  "\"";
         if (!myisupper((*ni)->label)) std::cout <<  ",style=dotted";
              std::cout << "];" << std::endl;
     }
