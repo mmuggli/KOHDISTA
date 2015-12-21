@@ -1,4 +1,4 @@
--- import Debug.Trace
+--- import Debug.Trace
 import Text.ParserCombinators.Parsec as PS
 import System.IO
 import System.Environment
@@ -9,8 +9,9 @@ import Data.Binary.Put
 bin_size :: Int
 bin_size = 100
 
+-- the order of the automaton.  This counts the backbone as a degenerate case of skip nodes, you might call it the 0th order skip nodes.  So an automaton with a backbone and skipnodes that sum two consecutive nodes in the backbone for each skipnode would have a value of 2.                    
 max_skipnode :: Int                                
-max_skipnode = 2
+max_skipnode = 3
                
 desorption_thresh :: Float
 desorption_thresh = 1.0
@@ -121,7 +122,6 @@ quantize val = if (val `mod` bin_size) < (bin_size `quot` 2)
 
 float_quantize :: Float -> Float
 float_quantize val = (fromIntegral (quantize (1000 * round val))) / 1000.0
--- the order of the automaton.  This counts the backbone as a degenerate case of skip nodes, you might call it the 0th order skip nodes.  So an automaton with a backbone and skipnodes that sum two consecutive nodes in the backbone for each skipnode would have a value of 2.                    
 
 
 --FIXME Edge and Node should probably be types
@@ -142,6 +142,14 @@ dumpEdges edge_list = do putWord32host $ fromIntegral $ length edge_list
 dumpGraph all_skipnodes edges nodes = do dumpNodes all_skipnodes nodes
                                          dumpEdges edges -- FIXME: TODO
 
+
+-- FIXME: enable this function
+add_reversed :: [[a]] -> [[a]]
+add_reversed [] = []
+add_reversed a = (head a) : (reverse (head a)) : (add_reversed (tail a))
+
+-- FIXME: trim tips of rmaps
+
 main :: IO ()
 main = do
   args <- getArgs
@@ -158,7 +166,7 @@ main = do
    Right x -> sequence_ [show_stats,  dump_file ]
               where  show_stats = print $ "nodes: " ++ (show num_all_nodes) ++ " edges: " ++ (show (length edges)) ++ " skip edge bundles: " ++ (show (length skip_edge_list))
                      dump_file = BL.hPut ohdl $ runPut $ dumpGraph all_skipnodes edges nodes
-                     nodes = fmap float_quantize $ intercalate frag_delim $ fmap extract_frags x
+                     nodes = fmap float_quantize $ intercalate frag_delim $ {- add_reversed $ -}  fmap extract_frags x
                      skipnode_list n = take ((length nodes) - (n - 1)) $ nth_skipnodes n nodes
                      all_skipnodes = fmap skipnode_list $ reverse [1..max_skipnode]
                      all_enumerated_skipnodes = enumerateNodes all_skipnodes -- this enumeration is file position, not backbone position
