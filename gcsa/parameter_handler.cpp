@@ -52,6 +52,9 @@ GCSA::ParameterHandler::ParameterHandler(int argc, char** argv, bool _rlcsa, std
       case 'O':
           this->min_overlap = atoi(argv[i] + 2);
            break; 
+      case 'T':
+          this->min_t_score = atof(argv[i] + 2);
+           break; 
 
         default:
           std::cout << "Invalid option: " << argv[i] << std::endl << std::endl;
@@ -124,6 +127,11 @@ GCSA::ParameterHandler::printOptions() const
   if(this->skip > 0) { std::cout << " skip=" << this->skip; }
   if(this->verbose) { std::cout << " verbose"; }
   if(this->write) { std::cout << " write"; }
+  std::cout << " min_overlap=" << this->min_overlap;
+  std::cout << " chi2cdf_thresh=" << this->chi2cdf_thresh;
+  std::cout << " min_t_score=" << this->min_t_score;
+  if(this->begin) std::cout << " begin=" << this->begin;
+  if(this->end) std::cout << " end=" << this->end;
   std::cout << std::endl;
 
   std::cout << "Index: " << this->index_name << std::endl;

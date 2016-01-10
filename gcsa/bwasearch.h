@@ -361,7 +361,10 @@ class BWASearch
         unsigned int rmap_num = rmap_iter.rank(val) - 1;
         if (already_reported.find(rmap_num) == already_reported.end()) {
             unsigned int offset = val - rmap_iter.select(rmap_num );
-            std::string target_rmap_name = frag2rmap[rmap_num].second;
+            std::string target_rmap_name = "unknown_rmap_name";
+            if (rmap_num < frag2rmap.size()) {
+                target_rmap_name = frag2rmap[rmap_num].second;
+            }
             std::cout << "<(rmap #" << rmap_num << ")" << target_rmap_name << "+" <<offset << ">" << std::endl;;
             already_reported.insert(rmap_num);
         }
@@ -376,7 +379,10 @@ class BWASearch
             unsigned int rmap_num = rmap_iter.rank(suffix_array_index) - 1;
             usint rmap_start = rmap_iter.select(rmap_num);
             std::cout << "rmap # " << rmap_num << " starts at GCSA index " << rmap_start << std::endl;
-            std::string target_rmap_name = frag2rmap[rmap_num].second;
+            std::string target_rmap_name = "unknown_rmap_name";
+            if (rmap_num < frag2rmap.size()) {
+                target_rmap_name = frag2rmap[rmap_num].second;
+            }
             std::cout << "alignment for " << rmap_name << " and " << target_rmap_name << std::endl;
 
 
@@ -441,7 +447,7 @@ class BWASearch
             // }
             // std::cout << std::endl;
             std::cout << "s-score:" << s_tot << std::endl;
-            float t_score = NU * matched_count - LAMBDA * missed_count;
+            float t_score = NU * (matched_count + 1) - LAMBDA * missed_count;
             std::cout << "t-score: " << t_score << std::endl;
 
         }            
@@ -452,10 +458,10 @@ class BWASearch
                           std::vector<std::vector<usint> > &query_match_frags,
                           std::vector<pair_type> &target_match_ranges, scoring_params &sp, const std::string &rmap_name, const unsigned char direction, const int skip) const {
         // handle pat_cursor=0 to prevent underrun in the other branch
-        float t_score = NU * matched_count - LAMBDA * missed_count;
-        if (pat_cursor == 0   || (matched_count >= handler.min_overlap) ){// && t_score >= MIN_T_SCORE)) { // stop the recurrsion
+        float t_score = NU * (matched_count + 1) - LAMBDA * missed_count; // matched cutsites = matched frags + 1
+        if (pat_cursor == 0   || matched_count >= handler.min_overlap)  { // && t_score >= handler.min_t_score) { // stop the recurrsion
         //if (matched_count >= MIN_MATCH_LEN) {
-            //if (t_score < 7.0) return false;
+            if (t_score < handler.min_t_score || matched_count < MIN_MATCH_LEN) return false;
             boost::math::chi_squared cs(matched_count );
             double chisqcdf = boost::math::cdf(cs, chi_squared_sum);
 
@@ -580,8 +586,8 @@ class BWASearch
                                 off_backbone_penalty = 1;
                             }
                         }
-                        float new_t_score = NU * (matched_count + 1)- LAMBDA * (missed_count + actv_la + off_backbone_penalty);
-                        if (1 || matched_count  > expected_t_lut_size || new_t_score >= lenwise_t_cutoffs[matched_count ]) {
+                        float new_t_score = NU * (matched_count + 1 + 1)- LAMBDA * (missed_count + actv_la + off_backbone_penalty); // matched cutsites = matched frags + 1
+                        if (1|| matched_count  > expected_t_lut_size || matched_count <= 2 || new_t_score >= lenwise_t_cutoffs[matched_count - 2]) {
                                 std::map<work_t, std::pair<float, float> >::iterator prev_work = exhausted_nodes.find(work);
                                 if( prev_work == exhausted_nodes.end() || prev_work->second.first > chisqcdf || prev_work->second.second < new_t_score) {
                                     target_match_frags.push_back(subst_frag);
