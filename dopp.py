@@ -78,3 +78,6 @@ p = subprocess.Popen([dopp_instdir + "/gcsa/gcsa_test", "-b", "-l", tempdir + "/
 sout, serr = p.communicate()
 ret = p.returncode
 print((sout), (serr), ret)
+
+print("*** Removing temporary directory", tempdir)
+shutil.rmtree(tempdir)
