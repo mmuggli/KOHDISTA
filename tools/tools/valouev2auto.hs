@@ -1,4 +1,4 @@
---- import Debug.Trace
+import Debug.Trace
 import Text.ParserCombinators.Parsec as PS
 import System.IO
 import System.Environment
@@ -7,7 +7,7 @@ import qualified Data.ByteString.Lazy as BL
 import Data.Binary.Put
 --import Control.Applicative as A
 bin_size :: Int
-bin_size = 100
+bin_size = 20
 
 -- the order of the automaton.  This counts the backbone as a degenerate case of skip nodes, you might call it the 0th order skip nodes.  So an automaton with a backbone and skipnodes that sum two consecutive nodes in the backbone for each skipnode would have a value of 2.                    
 max_skipnode :: Int                                
@@ -55,7 +55,9 @@ frag_delim :: [Float]
 frag_delim = [100000.0]
 
 dumpnode :: (Int, Int) -> Put
-dumpnode (lab, value) = do putWord32host $ fromIntegral lab
+dumpnode (lab, value) = do if lab == 0
+                           then trace (show value) $ putWord32host $ fromIntegral lab
+                           else  putWord32host $ fromIntegral lab
                            putWord32host $ fromIntegral value
 
 enumerate :: [a] -> [(a, Int)]
@@ -76,13 +78,18 @@ make_backbone n = if odd n
                   else n
 
 process_backbone_node :: Float -> Int                  
-process_backbone_node = (\lab -> fromIntegral $ make_backbone $  round lab * 1000)
+process_backbone_node lab = if retval == 0
+                        then trace ("proc_backbone: " ++ (show lab) )  retval
+                        else retval
+                            where retval :: Int
+                                  retval =  fromIntegral $ make_backbone $  round (lab * 1000)
+                        
 
 process_backbone_nodes :: [Float] -> [Int]
 process_backbone_nodes labs = fmap process_backbone_node labs
 
 process_actual_skipnode :: Float -> Int
-process_actual_skipnode = (\lab -> fromIntegral $ make_skipnode $ round lab * 1000)                              
+process_actual_skipnode = (\lab -> fromIntegral $ make_skipnode $ round (lab * 1000))                              
 process_actual_skipnodes :: [Float] -> [Int]                             
 process_actual_skipnodes labs = fmap process_actual_skipnode labs
          
@@ -121,7 +128,7 @@ quantize val = if (val `mod` bin_size) < (bin_size `quot` 2)
                else val - (val `mod` bin_size) + bin_size
 
 float_quantize :: Float -> Float
-float_quantize val = (fromIntegral (quantize (1000 * round val))) / 1000.0
+float_quantize val = (fromIntegral (quantize (round (1000.0 * val)))) / 1000.0
 
 
 --FIXME Edge and Node should probably be types
@@ -166,7 +173,7 @@ main = do
    Right x -> sequence_ [show_stats,  dump_file ]
               where  show_stats = print $ "nodes: " ++ (show num_all_nodes) ++ " edges: " ++ (show (length edges)) ++ " skip edge bundles: " ++ (show (length skip_edge_list))
                      dump_file = BL.hPut ohdl $ runPut $ dumpGraph all_skipnodes edges nodes
-                     nodes = fmap float_quantize $ intercalate frag_delim $ {- add_reversed $ -}  fmap extract_frags x
+                     nodes = {-filter (\a -> a > 0.001) $-} fmap float_quantize $ intercalate frag_delim $ {- add_reversed $ -}  fmap extract_frags x
                      skipnode_list n = take ((length nodes) - (n - 1)) $ nth_skipnodes n nodes
                      all_skipnodes = fmap skipnode_list $ reverse [1..max_skipnode]
                      all_enumerated_skipnodes = enumerateNodes all_skipnodes -- this enumeration is file position, not backbone position

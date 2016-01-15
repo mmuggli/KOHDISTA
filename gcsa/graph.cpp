@@ -608,45 +608,41 @@ PathGraph::PathGraph(Graph& parent) :
   generation(0),
   status(error), has_stabilized(false)
 {
-  if(!(parent.ok)) { return; }
+    if(!(parent.ok)) { return; }
 
-  std::vector<uint> end_markers;
-  for(uint i = 0; i < parent.node_count; i++)
-  {
+    std::vector<uint> end_markers;
+    for(uint i = 0; i < parent.node_count; i++) {
 //      std::cout << "parent.nodes["<<i<<"].label = " << parent.nodes[i].label << std::endl;
-    if(parent.nodes[i].label == 0) { this->automata++; end_markers.push_back(i); }
-    this->max_label = std::max(this->max_label, parent.nodes[i].label);
-  }
-  if(this->automata == 0)
-  {
-    std::cerr << "Error: The graph has no final nodes!" << std::endl;
-    return;
-  }
-  parent.changeLabels(this->automata, this->max_label);
+        if(parent.nodes[i].label == 0) { this->automata++; end_markers.push_back(i); }
+        this->max_label = std::max(this->max_label, parent.nodes[i].label);
+    }
+    if(this->automata == 0) {
+        std::cerr << "Error: The graph has no final nodes!" << std::endl;
+        return;
+    }
+    parent.changeLabels(this->automata, this->max_label);
 
-  // One PathNode per edge and one extra for each of the end markers.
-  // First this->automata key values are for end markers.
-  // Initial nodes also have distinct keys.
-  this->temp_nodes = this->node_count = parent.edge_count + this->automata;
-  this->nodes.reserve(this->node_count);
-  for(GraphEdge* edge = parent.edges; edge < parent.edges + parent.edge_count; ++edge)
-  {
-    PathNode pn;
-    pn.from = edge->from; pn.to = edge->to;
-    pn.key = pair_type(parent.nodes[edge->from].label, 0);
-    this->nodes.push_back(pn);
-  }
-  for(uint i = 0; i < this->automata; i++)  // Final nodes.
-  {
-    PathNode pn;
-    pn.from = pn.to = end_markers[i];
-    pn.key = pair_type(i, 0);
-    this->nodes.push_back(pn);
-  }
+    // One PathNode per edge and one extra for each of the end markers.
+    // First this->automata key values are for end markers.
+    // Initial nodes also have distinct keys.
+    this->temp_nodes = this->node_count = parent.edge_count + this->automata;
+    this->nodes.reserve(this->node_count);
+    for(GraphEdge* edge = parent.edges; edge < parent.edges + parent.edge_count; ++edge) {
+        PathNode pn;
+        pn.from = edge->from; pn.to = edge->to;
+        pn.key = pair_type(parent.nodes[edge->from].label, 0);
+        this->nodes.push_back(pn);
+    }
+    for(uint i = 0; i < this->automata; i++)  // Final nodes. {
+        PathNode pn;
+        pn.from = pn.to = end_markers[i];
+        pn.key = pair_type(i, 0);
+        this->nodes.push_back(pn);
+    }
 
-  parent.restoreLabels(this->automata, this->max_label);
-  this->status = ok;
-  this->sort();
+    parent.restoreLabels(this->automata, this->max_label);
+    this->status = ok;
+    this->sort();
 }
 
 PathGraph::PathGraph(PathGraph& previous) :
@@ -655,54 +651,53 @@ PathGraph::PathGraph(PathGraph& previous) :
   generation(previous.generation + 1),
   status(error), has_stabilized(false)
 {
-  if(previous.status != ok) { return; }
+    if(previous.status != ok) { return; }
 
-  previous.sortByFrom(true);
+    previous.sortByFrom(true);
 
-  // A heuristic to determine, whether the number of new nodes should be counted.
-  usint new_nodes = previous.node_count + previous.node_count / 8;
-  int nodecnt = 0;
-  if(previous.ranks >= previous.node_count / 2 && !(previous.has_stabilized))
-  {
-    new_nodes = 0;
-    for(nvector::iterator left = previous.nodes.begin(); left != previous.nodes.end(); ++left)
-    {
-      nodecnt++;
-      if (nodecnt % 1000000 == 0) std::cout << "counted " << nodecnt << " nodes." << std::endl;
+    // A heuristic to determine, whether the number of new nodes should be counted.
+    usint new_nodes = previous.node_count + previous.node_count / 8;
+    int nodecnt = 0;
+    if(previous.ranks >= previous.node_count / 2 && !(previous.has_stabilized)) {
+        new_nodes = 0;
+        for(nvector::iterator left = previous.nodes.begin(); left != previous.nodes.end(); ++left) {
+            nodecnt++;
+            if (nodecnt % 1000000 == 0) std::cout << "counted " << nodecnt << " nodes." << std::endl;
 
-      if(left->isSorted()) { new_nodes++; continue; }
-      pair_type pn_range = previous.getNodesFrom(left->to);
-      new_nodes += CSA::length(pn_range);
+            if(left->isSorted()) { new_nodes++; continue; }
+            pair_type pn_range = previous.getNodesFrom(left->to);
+            new_nodes += CSA::length(pn_range);
+        }
+
     }
+    std::cout << "Trying to allocate space for " << new_nodes << " nodes." << std::endl;  
+    this->nodes.reserve(new_nodes);
+    nodecnt = 0; unsigned int pncnt = 0;
+    for(nvector::iterator left = previous.nodes.begin(); left != previous.nodes.end(); ++left) {
 
-  }
-  std::cout << "Trying to allocate space for " << new_nodes << " nodes." << std::endl;  
-  this->nodes.reserve(new_nodes);
-  nodecnt = 0; unsigned int pncnt = 0;
-  for(nvector::iterator left = previous.nodes.begin(); left != previous.nodes.end(); ++left)
-  {
+        nodecnt++;
+        if (nodecnt % 1000000 == 0) std::cout << "Copied/created new nodes for " << nodecnt << " nodes." << std::endl;
 
-      nodecnt++;
-      if (nodecnt % 1000000 == 0) std::cout << "Copied/created new nodes for " << nodecnt << " nodes." << std::endl;
+        if(left->isSorted()) {
+            this->nodes.push_back(*left);
+            continue;
+        }
 
-    if(left->isSorted()) { this->nodes.push_back(*left); continue; }
-
-    pair_type pn_range = previous.getNodesFrom(left->to);
-    for(usint pn = pn_range.first; pn <= pn_range.second; pn++)
-    {if ((++pncnt) % 1000000 == 0) std::cout << "created pathnodes :" << pncnt  << std::endl;
-      this->createPathNode(*left, previous.nodes[pn]);
+        pair_type pn_range = previous.getNodesFrom(left->to);
+        for(usint pn = pn_range.first; pn <= pn_range.second; pn++) {
+            if ((++pncnt) % 1000000 == 0) std::cout << "created pathnodes :" << pncnt  << std::endl;
+            this->createPathNode(*left, previous.nodes[pn]);
+        }
     }
-  }
-  this->temp_nodes = this->node_count = this->nodes.size();
+    this->temp_nodes = this->node_count = this->nodes.size();
 
-  this->status = ok;
-  std::cout << "Sorting" << std::endl;
-  this->sort();
+    this->status = ok;
+    std::cout << "Sorting" << std::endl;
+    this->sort();
 
-  if(previous.has_stabilized || (this->generation >= 11 && this->ranks >= 0.8 * new_nodes))
-  {
-    this->has_stabilized = true;
-  }
+    if(previous.has_stabilized || (this->generation >= 11 && this->ranks >= 0.8 * new_nodes)) {
+        this->has_stabilized = true;
+    }
 }
 
 PathGraph::~PathGraph()
@@ -874,66 +869,70 @@ PathGraph::createPathNode(const PathNode& left, const PathNode& right)
 void
 PathGraph::sort()
 {
-  std::cout << "start PathGraph::sort()" << std::endl;
+    std::cout << "start PathGraph::sort()" << std::endl;
     std::cout << "sorting by key" << std::endl;
     std::cout << "Elapsed time: " << CSA::readTimer() - CSA::start_time  << std::endl;
-  this->sortByKey();
+    this->sortByKey();
 
-  // Update ranks.
-  usint rank = 0;
-  pair_type key = this->nodes[0].key;
-  std::cout << "Updating ranks" << std::endl;
+    // Update ranks.
+    usint rank = 0;
+    pair_type key = this->nodes[0].key;
+    std::cout << "Updating ranks" << std::endl;
     std::cout << "Elapsed time: " << CSA::readTimer() - CSA::start_time  << std::endl;
-  for(nvector::iterator iter = this->nodes.begin(); iter != this->nodes.end(); ++iter)
-  {
-    if(iter->key != key) { rank++; key = iter->key; }
-    iter->key = pair_type(rank, 0);
-  }
-
-  // Merge equivalent nodes.
-  std::cout << "Merging equivalent nodes" << std::endl;
-    std::cout << "Elapsed time: " << CSA::readTimer() - CSA::start_time  << std::endl;
-  usint top = 0;
-  pair_type node_range = EMPTY_PAIR;
-  while(true)
-  {
-    node_range = this->nextMaximalSet(node_range);
-    if(CSA::isEmpty(node_range)) { break; }
-    this->nodes[top] = this->nodes[node_range.first]; top++;
-  }
-  this->node_count = top; this->nodes.resize(this->node_count);
-
-  // Check if sorted.
-  std::cout << "Checking if sorted" << std::endl;
-    std::cout << "Elapsed time: " << CSA::readTimer() - CSA::start_time  << std::endl;
-  bool is_sorted = true;
-  PathNode* candidate = &(this->nodes[0]);
-  key = candidate->key; this->ranks = 1;
-  for(usint i = 1; i < this->node_count; i++)
-  {
-    if(this->nodes[i].key != key)
-    {
-      if(candidate != 0) { candidate->setSorted(); }
-      candidate = &(this->nodes[i]);
-      key = candidate->key; this->ranks++;
+    for(nvector::iterator iter = this->nodes.begin(); iter != this->nodes.end(); ++iter) {
+        if(iter->key != key) {
+            rank++;
+            key = iter->key;
+        }
+        iter->key = pair_type(rank, 0);
     }
-    else { candidate = 0; is_sorted = false; }
-  }
-  if(candidate != 0) { candidate->setSorted(); }
 
-  // Replace the ranks of a sorted graph so that rank(i) = i.
-  // Merges may otherwise leave gaps in the ranks.
-  std::cout << "Replacing the ranks of a sorted graph so that rank(i) = i." << std::endl;
+    // Merge equivalent nodes.
+    std::cout << "Merging equivalent nodes" << std::endl;
     std::cout << "Elapsed time: " << CSA::readTimer() - CSA::start_time  << std::endl;
-  if(is_sorted)
-  {
-    for(usint i = 0; i < this->node_count; i++)
-    {
-      this->nodes[i].key.first = i;
+    usint top = 0;
+    pair_type node_range = EMPTY_PAIR;
+    while(true) {
+        node_range = this->nextMaximalSet(node_range);
+        if(CSA::isEmpty(node_range)) {
+            break;
+        }
+        this->nodes[top] = this->nodes[node_range.first]; top++;
     }
-    this->status = sorted;
-  }
-  std::cout << "done PathGraph::sort()" << std::endl;
+    this->node_count = top; this->nodes.resize(this->node_count);
+
+    // Check if sorted.
+    std::cout << "Checking if sorted" << std::endl;
+    std::cout << "Elapsed time: " << CSA::readTimer() - CSA::start_time  << std::endl;
+    bool is_sorted = true;
+    PathNode* candidate = &(this->nodes[0]);
+    key = candidate->key; this->ranks = 1;
+    for(usint i = 1; i < this->node_count; i++) {
+        if(this->nodes[i].key != key) {
+            if(candidate != 0) { candidate->setSorted(); }
+            candidate = &(this->nodes[i]);
+            key = candidate->key; this->ranks++;
+        }
+        else {
+            candidate = 0;
+            is_sorted = false;
+        }
+    }
+    if(candidate != 0) {
+        candidate->setSorted();
+    }
+
+    // Replace the ranks of a sorted graph so that rank(i) = i.
+    // Merges may otherwise leave gaps in the ranks.
+    std::cout << "Replacing the ranks of a sorted graph so that rank(i) = i." << std::endl;
+    std::cout << "Elapsed time: " << CSA::readTimer() - CSA::start_time  << std::endl;
+    if(is_sorted) {
+        for(usint i = 0; i < this->node_count; i++) {
+            this->nodes[i].key.first = i;
+        }
+        this->status = sorted;
+    }
+    std::cout << "done PathGraph::sort()" << std::endl;
     std::cout << "Elapsed time: " << CSA::readTimer() - CSA::start_time  << std::endl;
 }
 
@@ -1094,7 +1093,7 @@ struct PathNodeFromComparator
 void
 PathGraph::sortByFrom(bool create_index)
 {
-    std::cout << "PathGraph::sortByFrom(bool create_index)" << std::endl;
+    std::cout << "PathGraph::sortByFrom(bool create_index=" << create_index << ")" << std::endl;
     std::cout << "Elapsed time: " << CSA::readTimer() - CSA::start_time  << std::endl;
 	CSA::parallelSort(this->nodes.begin(), this->nodes.end(), pn_from_comparator);
   this->status = error;

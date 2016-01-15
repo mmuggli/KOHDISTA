@@ -52,8 +52,8 @@ main(int argc, char** argv)
         std::cout << "Elapsed time: " << CSA::readTimer() - CSA::start_time  << std::endl;
 	}
     graph->printInfo();
-
-    std::cout << "Constructing pathgraph..."  ;
+    unsigned int pg_generation = 1;
+    std::cout << "Constructing pathgraph generation " << pg_generation << "..."  ;
     GCSA::PathGraph* pg = new GCSA::PathGraph(*graph);
     double pg_time = CSA::readTimer();
     std::cout << "done in " << pg_time - backboned_time  << " seconds." << std::endl << std::endl;
@@ -62,7 +62,8 @@ main(int argc, char** argv)
     pg->printInfo();
     while(pg->status != GCSA::PathGraph::sorted)
     {
-        std::cout << "Starting next generation of pathgraph" << std::endl;
+        pg_generation++;
+        std::cout << "Constructing pathgraph generation " << pg_generation << "..." << std::endl;
         std::cout << "Elapsed time: " << CSA::readTimer() - CSA::start_time  << std::endl;
         if(pg->status != GCSA::PathGraph::ok)
         {
@@ -73,22 +74,21 @@ main(int argc, char** argv)
         GCSA::PathGraph* next = new GCSA::PathGraph(*pg);
         delete pg; pg = next;
         pg->printInfo();
-        std::cout << "done with construction generation" << std::endl;
-        std::cout << "Elapsed time: " << CSA::readTimer() - CSA::start_time  << std::endl;
+        std::cout << "done with construction of generation " << pg_generation << std::endl;
     }
+    std::cout << "Pathgraph is now sorted" << std::endl;
+    std::cout << "Elapsed time: " << CSA::readTimer() - CSA::start_time  << std::endl;
+
     std::cout << std::endl;
     std::cout << "constructing new graph" << std::endl;
-    std::cout << "Elapsed time: " << CSA::readTimer() - CSA::start_time  << std::endl;
     graph = new GCSA::Graph(base_name);
     if(backbone) { 
         std::cout << "constructing backbone" << std::endl;
-        std::cout << "Elapsed time: " << CSA::readTimer() - CSA::start_time  << std::endl;
         graph->createBackbone(); 
         std::cout << "done constructing backbone" << std::endl;
         std::cout << "Elapsed time: " << CSA::readTimer() - CSA::start_time  << std::endl;
     }
     std::cout << "constructing gcsa" << std::endl;
-    std::cout << "Elapsed time: " << CSA::readTimer() - CSA::start_time  << std::endl;
     GCSA::GCSA gcsa(*pg, *graph, true);
     std::cout << "writing gcsa" << std::endl;
     std::cout << "Elapsed time: " << CSA::readTimer() - CSA::start_time  << std::endl;
