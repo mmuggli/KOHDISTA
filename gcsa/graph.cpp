@@ -633,7 +633,7 @@ PathGraph::PathGraph(Graph& parent) :
         pn.key = pair_type(parent.nodes[edge->from].label, 0);
         this->nodes.push_back(pn);
     }
-    for(uint i = 0; i < this->automata; i++)  // Final nodes. {
+    for(uint i = 0; i < this->automata; i++)   { // Final nodes.
         PathNode pn;
         pn.from = pn.to = end_markers[i];
         pn.key = pair_type(i, 0);

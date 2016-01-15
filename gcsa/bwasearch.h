@@ -245,7 +245,7 @@ class BWASearch
         std::vector<usint> target_match_frags;
         std::vector<std::vector<usint> > query_match_frags;
         std::vector<pair_type> target_match_ranges;
-        std::set<unsigned int> already_reported; // only report the first alignment between two rmaps to save output disk space
+        std::map<unsigned int, std::pair<float, float> > already_reported; // only report the first alignment between two rmaps to save output disk space
         
         for (int i = 0; i < MAX_DEPTH; ++i) {
             branch_fact_sum[i] = 0;
@@ -254,7 +254,7 @@ class BWASearch
         scoring_params sp(.2,1.2,.9,3,17.43,0.58, 0.0015, 0.8, 1, 3);//fixme: instantiate just once
 
         std::cout << "=== backward searching matching orientation ===" << std::endl;
-        std::set<usint> occurrences;
+        std::map<usint, std::pair<float, float> > occurrences;
         for (unsigned int skip = 0; skip < 3; ++skip) {
             std::cout << "--- skipping " << skip << " query symbols. ---" << std::endl;
             
@@ -280,15 +280,15 @@ class BWASearch
         }
         if (occurrences.size()) {
             std::cout << "Found " << occurrences.size() << ":" << std::endl;
-            for(std::set<usint>::iterator oi = occurrences.begin(); oi != occurrences.end(); ++oi) {
-                report_occurrence(*oi, rmap_name, already_reported);
+            for(std::map<usint, std::pair<float, float>>::iterator oi = occurrences.begin(); oi != occurrences.end(); ++oi) {
+                report_occurrence(oi->first, oi->second.first, oi->second.second, rmap_name, already_reported);
             }
         }
 
 
 
         std::cout << "=== backward searching reverse orientation ===" << std::endl;
-        std::set<usint> revoccurrences;
+        std::map<usint, std::pair<float, float> > revoccurrences;
         for (unsigned int skip = 0; skip < 3; ++skip) {
             std::cout << "skipping " << skip << " query symbols." << std::endl;
         
@@ -316,8 +316,8 @@ class BWASearch
 
         if (revoccurrences.size()) {
             std::cout << "Found " << revoccurrences.size() << ":" << std::endl;
-            for(std::set<usint>::iterator oi = revoccurrences.begin(); oi != revoccurrences.end(); ++oi) {
-                report_occurrence(*oi, rmap_name, already_reported);
+            for(std::map<usint, std::pair<float, float> >::iterator oi = revoccurrences.begin(); oi != revoccurrences.end(); ++oi) {
+                report_occurrence(oi->first, oi->second.first, oi->second.second, rmap_name, already_reported);
             }
         }
 
@@ -345,30 +345,50 @@ class BWASearch
     //TODO: convert this to recursive call
     //TODO: use sigma*length as stddev
 
-    void report_occurrence(unsigned int val, const std::string &rmap_name, std::set<unsigned int> &already_reported) const {
+    void report_occurrence(unsigned int val, float chisqcdf, float t_score, const std::string &rmap_name, std::map<unsigned int,  std::pair<float, float> > &already_reported) const {
      
-        bool backbone = true;
-        if (val > this->index.getBackbone()->getSize()-1) {
-            backbone = false;
-            val -= this->index.getBackbone()->getSize()-1;
-        }
-        if (!backbone)  std::cout <<"(val-"<<this->index.getBackbone()->getSize()-1 << ")";
-        std::cout << val << ", ";
         
         
         // lookup the name
         CSA::DeltaVector::Iterator rmap_iter(rmap_starts);
         unsigned int rmap_num = rmap_iter.rank(val) - 1;
-        if (already_reported.find(rmap_num) == already_reported.end()) {
+        std::pair<float, float> this_occ(chisqcdf, t_score);
+        bool is_new = false;
+        std::map<unsigned int , std::pair<float, float> >::iterator map_entry = already_reported.find(rmap_num);
+        if (map_entry == already_reported.end()) {
+            already_reported[rmap_num] = this_occ;
+            is_new = true;
+        } else {
+            if (map_entry->second > this_occ) {
+                already_reported.erase(map_entry);
+                already_reported[rmap_num] = this_occ;
+                is_new = true;
+            }
+        }
+            
+        if (is_new) {
             unsigned int offset = val - rmap_iter.select(rmap_num );
             std::string target_rmap_name = "unknown_rmap_name";
             if (rmap_num < frag2rmap.size()) {
                 target_rmap_name = frag2rmap[rmap_num].second;
             }
-            std::cout << "<(rmap #" << rmap_num << ")" << target_rmap_name << "+" <<offset << ">" << std::endl;;
-            already_reported.insert(rmap_num);
+            std::cout << "bbpos= " << rmap_iter.select(rmap_num) << " == <(rmap #" << rmap_num << ")" << target_rmap_name << std::endl;
+            //std::cout << "<(rmap #" << rmap_num << ")" << target_rmap_name << "+" <<offset << ">" 
+
+
+            bool backbone = true;
+            if (val > this->index.getBackbone()->getSize()-1) {
+                backbone = false;
+                val -= this->index.getBackbone()->getSize()-1;
+            }
+            if (!backbone)  std::cout <<"(val-"<<this->index.getBackbone()->getSize()-1 << ")";
+            std::cout << "bbpos= " << val << " " << " chisqcdf= " << chisqcdf << " t_score= " << t_score << std::endl;;        ;
+
+            
         }
         //std::cout << "alignment for " << rmap_name << " and " << target_rmap_name << std::endl;
+
+        
         
     }
     void report_valouev_alignment(std::vector<usint> &target_match_frags,
@@ -453,7 +473,7 @@ class BWASearch
         }            
 
     // [ 10:24.782 ]->[ 5:14.06, 6:20.276 ] s: 7.62454
-    bool mybackwardSearch(const std::vector<usint>& pattern, const int &pat_cursor, const pair_type &range, const double &chi_squared_sum, const unsigned int &matched_count, const unsigned int &missed_count, std::set<usint> &occurrence_set, std::map<work_t, std::pair<float, float> >  &exhausted_nodes, unsigned long long branch_fact_sum[], unsigned long long branch_fact_count[], unsigned int depth,
+    bool mybackwardSearch(const std::vector<usint>& pattern, const int &pat_cursor, const pair_type &range, const double &chi_squared_sum, const unsigned int &matched_count, const unsigned int &missed_count, std::map<usint, std::pair<float, float> > &occurrence_set, std::map<work_t, std::pair<float, float> >  &exhausted_nodes, unsigned long long branch_fact_sum[], unsigned long long branch_fact_count[], unsigned int depth,
                           std::vector<usint> &target_match_frags,
                           std::vector<std::vector<usint> > &query_match_frags,
                           std::vector<pair_type> &target_match_ranges, scoring_params &sp, const std::string &rmap_name, const unsigned char direction, const int skip) const {
@@ -474,10 +494,27 @@ class BWASearch
                     // unsigned int offset = val - rmap_iter.select(rmap_num );
                     //std::cout << "<(rmap #" << rmap_num << ")" << frag2rmap[rmap_num].second << "+" <<offset << ">" << std::endl;;
 
-                    unsigned size = occurrence_set.size();
-                    occurrence_set.insert(*mi);
+                    std::map<usint, std::pair<float, float> >::iterator map_entry = occurrence_set.find(*mi);
+                    std::pair<float, float> this_match(chisqcdf, t_score);
+                    bool is_new_entry = false;
+                    if (map_entry == occurrence_set.end()) {
+                        occurrence_set[*mi] = this_match;
+                        is_new_entry = true;
+                    } else {
+                        if (map_entry->second > this_match) {
+                            occurrence_set.erase(map_entry);
+                            occurrence_set[*mi] = this_match;
+                            is_new_entry = true;
+                        }
+                    }
+                        
+
+
+                    
+
+
                     if (handler.detailed) {
-                        if (occurrence_set.size() > size) {
+                        if (is_new_entry) {
                             //report_occurrence(*mi, rmap_name);
                             report_valouev_alignment(target_match_frags, query_match_frags, target_match_ranges, sp, matched_count, missed_count, pattern, direction, skip, *mi, rmap_name);
                             std::cout <<  "chisqcdf: " << chisqcdf << " matches found at: " << std::endl;
