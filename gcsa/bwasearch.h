@@ -372,7 +372,7 @@ class BWASearch
             if (rmap_num < frag2rmap.size()) {
                 target_rmap_name = frag2rmap[rmap_num].second;
             }
-            std::cout << "bbpos= " << rmap_iter.select(rmap_num) << " == <(rmap #" << rmap_num << ")" << target_rmap_name << std::endl;
+            std::cout << "bbpos= " << rmap_iter.select(rmap_num) << " == <(rmap #" << rmap_num << ")" << target_rmap_name << ">" << std::endl;
             //std::cout << "<(rmap #" << rmap_num << ")" << target_rmap_name << "+" <<offset << ">" 
 
 
@@ -624,7 +624,8 @@ class BWASearch
                             }
                         }
                         float new_t_score = NU * (matched_count + 1 + 1)- LAMBDA * (missed_count + actv_la + off_backbone_penalty); // matched cutsites = matched frags + 1
-                        if (1|| matched_count  > expected_t_lut_size || matched_count <= 2 || new_t_score >= lenwise_t_cutoffs[matched_count - 2]) {
+                        const int bonus = 2;
+                        if (1|| matched_count - bonus  > expected_t_lut_size || matched_count < bonus || new_t_score >= lenwise_t_cutoffs[matched_count - bonus]) {
                                 std::map<work_t, std::pair<float, float> >::iterator prev_work = exhausted_nodes.find(work);
                                 if( prev_work == exhausted_nodes.end() || prev_work->second.first > chisqcdf || prev_work->second.second < new_t_score) {
                                     target_match_frags.push_back(subst_frag);
