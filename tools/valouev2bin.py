@@ -3,14 +3,17 @@ import sys
 
 import struct
 
-if len(sys.argv) < 4:
-    print("Usage: valuev2bin.py map.valuev map.bin pat.bin")
+if len(sys.argv) < 5:
+    print("Usage: valouev2bin.py map.valuev map.bin pat.bin min_desorption_thresh")
     sys.exit(1)
 
 
 def write_files(frags, rmap, pos, name):
+
     for frag in frags:
+
         fragsize = int(float(frag)*1000)
+#        if fragsize < 50 : print("found 0 frag while converting", (frags, rmap, pos, name))
         target.write(item.pack(fragsize))
         targettext.write(str(fragsize) + "\n")
     fragsize = int(1000000000)
@@ -25,6 +28,7 @@ item = struct.Struct("i")
 target = open(sys.argv[2], "wb")
 targetrmaps = open(sys.argv[2] + ".frag2rmap", "w")
 query = open(sys.argv[3], "wb")
+min_desorption_thresh = float(sys.argv[4])
 targettext = open(sys.argv[2] + ".text", "w")
 pos = 0
 rmap = 0
@@ -47,8 +51,8 @@ for i,line in enumerate(open(sys.argv[1])):
         pos += len(frags) + 1
         
         # write the query file
-        QDESORPTIONTHRESH = .5
-        qfrags = [frag for frag in frags if float(frag) > QDESORPTIONTHRESH]
+
+        qfrags = [frag for frag in frags if float(frag) > min_desorption_thresh]
         query.write(item.pack(len(qfrags)))
         #print("writting",len(fields) - 2,"frags: ",end=" ")
         for qfrag in qfrags:

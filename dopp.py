@@ -10,8 +10,20 @@ p = optparse.OptionParser()
 
 p.add_option("--query", action="store", dest="query")
 p.add_option("--target", action="store", dest="target")
+p.add_option("--bin-size", action="store", dest="bin_size")
+p.add_option("--min-overlap", action="store", dest="min_overlap")
 p.add_option("--detailed", action="store_true", dest="detailed")
+p.add_option("--keep-tempdir", action="store_true", dest="keep_tempdir")
+p.add_option("--chi-squared-cdf-thresh", action="store", dest="chi2cdf_thresh")
+p.add_option("--max-desorption-thresh", action="store", dest="max_desorption_thresh")
+p.add_option("--min-desorption-thresh", action="store", dest="min_desorption_thresh")
+p.set_defaults(chi2cdf_thresh=".1")
 p.set_defaults(detailed=False)
+p.set_defaults(keep_tempdir=False)
+p.set_defaults(bin_size="100")
+p.set_defaults(max_desorption_thresh="1000")
+p.set_defaults(min_desorption_thresh="500")
+p.set_defaults(min_overlap="10")
 
 opts,args = p.parse_args()
 #query = opts.query
@@ -26,41 +38,47 @@ print("Storing temporary files in directory", tempdir)
 
 # python /s/chopin/l/grad/muggli/git/rlcsa/tools/valouev2bin.py  ../ecoli_verif_100x_experimental.valuev sim_ecoli_XhoI_rev.bin sim_ecoli_XhoI_rev_pat.bin
 print("*** build the automaton for the target")
-print("***   step 1.) convert target rmaps file to binary file")
-p = subprocess.Popen(["/usr/bin/python", dopp_instdir +  "/tools/valouev2bin.py", opts.target, tempdir + "/target.bin", tempdir + "/target_pat.bin"])
+cmd = ["/usr/bin/python", dopp_instdir +  "/tools/valouev2bin.py", opts.target, tempdir + "/target.bin", tempdir + "/target_pat.bin", str(float(opts.min_desorption_thresh)/1000.0)]
+print("***   step 1.) convert target rmaps file to binary file with command:", " ".join(cmd))
+p = subprocess.Popen(cmd)
 sout, serr = p.communicate()
 ret = p.returncode
 print((sout), (serr), ret)
  
 # ~/git/rlcsa/tools/om2automaton sim_ecoli_XhoI_rev.bin sim_ecoli_XhoI_rev.automaton 100 0
-print("***   step 2.) build the automaton from the binary file")                     
-p = subprocess.Popen([dopp_instdir + "/tools/om2automaton", tempdir + "/target.bin",  tempdir + "/target.automaton",
-                      "100", # quantization bin size
-                      "0" # prefix of the whole set to use (for testing with smaller substring of a large set of rmaps concatenated
-])
+cmd = [dopp_instdir + "/tools/om2automaton", tempdir + "/target.bin",  tempdir + "/target.automaton",
+                      opts.bin_size, # quantization bin size
+                      "0",# prefix of the whole set to use (for testing with smaller substring of a large set of rmaps concatenated
+                      opts.max_desorption_thresh] 
+
+print("***   step 2.) build the automaton from the binary file with command:", " ".join(cmd))                     
+p = subprocess.Popen(cmd)
 sout, serr = p.communicate()
 ret = p.returncode
 print((sout), (serr), ret)
 
 
-print("*** build the automaton for the target")
-print("***   convert query rmaps file to binary file (for the side effect of producing the patterns file")
-p = subprocess.Popen(["/usr/bin/python", dopp_instdir +  "/tools/valouev2bin.py", opts.query, tempdir + "/query.bin", tempdir + "/query_pat.bin"])
+cmd = ["/usr/bin/python", dopp_instdir +  "/tools/valouev2bin.py", opts.query, tempdir + "/query.bin", tempdir + "/query_pat.bin", str(float(opts.min_desorption_thresh)/1000.0)]
+print("*** convert query rmaps file to binary file (for the side effect of producing the patterns file with command:", " ".join(cmd))
+
+p = subprocess.Popen(cmd)
 sout, serr = p.communicate()
 ret = p.returncode
 print((sout), (serr), ret)
 
 
 # ~/git/rlcsa/gcsa/determinize -b sim_ecoli_XhoI_rev.automaton sim_ecoli_XhoI_rev_base
-print("*** Determinizing the automaton")                     
-p = subprocess.Popen([dopp_instdir + "/gcsa/determinize", "-b", tempdir + "/target.automaton", tempdir + "/target_base"])
+cmd = [dopp_instdir + "/gcsa/determinize", "-b", tempdir + "/target.automaton", tempdir + "/target_base"]
+print("*** Determinizing the automaton with command", " ".join(cmd))                     
+p = subprocess.Popen(cmd)
 sout, serr = p.communicate()
 ret = p.returncode
 print((sout), (serr), ret)
 
 # ~/git/rlcsa/gcsa/build_index -b  sim_ecoli_XhoI_rev_base
-print("*** Building the GCSA data structure")                     
-p = subprocess.Popen([dopp_instdir + "/gcsa/build_index", "-b", tempdir + "/target_base"])
+cmd = [dopp_instdir + "/gcsa/build_index", "-b", tempdir + "/target_base"]
+print("*** Building the GCSA data structure with command:", " ".join(cmd))                     
+p = subprocess.Popen(cmd)
 sout, serr = p.communicate()
 ret = p.returncode
 print((sout), (serr), ret)
@@ -73,11 +91,17 @@ print("*** Moving rmap index file returned", shutil.move(tempdir + "/target.bin.
 # cp sim_ecoli_XhoI_rev.bin.frag2rmap sim_ecoli_XhoI_rev_base.frag2rmap #FIXME this step is convoluted
 # echo "arguments" "$@"
 # /bin/time -v ~/git/rlcsa/gcsa/gcsa_test sim_ecoli_XhoI_rev_base sim_ecoli_XhoI_rev_pat.bin  -b -l "$@"
-print("*** Performing alignment")                     
-p = subprocess.Popen([dopp_instdir + "/gcsa/gcsa_test", "-b", "-l", tempdir + "/target_base", tempdir + "/query_pat.bin"])
+cmd = [dopp_instdir + "/gcsa/gcsa_test", "-b", "-l", tempdir + "/target_base", tempdir + "/query_pat.bin"]
+if opts.detailed:
+    cmd.append("-d")
+cmd.append("-O" + opts.min_overlap)
+cmd.append("-C" + opts.chi2cdf_thresh)
+print("*** Performing alignment with command:", " ".join(cmd))                     
+p = subprocess.Popen(cmd)
 sout, serr = p.communicate()
 ret = p.returncode
 print((sout), (serr), ret)
 
-print("*** Removing temporary directory", tempdir)
-shutil.rmtree(tempdir)
+if not opts.keep_tempdir:
+    print("*** Removing temporary directory", tempdir)
+    shutil.rmtree(tempdir)

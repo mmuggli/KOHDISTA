@@ -15,7 +15,7 @@ VECTOR_FLAGS = $(PSI_FLAGS) $(LCP_FLAGS) $(SA_FLAGS)
 # PSI_FLAGS = -DUSE_NIBBLE_VECTORS
 # LCP_FLAGS = -DSUCCINCT_LCP_VECTOR
 # SA_FLAGS = -DSUCCINCT_SA_VECTOR
-SDSL_PREFIX = /s/chopin/l/grad/muggli/local
+# SDSL_PREFIX = /s/chopin/l/grad/muggli/local
 SDSL_STUFF =  -I/usr/include/boost/ -I$(SDSL_PREFIX)/include -L /usr/lib64 -L$(SDSL_PREFIX)/lib  -lsdsl -ldivsufsort -ldivsufsort64
 
 CXXFLAGS = -Wall   -O2 -g -std=c++11 $(SIZE_FLAGS) $(PARALLEL_FLAGS) $(VECTOR_FLAGS) $(SDSL_STUFF)

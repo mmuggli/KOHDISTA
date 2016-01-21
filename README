@@ -1,8 +1,12 @@
 DOPPELGANGER - Find restriction maps (Rmaps) that look alike (align)
 
-You must first compile and install sdsl-lite to use this software.
+You must first compile and install sdsl-lite to use this software.  Set the environment variable SDSL_PREFIX to the directory where you install it.
 
-If your Valouev et al. formatted data reside in plum.maps, you can find pairwise alignments with these commands:
+You can find pairwise alignments for the included simulated E. coli optical map reads (after decompressing them) with:
+
+./dopp.py --query ecoli_verif_100x_experimental.valouev --target ecoli_verif_100x_experimental.valouev
+
+Alternately, if your Valouev et al. formatted data reside in plum.maps, you can find pairwise alignments with these commands:
 
 python doppelganger/tools/valuev2bin.py plum.maps plum.bin plum_pat.bin 
 doppelganger/tools/om2automaton plum.bin plum.automaton 100 0
@@ -10,6 +14,7 @@ doppelganger/gcsa/determinize -b plum.automaton plum_base
 doppelganger/gcsa/build_index -b  plum_base
 cp plum.bin.frag2rmap plum_base.frag2rmap
 doppelganger/gcsa/gcsa_test plum_base plum_pat.bin  -b -l
+
 
 
 

@@ -99,8 +99,8 @@ int main(int argc, char** argv)
 
     // Always start with exact matching.
     double row_start = CSA::readTimer();
-    if (rows[i].size() < 10 ) {
-        std::cout << "Skipping row " << i << " because size() < 10" << std::endl;
+    if (rows[i].size() < handler.min_overlap ) {
+        std::cout << "Skipping query " << i << " because length its length (" << rows[i].size() << ") < minimum overlap parameter (" << handler.min_overlap << ")" <<  std::endl;
     } else {
         std::string rmap_name = frag2rmap[i*2/*two entries in the automaton/map per every sequence, introduced in valuev2bin.py*/].second;
         std::cout << "### Finding row " << i << "(" << rmap_name<< "): ###" <<std::endl;

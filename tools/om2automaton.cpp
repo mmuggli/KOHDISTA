@@ -83,7 +83,7 @@ bool mislower(unsigned int lab)
 }
 
 int bin_size = 1;
-const int DESORPTION_THRESH = 1000;
+int desorption_thresh = 1000;
 
 unsigned int quantize(unsigned int val)
 {
@@ -102,11 +102,12 @@ int main(int argc, char** argv)
     unsigned doubleskipedgecount = 0;
 
     if (argc < 5) {
-        printf("Usage: %s <binary optical map> <gcsa format graph> <quantization bin size> <file prefix>\n", argv[0]);
+        printf("Usage: %s <binary optical map> <gcsa format graph> <quantization bin size> <file prefix> <desorption theshold>\n", argv[0]);
         exit(1);
     }
     bin_size = atol(argv[3]);
     unsigned long long requested_elems = atoll(argv[4]);
+    desorption_thresh = atol(argv[5]);
     printf("Quantizing with bin size %d\n", bin_size);
     std::map<unsigned int, unsigned int> counts;
 
@@ -208,14 +209,14 @@ int main(int argc, char** argv)
         }
 
         // add skip edges
-        if (nodes[i+1]->label < DESORPTION_THRESH) {
+        if (nodes[i+1]->label < desorption_thresh) {
             Edge *eskip = new Edge(nodes[i], nodes[i+2]);
             edges.push_back(eskip);
             skipedgecount++;
         }
 
         // add double skip edges
-        if (nodes[i+1]->label < DESORPTION_THRESH && nodes[i+2]->label < DESORPTION_THRESH) {
+        if (nodes[i+1]->label < desorption_thresh && nodes[i+2]->label < desorption_thresh) {
             Edge *eskip = new Edge(nodes[i], nodes[i+3]);
             edges.push_back(eskip);
             doubleskipedgecount++;

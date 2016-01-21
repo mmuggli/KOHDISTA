@@ -467,7 +467,7 @@ class BWASearch
             // }
             // std::cout << std::endl;
             std::cout << "s-score:" << s_tot << std::endl;
-            float t_score = NU * (matched_count + 1) - LAMBDA * missed_count;
+            float t_score = NU * (matched_count ) - LAMBDA * missed_count;
             std::cout << "t-score: " << t_score << std::endl;
 
         }            
@@ -478,10 +478,10 @@ class BWASearch
                           std::vector<std::vector<usint> > &query_match_frags,
                           std::vector<pair_type> &target_match_ranges, scoring_params &sp, const std::string &rmap_name, const unsigned char direction, const int skip) const {
         // handle pat_cursor=0 to prevent underrun in the other branch
-        float t_score = NU * (matched_count + 1) - LAMBDA * missed_count; // matched cutsites = matched frags + 1
+        float t_score = NU * (matched_count) - LAMBDA * missed_count; // matched cutsites = matched frags + 1
         if (pat_cursor == 0   || matched_count >= handler.min_overlap)  { // && t_score >= handler.min_t_score) { // stop the recurrsion
         //if (matched_count >= MIN_MATCH_LEN) {
-            if (t_score < handler.min_t_score || matched_count < MIN_MATCH_LEN) return false;
+            if (t_score < handler.min_t_score || matched_count < handler.min_overlap) return false;
             boost::math::chi_squared cs(matched_count );
             double chisqcdf = boost::math::cdf(cs, chi_squared_sum);
 
@@ -623,9 +623,9 @@ class BWASearch
                                 off_backbone_penalty = 1;
                             }
                         }
-                        float new_t_score = NU * (matched_count + 1 + 1)- LAMBDA * (missed_count + actv_la + off_backbone_penalty); // matched cutsites = matched frags + 1
-                        const int bonus = 2;
-                        if (1|| matched_count - bonus  > expected_t_lut_size || matched_count < bonus || new_t_score >= lenwise_t_cutoffs[matched_count - bonus]) {
+                        float new_t_score = NU * (matched_count + 1)- LAMBDA * (missed_count + actv_la + off_backbone_penalty); // matched cutsites = matched frags + 1
+                        const int bonus = 1; // bonus to experiment with allowing a match at position n to only need to exceed the table of thresholds at position n-1
+                        if (1 || matched_count - bonus  > expected_t_lut_size  || matched_count < bonus || new_t_score >= lenwise_t_cutoffs[matched_count - bonus - 1]) {
                                 std::map<work_t, std::pair<float, float> >::iterator prev_work = exhausted_nodes.find(work);
                                 if( prev_work == exhausted_nodes.end() || prev_work->second.first > chisqcdf || prev_work->second.second < new_t_score) {
                                     target_match_frags.push_back(subst_frag);
