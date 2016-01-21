@@ -224,7 +224,7 @@ class BWASearch
 
 
     unsigned int get_stddev(const unsigned int frag_bp) const {
-        double sigma_kbp = .58;
+        double sigma_kbp = handler.sigma_kbp; //.58;
         double frag_kbp = (double)frag_bp / 1000.0;
         double variance_kbp = powf(sigma_kbp, 2);
         double expect_var_kbp = 2* variance_kbp * frag_kbp; // FIXME: do we need to double this? or does valouev .58 already account for noise in both frags
@@ -237,9 +237,9 @@ class BWASearch
     }
 
 
-
+    const int MAX_DEPTH = 100;
     void find(const std::vector<usint>& pattern, const std::string &rmap_name) const {
-        const int MAX_DEPTH = 100;
+
         unsigned long long branch_fact_sum[MAX_DEPTH];
         unsigned long long branch_fact_count[MAX_DEPTH];
         std::vector<usint> target_match_frags;
@@ -323,7 +323,7 @@ class BWASearch
 
         std::cout << "Branching factor stats:" << std::endl;
         for (int i = 0; i < MAX_DEPTH and branch_fact_count[i]; ++i) {
-            std::cout << "depth: " << i << " mean: " << (float)branch_fact_sum[i] / (float)branch_fact_count[i] << " count: " << branch_fact_count[i] << std::endl;
+            std::cout << "depth: " << i << " mean |SA interval|: " << (float)branch_fact_sum[i] / (float)branch_fact_count[i] << " query count: " << branch_fact_count[i] << std::endl;
         }
         
      
@@ -434,7 +434,7 @@ class BWASearch
                 // position
                 std::vector<usint>* mr_occurrences = this->index.locateRange(*ri); //match (sa) range
                 const int MAX_RANGES = 5;
-                if (mr_occurrences->size() <= 5) {
+                if (mr_occurrences->size() <= MAX_RANGES) {
                     for (std::vector<usint>::iterator mi = mr_occurrences->begin(); mi != mr_occurrences->end(); ++mi) {
                         std::cout << " " << *mi - rmap_start;
                     }
@@ -445,17 +445,27 @@ class BWASearch
 
                 // size
                 std::cout << ":" << *fi / 1000.0;
-
+                // FIXME: since a SA interval may contain a mix of backbone and skip nodes, how shall we score this
+                // until we have code to resolve which element in an early query compound fragment's matches
+                // belongs to the subsequent ones? Given that 2nd order skip nodes should really penalize for two
+                // missed sites and we aren't sure at the moment, might as well overpenalize here and hope the scores
+                // balance out to be something like Valouev
+                bool found_skipnodes = false;
                 for (usint sai = ri->first; sai <= ri->second && ri->second - ri->first < 6; ++sai) {
 //                    std::cout << ( (this->index.getBackbone()->contains(sai)) ? "" : ", 0");
-                    std::cout << ( (this->index.getBackbone()->originalContains(sai)) ? "" : ", -1:0.0");
+                    if ( (this->index.getBackbone()->originalContains(sai))) {
+                        std::cout <<  "" ;
+                    } else {
+                        found_skipnodes = true;
+                        std::cout <<  ", -1:0.0";
+                    }
 //                            std::cout << " " << sai << " ";
                 }
 
 
                 std::cout << " ]" ;
 
-                float s_score = sp.opt_size_score((double)querytotal/1000, (double)*fi/1000, (int)qi->size(), 1);
+                float s_score = sp.opt_size_score((double)querytotal/1000, (double)*fi/1000, (int)qi->size(), 1 + found_skipnodes);
                 s_tot += s_score;
                 std::cout << " s: " << s_tot  /* << " incr_s: " << s_score */  << std::endl;
 
@@ -583,9 +593,10 @@ class BWASearch
                                                                              c <= delta ? 1 : c - delta, // if subtracting results in less than 1, use 1
                                                                      c + delta, hits2);
                 }
-
-                branch_fact_sum[depth] += hits2.size();
-                branch_fact_count[depth] += 1;
+                if (depth < MAX_DEPTH) {
+                    branch_fact_sum[depth] += hits2.size();
+                    branch_fact_count[depth] += 1;
+                }
 
 
                 

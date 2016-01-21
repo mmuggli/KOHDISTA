@@ -55,7 +55,9 @@ GCSA::ParameterHandler::ParameterHandler(int argc, char** argv, bool _rlcsa, std
       case 'T':
           this->min_t_score = atof(argv[i] + 2);
            break; 
-
+      case 'Z':
+          this->sigma_kbp = atof(argv[i] + 2);
+          break;
         default:
           std::cout << "Invalid option: " << argv[i] << std::endl << std::endl;
           this->ok = false;
