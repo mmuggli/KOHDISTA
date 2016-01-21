@@ -33,6 +33,7 @@ targettext = open(sys.argv[2] + ".text", "w")
 pos = 0
 rmap = 0
 for i,line in enumerate(open(sys.argv[1])):
+
     if i % 100000 == 0: print("processing lineno:",i)
     # parse name line
     if i % 3 == 0:
@@ -54,11 +55,11 @@ for i,line in enumerate(open(sys.argv[1])):
 
         qfrags = [frag for frag in frags if float(frag) > min_desorption_thresh]
         query.write(item.pack(len(qfrags)))
-        #print("writting",len(fields) - 2,"frags: ",end=" ")
+#        print("writting",len(qfrags) ,"frags: ",end=" ")
         for qfrag in qfrags:
-            #print(int(float(frag)*1000), end=" ")
+#            print(int(float(qfrag)*1000), end=" ")
             query.write(item.pack(int(float(qfrag)*1000)))
-        #print()
+#        print()
 print("Processed aprox",i/3,"rmaps")               
 
 target.close()

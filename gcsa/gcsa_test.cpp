@@ -73,7 +73,7 @@ int main(int argc, char** argv)
 
   std::vector<std::vector<usint> > rows;
   CSA::readPatternRows(patterns, rows, true, handler.binary_patterns);
-
+  std::cout << "Read " << rows.size() << " patterns." << std::endl;
   usint total = 0, n = rows.size();
   usint found = 0, forward = 0, reverse = 0;
   usint forward_occurrences = 0, reverse_occurrences = 0;

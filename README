@@ -6,6 +6,8 @@ You can find pairwise alignments for the included simulated E. coli optical map 
 
 ./dopp.py --query ecoli_verif_100x_experimental.valouev --target ecoli_verif_100x_experimental.valouev
 
+If you need details of the alignment (which fragment groups from the target align to which fragment groups in the target), add the --detailed option.  See --help for other options.
+
 Alternately, if your Valouev et al. formatted data reside in plum.maps, you can find pairwise alignments with these commands:
 
 python doppelganger/tools/valuev2bin.py plum.maps plum.bin plum_pat.bin 
