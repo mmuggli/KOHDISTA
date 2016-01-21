@@ -17,7 +17,7 @@ doppelganger/gcsa/build_index -b  plum_base
 cp plum.bin.frag2rmap plum_base.frag2rmap
 doppelganger/gcsa/gcsa_test plum_base plum_pat.bin  -b -l
 
-
+Experiments in the associated manuscript were run with this software as it existed Oct. 26, 2015.
 
 
 
