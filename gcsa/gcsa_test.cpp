@@ -102,7 +102,11 @@ int main(int argc, char** argv)
     if (rows[i].size() < handler.min_overlap ) {
         std::cout << "Skipping query " << i << " because length its length (" << rows[i].size() << ") < minimum overlap parameter (" << handler.min_overlap << ")" <<  std::endl;
     } else {
-        std::string rmap_name = frag2rmap[i*2/*two entries in the automaton/map per every sequence, introduced in valuev2bin.py*/].second;
+        
+        std::string rmap_name = "unknown_rmap_name";
+        if (i*2 < frag2rmap.size() ) {
+            rmap_name = frag2rmap[i*2/*two entries in the automaton/map per every sequence, introduced in valuev2bin.py*/].second;
+        }
         std::cout << "### Finding row " << i << "(" << rmap_name<< "): ###" <<std::endl;
         for (std::vector<usint>::iterator ri = rows[i].begin(); ri != rows[i].end(); ++ri) {
             std::cout << *ri << ", ";
