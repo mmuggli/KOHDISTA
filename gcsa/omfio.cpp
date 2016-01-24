@@ -6,13 +6,14 @@ Omfio::Omfio(std::string fname)
     std::ifstream rmap_file(fname.c_str());
     std::string id, enzyme_name, enzyme_acronym;
     std::vector<float> fragments;
-    while (rmap_file.good()) {
-        rmap_file >> id;
+    while (rmap_file >> id) {
+
         rmap_file >> enzyme_name >> enzyme_acronym;
         float fragment;
         while (rmap_file >> fragment) {
             fragments.push_back(fragment);
         }
+        rmap_file.clear();
         Rmap rmap(id, enzyme_name, enzyme_acronym, fragments);
         rmaps.push_back(rmap);
     }
