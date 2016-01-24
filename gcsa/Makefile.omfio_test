@@ -1,0 +1,9 @@
+
+omfio_test: libomfio.a omfio_test.cpp
+	g++ -g omfio_test.cpp -o omfio_test libomfio.a
+
+libomfio.a: omfio.h omfio.cpp
+	g++ -g -c omfio.cpp -o libomfio.a
+
+clean:
+	rm -f libomfio.a omfio_test
