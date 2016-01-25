@@ -368,6 +368,7 @@ class BWASearch
             
         if (is_new) {
             unsigned int offset = val - rmap_iter.select(rmap_num );
+
             std::string target_rmap_name = "unknown_rmap_name";
             if (rmap_num < frag2rmap.size()) {
                 target_rmap_name = frag2rmap[rmap_num].second;
@@ -527,7 +528,7 @@ class BWASearch
                         if (is_new_entry) {
                             //report_occurrence(*mi, rmap_name);
                             report_valouev_alignment(target_match_frags, query_match_frags, target_match_ranges, sp, matched_count, missed_count, pattern, direction, skip, *mi, rmap_name);
-                            std::cout <<  "chisqcdf: " << chisqcdf << " matches found at: " << std::endl;
+                            std::cout <<  "chisqcdf: " << chisqcdf  << std::endl << std::endl;
 
                         }
                     }
