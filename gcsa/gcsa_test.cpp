@@ -11,6 +11,7 @@
 #include "parameter_handler.h"
 #include "pattern_classifier.h"
 #include <bits/deltavector.h>
+#include "omfio.h"
 
 //using namespace CSA;
 typedef CSA::usint usint;
@@ -27,10 +28,10 @@ int main(int argc, char** argv)
   if(!(handler.ok)) { handler.printUsage(); return 1; }
   handler.printOptions();
 
-
+  // load frag2rmap data
   CSA::DeltaEncoder *rmap_startse = new CSA::DeltaEncoder(1024);
   unsigned int pos = 0;
-  // read the frag2rmap file
+
   std::vector<std::pair<unsigned int, std::string> > frag2rmap;
   std::string f2rm_fname;
   f2rm_fname += handler.index_name; 
@@ -49,32 +50,33 @@ int main(int argc, char** argv)
   }
   f2rm_file.close();
   CSA::DeltaVector* rmap_starts = new CSA::DeltaVector(*rmap_startse, pos);  
-  CSA::DeltaVector::Iterator itr(*rmap_starts);
-// for(int jk = 0; jk < pos; ++jk) {
-// if (itr.isSet(jk))  std::cout << "rmap_starts[" << jk << "] is set" << std::endl;
-// }
 
+  // load GCSA
   const GCSA::GCSA gcsa(handler.index_name);
   if(!gcsa.isOk()) { return 2; }
   gcsa.reportSize(true);
 
 
-  if(handler.patterns_name == 0) { return 0; }
   GCSA::BWASearch<GCSA::GCSA> bwasearch(gcsa, *rmap_starts, frag2rmap, handler);
 
-  std::ifstream patterns(handler.patterns_name, std::ios_base::binary);
-  std::cout << "Reading patterns from file: " << handler.patterns_name << std::endl;
-  if(!patterns)
-  {
-    std::cerr << "Error opening pattern file!" << std::endl;
-    return 3;
-  }
-  GCSA::PatternClassifier classifier(handler.write ? handler.patterns_name : "");
+  if(handler.patterns_name == 0) { return 0; }
 
-  std::vector<std::vector<usint> > rows;
-  CSA::readPatternRows(patterns, rows, true, handler.binary_patterns);
-  std::cout << "Read " << rows.size() << " patterns." << std::endl;
-  usint total = 0, n = rows.size();
+  //std::ifstream patterns(handler.patterns_name, std::ios_base::binary);
+  // std::cout << "Reading patterns from file: " << handler.patterns_name << std::endl;
+  // if(!patterns)
+  // {
+  //   std::cerr << "Error opening pattern file!" << std::endl;
+  //   return 3;
+  // }
+  // GCSA::PatternClassifier classifier(handler.write ? handler.patterns_name : "");
+
+  // std::vector<std::vector<usint> > rows;
+  // CSA::readPatternRows(patterns, rows, true, handler.binary_patterns);
+  // std::cout << "Read " << rows.size() << " patterns." << std::endl;
+
+  Omfio omfio(handler.patterns_name);
+
+  usint total = 0, n = omfio.rmaps.size();
   usint found = 0, forward = 0, reverse = 0;
   usint forward_occurrences = 0, reverse_occurrences = 0;
 
@@ -94,27 +96,24 @@ int main(int argc, char** argv)
   }
   for(usint i = handler.begin; i < n; i++)
   {
-    total += rows[i].size();
+    total += omfio.rmaps[i].fragments.size();
     //bool match = false;
 
     // Always start with exact matching.
     double row_start = CSA::readTimer();
-    if (rows[i].size() < handler.min_overlap ) {
-        std::cout << "Skipping query " << i << " because length its length (" << rows[i].size() << ") < minimum overlap parameter (" << handler.min_overlap << ")" <<  std::endl;
+    if (omfio.rmaps[i].fragments.size() < handler.min_overlap ) {
+        std::cout << "Skipping query " << i << " because length its length (" << omfio.rmaps[i].fragments.size() << ") < minimum overlap parameter (" << handler.min_overlap << ")" <<  std::endl;
     } else {
         
-        std::string rmap_name = "unknown_rmap_name";
-        if (i*2 < frag2rmap.size() ) {
-            rmap_name = frag2rmap[i*2/*two entries in the automaton/map per every sequence, introduced in valuev2bin.py*/].second;
-        }
-        std::cout << "### Finding row " << i << "(" << rmap_name<< "): ###" <<std::endl;
-        for (std::vector<usint>::iterator ri = rows[i].begin(); ri != rows[i].end(); ++ri) {
+
+        std::cout << "### Finding row " << i << "(" << omfio.rmaps[i].id << "): ###" <<std::endl;
+        for (std::vector<long unsigned int>::iterator ri = omfio.rmaps[i].fragments.begin(); ri != omfio.rmaps[i].fragments.end(); ++ri) {
             std::cout << *ri << ", ";
         }
         std::cout << std::endl;
 
         
-        bwasearch.find(rows[i], rmap_name);
+        bwasearch.find(omfio.rmaps[i].fragments, omfio.rmaps[i].id);
 
     
         std::cout << "Find (row = " << i << ") completed in " <<   CSA::readTimer() - row_start << " seconds." << std::endl;

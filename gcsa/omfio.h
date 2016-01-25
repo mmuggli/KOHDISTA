@@ -3,23 +3,27 @@
 
 #include <iostream>
 #include <vector>
+
 class Omfio {
 public:
-    Omfio(std::string fname);
-    void dump();
-
-private:
     class Rmap {
     public:
-        Rmap(std::string, std::string, std::string, std::vector<float> fragments);
+        Rmap(std::string, std::string, std::string, std::vector<long unsigned int> fragments);
         void dump();
-    private:        
+
         std::string id;
         std::string enzyme_name;
         std::string enzyme_acronym;
-        std::vector<float> fragments;
+        std::vector<long unsigned int> fragments;
 
     };
+
+
+    Omfio(std::string fname);
+    void dump();
+
+
+
 
     std::vector<Rmap> rmaps;
 };
