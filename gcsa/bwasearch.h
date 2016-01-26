@@ -224,16 +224,20 @@ class BWASearch
 
 
     unsigned int get_stddev(const unsigned int frag_bp) const {
-        double sigma_kbp = handler.sigma_kbp; //.58;
-        double frag_kbp = (double)frag_bp / 1000.0;
-        double variance_kbp = powf(sigma_kbp, 2);
-        double expect_var_kbp = 2* variance_kbp * frag_kbp; // FIXME: do we need to double this? or does valouev .58 already account for noise in both frags
-        double expect_stddev_kbp = sqrt(expect_var_kbp);
-        double expect_stddev_bp = expect_stddev_kbp * 1000.0;
+        if (!handler.bounded_stddev) {
+            double sigma_kbp = handler.sigma_kbp; //.58;
+            double frag_kbp = (double)frag_bp / 1000.0;
+            double variance_kbp = powf(sigma_kbp, 2);
+            double expect_var_kbp = 2* variance_kbp * frag_kbp; // FIXME: do we need to double this? or does valouev .58 already account for noise in both frags
+            double expect_stddev_kbp = sqrt(expect_var_kbp);
+            double expect_stddev_bp = expect_stddev_kbp * 1000.0;
 //        return OM_STDDEV;
 //        return 100;
 //        std::cout << "(stddev " << expect_stddev_bp << ")" << std::endl;
-        return expect_stddev_bp;
+            return expect_stddev_bp;
+        } else {
+            return handler.sigma_kbp * 1000.0;
+        }
     }
 
 
@@ -434,10 +438,12 @@ class BWASearch
 
                 // position
                 std::vector<usint>* mr_occurrences = this->index.locateRange(*ri); //match (sa) range
-                const int MAX_RANGES = 5;
+                const int MAX_RANGES = 1;
                 if (mr_occurrences->size() <= MAX_RANGES) {
                     for (std::vector<usint>::iterator mi = mr_occurrences->begin(); mi != mr_occurrences->end(); ++mi) {
-                        std::cout << " " << *mi - rmap_start;
+                        usint temp_pos = *mi - rmap_start;
+                        std::cout << " " << temp_pos;
+                        
                     }
                 } else {
                     std::cout << " (|SA| = " << mr_occurrences->size() << " > " << MAX_RANGES << ") ";

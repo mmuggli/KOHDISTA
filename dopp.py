@@ -20,8 +20,10 @@ p.add_option("--max-desorption-thresh", action="store", dest="max_desorption_thr
 p.add_option("--min-desorption-thresh", action="store", dest="min_desorption_thresh", help="value below which fragments are discarded from the query")
 p.add_option("--min-t-score", action="store", dest="min_t_score", help="minimum t-score required to report an alignment")
 p.add_option("--sigma", action="store", dest="sigma_kbp", help="per Kbp standard deviation of fragment size estimation error (default=%default)", default=".58")
+p.add_option("--constant-sigma", action="store_true", dest="bounded_sigma", help="Assume all fragments have sigma as the upper bound of their stddev, instead of calculated from fragment length.")
 p.set_defaults(chi2cdf_thresh=".1")
 p.set_defaults(detailed=False)
+p.set_defaults(bounded_sigma=False)
 p.set_defaults(keep_tempdir=False)
 p.set_defaults(bin_size="100")
 p.set_defaults(min_t_score="1")
@@ -106,6 +108,9 @@ print("*** Moving rmap index file returned", shutil.move(tempdir + "/target.bin.
 cmd = [dopp_instdir + "/gcsa/gcsa_test", "-b", "-l", tempdir + "/target_base", opts.query]
 if opts.detailed:
     cmd.append("-d")
+if opts.bounded_sigma:
+    cmd.append("-B")
+    
 cmd.append("-O" + opts.min_overlap)
 cmd.append("-C" + opts.chi2cdf_thresh)
 cmd.append("-T" + opts.min_t_score)

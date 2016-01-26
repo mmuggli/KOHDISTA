@@ -20,7 +20,7 @@ class ParameterHandler
     bool ok, rlcsa;
     std::string usage;
 
-    bool  indels, locate, penalties, reverse_complement, verbose, write, binary_patterns, detailed;
+    bool  indels, locate, penalties, reverse_complement, verbose, write, binary_patterns, detailed, bounded_stddev;
     char* index_name;
     char* patterns_name;
     usint k, skip, max_matches, begin = 0, end = 0, min_overlap = 10;

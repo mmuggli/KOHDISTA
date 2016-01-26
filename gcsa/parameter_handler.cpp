@@ -40,6 +40,9 @@ GCSA::ParameterHandler::ParameterHandler(int argc, char** argv, bool _rlcsa, std
           this->binary_patterns = true; break;
         case 's':
             if(this->rlcsa) { this->skip = atoi(argv[i] + 2); break; } // Fall through.
+      case 'B':
+          this->bounded_stddev = true; break;
+            
       case 'S':
           this->begin = atoi(argv[i] + 2);
            break; 
