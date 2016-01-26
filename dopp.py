@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import os
+import re
 import sys
 import optparse
 import tempfile
@@ -17,10 +18,13 @@ p.add_option("--keep-tempdir", action="store_true", dest="keep_tempdir", help="d
 p.add_option("--chi-squared-cdf-thresh", action="store", dest="chi2cdf_thresh", default=".1", help="Chi^2 CDF threshold used for pruning the partial alignments which are extended to full alignments (default=%default)")
 p.add_option("--max-desorption-thresh", action="store", dest="max_desorption_thresh", help="value below which skip edges are added to the target automaton")
 p.add_option("--min-desorption-thresh", action="store", dest="min_desorption_thresh", help="value below which fragments are discarded from the query")
+p.add_option("--min-t-score", action="store", dest="min_t_score", help="minimum t-score required to report an alignment")
+p.add_option("--sigma", action="store", dest="sigma_kbp", help="per Kbp standard deviation of fragment size estimation error (default=%default)", default=".58")
 p.set_defaults(chi2cdf_thresh=".1")
 p.set_defaults(detailed=False)
 p.set_defaults(keep_tempdir=False)
 p.set_defaults(bin_size="100")
+p.set_defaults(min_t_score="1")
 p.set_defaults(max_desorption_thresh="1000")
 p.set_defaults(min_desorption_thresh="500")
 p.set_defaults(min_overlap="10")
@@ -58,13 +62,21 @@ ret = p.returncode
 print((sout), (serr), ret)
 
 
-cmd = ["/usr/bin/python", dopp_instdir +  "/tools/valouev2bin.py", opts.query, tempdir + "/query.bin", tempdir + "/query_pat.bin", str(float(opts.min_desorption_thresh)/1000.0)]
-print("*** convert query rmaps file to binary file (for the side effect of producing the patterns file with command:", " ".join(cmd))
+# cmd = ["/usr/bin/python", dopp_instdir +  "/tools/valouev2bin.py", opts.query, tempdir + "/query.bin", tempdir + "/query_pat.bin", str(float(opts.min_desorption_thresh)/1000.0)]
+# print("*** convert query rmaps file to binary file (for the side effect of producing the patterns file with command:", " ".join(cmd))
 
-p = subprocess.Popen(cmd)
-sout, serr = p.communicate()
-ret = p.returncode
-print((sout), (serr), ret)
+# p = subprocess.Popen(cmd)
+# sout, serr = p.communicate()
+# ret = p.returncode
+# print((sout), (serr), ret)
+
+# guard against something Omfio parser class can't handle
+id_re = re.compile("^\W*(\w+)")
+for lno, line in enumerate(open(opts.query)):
+    if lno % 3 == 0:
+        if ord("0") >= ord(id_re.search(line).group(1)[0]) >= ord("9"):
+            print("Error: ", opts.query, "line", lno, "query rmap id's must not begin with a digit")
+            sys.exit(1)
 
 
 # ~/git/rlcsa/gcsa/determinize -b sim_ecoli_XhoI_rev.automaton sim_ecoli_XhoI_rev_base
@@ -91,11 +103,13 @@ print("*** Moving rmap index file returned", shutil.move(tempdir + "/target.bin.
 # cp sim_ecoli_XhoI_rev.bin.frag2rmap sim_ecoli_XhoI_rev_base.frag2rmap #FIXME this step is convoluted
 # echo "arguments" "$@"
 # /bin/time -v ~/git/rlcsa/gcsa/gcsa_test sim_ecoli_XhoI_rev_base sim_ecoli_XhoI_rev_pat.bin  -b -l "$@"
-cmd = [dopp_instdir + "/gcsa/gcsa_test", "-b", "-l", tempdir + "/target_base", tempdir + "/query_pat.bin"]
+cmd = [dopp_instdir + "/gcsa/gcsa_test", "-b", "-l", tempdir + "/target_base", opts.query]
 if opts.detailed:
     cmd.append("-d")
 cmd.append("-O" + opts.min_overlap)
 cmd.append("-C" + opts.chi2cdf_thresh)
+cmd.append("-T" + opts.min_t_score)
+cmd.append("-Z" + opts.sigma_kbp)
 print("*** Performing alignment with command:", " ".join(cmd))                     
 p = subprocess.Popen(cmd)
 sout, serr = p.communicate()

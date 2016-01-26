@@ -24,7 +24,7 @@ class ParameterHandler
     char* index_name;
     char* patterns_name;
     usint k, skip, max_matches, begin = 0, end = 0, min_overlap = 10;
-    float chi2cdf_thresh = 0.1, min_t_score = 8.1;
+    float chi2cdf_thresh = 0.1, min_t_score = 8.1, sigma_kbp = .58;
 };
 
 };  // namespace CSA

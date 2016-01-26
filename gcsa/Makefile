@@ -26,12 +26,12 @@ SDSL_STUFF =  -I/usr/include/boost/ -I$(SDSL_PREFIX)/include -L /usr/lib64 -L$(S
 CXXFLAGS = -Wall -g -O2 $(DEBUG_FLAGS) $(SIZE_FLAGS) $(PARALLEL_FLAGS) $(VECTOR_FLAGS) -I$(RLCSA_ROOT) $(SDSL_STUFF) -std=c++11 
 
 OBJS = graph.o gcsa.o parameter_handler.o
-LIBRARIES = gcsa.a $(RLCSA) $(SDSL_PREFIX)/lib/libsdsl.a $(SDSL_PREFIX)/lib/libdivsufsort.a  $(SDSL_PREFIX)/lib/libdivsufsort64.a
+LIBRARIES = gcsa.a $(RLCSA) $(SDSL_PREFIX)/lib/libsdsl.a $(SDSL_PREFIX)/lib/libdivsufsort.a  $(SDSL_PREFIX)/lib/libdivsufsort64.a libomfio.a
 PROGRAMS = build_automaton clean_alignment generator build_index gcsa_test transpose  verify determinize # rlcsa_test
 
 all: default
 
-default: gcsa.a $(PROGRAMS)
+default: gcsa.a libomfio.a $(PROGRAMS)
 
 
 depend:
@@ -39,6 +39,9 @@ depend:
 
 gcsa.a: $(OBJS)
 	ar rcs gcsa.a $(OBJS)
+
+libomfio.a: omfio.h omfio.cpp
+	g++ -g -c omfio.cpp -o libomfio.a
 
 build_automaton: build_automaton.o $(LIBRARIES)
 	$(CXX) $(CXXFLAGS) -o build_automaton build_automaton.o $(LIBRARIES) 
@@ -68,7 +71,7 @@ rlcsa_test: rlcsa_test.o gcsa.a $(LIBRARIES)
 	$(CXX) $(CXXFLAGS) -o rlcsa_test rlcsa_test.o $(LIBRARIES)
 
 clean:
-	rm -f *.o gcsa.a
+	rm -f *.o gcsa.a libomfio.a
 	rm -f $(PROGRAMS)
 
 package:
