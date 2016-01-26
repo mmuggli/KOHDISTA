@@ -264,7 +264,7 @@ class BWASearch
             
 
             std::vector<usint> pat;
-            for (usint i = 0; i < pattern.size() - skip; ++i) {
+            for (usint i = 0; i < pattern.size() - skip - handler.trim; ++i) {
                 pat.push_back(pattern[i]);
             }
             assert(pat.size() > 0);
@@ -298,7 +298,7 @@ class BWASearch
         
 
             std::vector<usint> revpat;
-            for (long long int i = pattern.size()  - 1; i >= skip ; --i) {
+            for (long long int i = pattern.size()  - 1; i >= skip + handler.trim; --i) {
                 revpat.push_back(pattern[i]);
             }
             assert(revpat.size() > 0);
@@ -585,7 +585,7 @@ class BWASearch
                 }
 
                 //wt stuff
-                unsigned int delta = STDDEV_MULT * get_stddev(c) ;
+                unsigned int delta = STDDEV_MULT * get_stddev(c) *2;
                 unsigned long long interval_size = range.second - range.first;
 
                 std::set<long unsigned int> hits2;
@@ -621,7 +621,7 @@ class BWASearch
                     // compute chi^2 score for putative substitute fragment in target
                     long unsigned int subst_frag = *hit_itr;
                     int deviation = abs(subst_frag - c);
-                    float chi_squared = std::pow((float)deviation / (float)get_stddev(uint_max(c, subst_frag)), 2);
+                    float chi_squared = std::pow((float)deviation / (float)get_stddev(c + subst_frag /*uint_max(c, subst_frag)*/), 2);
                     boost::math::chi_squared cs(matched_count + 1);
                     double chisqcdf = boost::math::cdf(cs, chi_squared_sum + chi_squared);
                     if (chisqcdf <= handler.chi2cdf_thresh) {
