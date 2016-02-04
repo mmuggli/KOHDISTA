@@ -7,7 +7,7 @@ import qualified Data.ByteString.Lazy as BL
 import Data.Binary.Put
 --import Control.Applicative as A
 bin_size :: Int
-bin_size = 20
+bin_size = 100
 
 -- the order of the automaton.  This counts the backbone as a degenerate case of skip nodes, you might call it the 0th order skip nodes.  So an automaton with a backbone and skipnodes that sum two consecutive nodes in the backbone for each skipnode would have a value of 2.                    
 max_skipnode :: Int                                
