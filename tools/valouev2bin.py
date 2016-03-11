@@ -41,8 +41,9 @@ for i,line in enumerate(open(sys.argv[1])):
         
     # parse the frag line and write the target binary file
     if i % 3 == 1:
-        fields = line.strip().split("\t")
+        fields = line.strip().split()
         frags = fields[2:]
+#        print("found",len(frags),"frags in line")
         write_files(frags, rmap, pos, name)
         rmap += 1
         pos += len(frags) + 1
@@ -57,7 +58,7 @@ for i,line in enumerate(open(sys.argv[1])):
         query.write(item.pack(len(qfrags)))
 #        print("writting",len(qfrags) ,"frags: ",end=" ")
         for qfrag in qfrags:
-#            print(int(float(qfrag)*1000), end=" ")
+#            print(int(float(qfrag)*1000))
             query.write(item.pack(int(float(qfrag)*1000)))
 #        print()
 print("Processed aprox",i/3,"rmaps")               

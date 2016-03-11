@@ -45,6 +45,9 @@ GCSA::ParameterHandler::ParameterHandler(int argc, char** argv, bool _rlcsa, std
             if(this->rlcsa) { this->skip = atoi(argv[i] + 2); break; } // Fall through.
       case 'B':
           this->bounded_stddev = true; break;
+      case 'Q':
+          this->query_order = atoi(argv[i] + 2);
+           break; 
             
       case 'S':
           this->begin = atoi(argv[i] + 2);

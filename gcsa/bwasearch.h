@@ -259,7 +259,7 @@ class BWASearch
 
         std::cout << "=== backward searching matching orientation ===" << std::endl;
         std::map<usint, std::pair<float, float> > occurrences;
-        for (unsigned int skip = 0; skip < 3; ++skip) {
+        for (unsigned int skip = 0; skip <= handler.query_order; ++skip) {
             std::cout << "--- skipping " << skip << " query symbols. ---" << std::endl;
             
 
@@ -267,7 +267,7 @@ class BWASearch
             for (usint i = 0; i < pattern.size() - skip - handler.trim; ++i) {
                 pat.push_back(pattern[i]);
             }
-            assert(pat.size() > 0);
+            if (pat.size() <  handler.min_overlap) continue;
             std::map<work_t, std::pair<float, float> > exhausted_nodes;
             this->mybackwardSearch(pat, // pattern to search for
                                pat.size(), // index of next symbol to search for
@@ -301,7 +301,8 @@ class BWASearch
             for (long long int i = pattern.size()  - 1; i >= skip + handler.trim; --i) {
                 revpat.push_back(pattern[i]);
             }
-            assert(revpat.size() > 0);
+            if (revpat.size() <  handler.min_overlap) continue;
+
             //find_one_dir(revpat, revoccurrences, branch_fact_sum, branch_fact_count, sp);
             std::map<work_t, std::pair<float, float> > exhausted_nodes;
             this->mybackwardSearch(revpat, // pattern to search for
@@ -400,140 +401,159 @@ class BWASearch
     // This function takes a vector of fragment sizes and a vector of SA intervals and generates all the possible paths corresponding to the SA intervals
     // we'll start with a hacky version that just takes every element individually in the initial match range and tries to backward search its way to the end of the target match.
     // If it reaches the end, we include it in the set
+
+    void report_valouev_alignment(std::vector<usint> &target_match_frags,
+                          std::vector<std::vector<usint> > &query_match_frags,
+                                  std::vector<pair_type> &target_match_ranges, scoring_params &sp,const unsigned int &matched_count,const unsigned int &missed_count, const std::vector<usint>& pattern, const unsigned char direction, const int skip, const std::string &rmap_name) const
+        {
+
+
+            CSA::DeltaVector::Iterator rmap_iter(rmap_starts);
+            unsigned int rmap_num = rmap_iter.rank(target_match_ranges[target_match_ranges.size() - 1].first - 1);
+            usint rmap_start = rmap_iter.select(rmap_num);
+            std::cout << "rmap # " << rmap_num << " starts at GCSA index " << rmap_start << std::endl;
+            std::string target_rmap_name = "unknown_rmap_name";
+            if (rmap_num < frag2rmap.size()) {
+                target_rmap_name = frag2rmap[rmap_num].second;
+            }
+            std::cout << "alignment for " << rmap_name << " and " << target_rmap_name << std::endl;
+
+
+            std::vector<pair_type>::iterator ri; // range iterator
+            std::vector<usint>::iterator fi; // frag iterator
+            std::vector<std::vector<usint> >::iterator qi; // query iterator
+            float s_tot = 0.0;
+            int qfragnum = -1;
+            if (direction==0) {
+                qfragnum = pattern.size() - 1;
+            } else {
+                qfragnum = 0 + skip;
+            }
+            for (qi = query_match_frags.begin(), fi = target_match_frags.begin(), ri = target_match_ranges.begin();
+                 qi != query_match_frags.end() &&  fi != target_match_frags.end() && ri != target_match_ranges.end();
+                 ++qi, ++fi, ++ri) {
+                std::cout << "[ ";
+                usint querytotal = 0;
+                for (std::vector<usint>::iterator qfpi = qi->begin(); qfpi != qi->end(); ++ qfpi) {
+                    std::cout << qfragnum << ":" << *qfpi / 1000.0;
+                    qfragnum = direction ? qfragnum + 1 : qfragnum - 1;
+                    querytotal += *qfpi;
+                    if (qfpi + 1 != qi->end()) {
+                        std::cout << ", ";
+                    }
+                }
+                std::cout << " ]->[";
+
+                // position
+                std::vector<usint>* mr_occurrences = this->index.locateRange(*ri); //match (sa) range
+                const int MAX_RANGES = 1;
+                std::cout << "( SA[" << ri->first << ".." << ri->second << "] ) ";
+                if (mr_occurrences->size() <= MAX_RANGES) {
+                    for (std::vector<usint>::iterator mi = mr_occurrences->begin(); mi != mr_occurrences->end(); ++mi) {
+                        signed long long temp_pos = *mi - rmap_start;
+                        std::cout << " " << temp_pos;
+                        
+                    }
+                } else {
+                    std::cout << " (|SA| = " << mr_occurrences->size() << " > " << MAX_RANGES << ") ";
+                }
+                delete mr_occurrences;
+
+                // size
+                std::cout << ":" << *fi / 1000.0;
+                // FIXME: since a SA interval may contain a mix of backbone and skip nodes, how shall we score this
+                // until we have code to resolve which element in an early query compound fragment's matches
+                // belongs to the subsequent ones? Given that 2nd order skip nodes should really penalize for two
+                // missed sites and we aren't sure at the moment, might as well overpenalize here and hope the scores
+                // balance out to be something like Valouev
+                bool found_skipnodes = false;
+                for (usint sai = ri->first; sai <= ri->second && ri->second - ri->first < 6; ++sai) {
+//                    std::cout << ( (this->index.getBackbone()->contains(sai)) ? "" : ", 0");
+                    if ( (this->index.getBackbone()->originalContains(sai))) {
+                        std::cout <<  "" ;
+                    } else {
+                        found_skipnodes = true;
+                        std::cout <<  ", -1:0.0";
+                    }
+//                            std::cout << " " << sai << " ";
+                }
+
+
+                std::cout << " ]" ;
+
+                float s_score = sp.opt_size_score((double)querytotal/1000, (double)*fi/1000, (int)qi->size(), 1 + found_skipnodes);
+                s_tot += s_score;
+                std::cout << " s: " << s_tot  /* << " incr_s: " << s_score */  << std::endl;
+
+            }
+            // std::cout << std::endl;
+            // std::cout << "Matched frag sequence in target: " << std::endl;
+            // for (std::vector<usint>::iterator fi = target_match_frags.begin(); fi != target_match_frags.end(); ++fi) {
+            //     std::cout << *fi << " ";
+            // }
+            // std::cout << std::endl;
+            std::cout << "s-score:" << s_tot << std::endl;
+            float t_score = NU * (matched_count ) - LAMBDA * missed_count;
+            std::cout << "t-score: " << t_score << std::endl;
+
+        }
+
     bool path_check(const std::vector<usint> &target_match_frags,
                     const unsigned int &pat_cursor, // this marks the index in target_match_frags matching 'range'
                     const pair_type &range,
-                    std::vector<pair_type> &path) {
+                    std::vector<pair_type> &path) const {
 
         // recursion base case
         if (pat_cursor == 0) return true;
 
-
+//        std::cout << "patch_check reached depth " << path.size() << std::endl;
         pair_type new_range = this->index.LF(range, target_match_frags[pat_cursor - 1]);
         if (new_range.first > new_range.second) {
             return false;
         } else {
             path.push_back(new_range);
+
             return path_check(target_match_frags, pat_cursor - 1, new_range, path);
         }                   
-
+        
         
     }
+
+    
     //fixme: change pair_type to usint in return values; the whole point is to only have one element in each SA interval after this
-    std::vector<std::vector<pair_type> > matched_paths(const std::vector<usint> &target_match_frags, const std::vector<pair_type> &target_match_ranges) {
-        std::vector<std::vector<pair_type> > ret_val;
-        pair_type &first_range = *(target_match_ranges.begin());
-        for (usint i = first_range.first; i < first_range.second; ++i) {
+    void populate_matched_paths(const std::vector<usint> &target_match_frags, const std::vector<pair_type> &target_match_ranges, std::vector<std::vector<pair_type> > &paths) const {
+      
+        auto first_range = target_match_ranges.begin();
+        for (usint i = first_range->first; i < first_range->second; ++i) {
             pair_type start;
             start.first = i;
-            start.second = i+1;
+            start.second = i;
             std::vector<pair_type> path;
 
-            if (path_check(target_match_frags, target_match_frags.size() - 1, start, path)) {
+            if (path_check(target_match_frags, target_match_frags.size() - 2, start, path)) {
                 std::reverse(path.begin(), path.end()); //FIXME: is this right? do we need to handle differently like how we change direction in reporting?
-                ret_val.push_back(path);
+                paths.push_back(path);
             }
         }
-        return ret_val;
     }
-    void report_valouev_alignment(std::vector<usint> &target_match_frags,
+
+    
+
+    void report_valouev_alignments(std::vector<usint> &target_match_frags,
                           std::vector<std::vector<usint> > &query_match_frags,
-                                  std::vector<pair_type> &target_match_ranges, scoring_params &sp,const unsigned int &matched_count,const unsigned int &missed_count, const std::vector<usint>& pattern, const unsigned char direction, const int skip, usint suffix_array_index, const std::string &rmap_name) const
+                                  std::vector<pair_type> &target_match_ranges, scoring_params &sp,const unsigned int &matched_count,const unsigned int &missed_count, const std::vector<usint>& pattern, const unsigned char direction, const int skip, const std::string &rmap_name) const
         {
+            std::cout << "dumping full set of alignments (each position in the alignment denotes the full set of SA positions whose prefix match the query suffix): " << std::endl;
+            report_valouev_alignment(target_match_frags, query_match_frags, target_match_ranges, sp, matched_count, missed_count, pattern, direction, skip, rmap_name);
 
-            std::vector<std::vector<pair_type> > paths = matched_paths(target_match_frags, target_match_ranges);
+            std::cout << "dumping restricted alignments (each element in the initial range can be backward searched all the way to the start of the query): " << std::endl;
+            std::vector<std::vector<pair_type> > paths;
+            populate_matched_paths(target_match_frags, target_match_ranges, paths);
             for (std::vector<std::vector<pair_type> >::iterator pathiter = paths.begin(); pathiter != paths.end(); ++pathiter) {
-                std::vector<pair_type> restricted_target_match_ranges = *pathiter;
-                CSA::DeltaVector::Iterator rmap_iter(rmap_starts);
-                unsigned int rmap_num = rmap_iter.rank(suffix_array_index) - 1;
-                usint rmap_start = rmap_iter.select(rmap_num);
-                std::cout << "rmap # " << rmap_num << " starts at GCSA index " << rmap_start << std::endl;
-                std::string target_rmap_name = "unknown_rmap_name";
-                if (rmap_num < frag2rmap.size()) {
-                    target_rmap_name = frag2rmap[rmap_num].second;
-                }
-                std::cout << "alignment for " << rmap_name << " and " << target_rmap_name << std::endl;
-
-
-                std::vector<pair_type>::iterator ri; // range iterator
-                std::vector<usint>::iterator fi; // frag iterator
-                std::vector<std::vector<usint> >::iterator qi; // query iterator
-                float s_tot = 0.0;
-                int qfragnum = -1;
-                if (direction==0) {
-                    qfragnum = pattern.size() - 1;
-                } else {
-                    qfragnum = 0 + skip;
-                }
-                for (qi = query_match_frags.begin(), fi = target_match_frags.begin(), ri = restricted_target_match_ranges.begin();
-                     qi != query_match_frags.end() &&  fi != target_match_frags.end() && ri != restricted_target_match_ranges.end();
-                     ++qi, ++fi, ++ri) {
-                    std::cout << "[ ";
-                    usint querytotal = 0;
-                    for (std::vector<usint>::iterator qfpi = qi->begin(); qfpi != qi->end(); ++ qfpi) {
-                        std::cout << qfragnum << ":" << *qfpi / 1000.0;
-                        qfragnum = direction ? qfragnum + 1 : qfragnum - 1;
-                        querytotal += *qfpi;
-                        if (qfpi + 1 != qi->end()) {
-                            std::cout << ", ";
-                        }
-                    }
-                    std::cout << " ]->[";
-
-                    // position
-                    std::vector<usint>* mr_occurrences = this->index.locateRange(*ri); //match (sa) range
-                    const int MAX_RANGES = 1;
-                    if (mr_occurrences->size() <= MAX_RANGES) {
-                        for (std::vector<usint>::iterator mi = mr_occurrences->begin(); mi != mr_occurrences->end(); ++mi) {
-                            usint temp_pos = *mi - rmap_start;
-                            std::cout << " " << temp_pos;
-                        
-                        }
-                    } else {
-                        std::cout << " (|SA| = " << mr_occurrences->size() << " > " << MAX_RANGES << ") ";
-                    }
-                    delete mr_occurrences;
-
-                    // size
-                    std::cout << ":" << *fi / 1000.0;
-                    // FIXME: since a SA interval may contain a mix of backbone and skip nodes, how shall we score this
-                    // until we have code to resolve which element in an early query compound fragment's matches
-                    // belongs to the subsequent ones? Given that 2nd order skip nodes should really penalize for two
-                    // missed sites and we aren't sure at the moment, might as well overpenalize here and hope the scores
-                    // balance out to be something like Valouev
-                    bool found_skipnodes = false;
-                    for (usint sai = ri->first; sai <= ri->second && ri->second - ri->first < 6; ++sai) {
-//                    std::cout << ( (this->index.getBackbone()->contains(sai)) ? "" : ", 0");
-                        if ( (this->index.getBackbone()->originalContains(sai))) {
-                            std::cout <<  "" ;
-                        } else {
-                            found_skipnodes = true;
-                            std::cout <<  ", -1:0.0";
-                        }
-//                            std::cout << " " << sai << " ";
-                    }
-
-
-                    std::cout << " ]" ;
-
-                    float s_score = sp.opt_size_score((double)querytotal/1000, (double)*fi/1000, (int)qi->size(), 1 + found_skipnodes);
-                    s_tot += s_score;
-                    std::cout << " s: " << s_tot  /* << " incr_s: " << s_score */  << std::endl;
-
-                }
-                // std::cout << std::endl;
-                // std::cout << "Matched frag sequence in target: " << std::endl;
-                // for (std::vector<usint>::iterator fi = target_match_frags.begin(); fi != target_match_frags.end(); ++fi) {
-                //     std::cout << *fi << " ";
-                // }
-                // std::cout << std::endl;
-                std::cout << "s-score:" << s_tot << std::endl;
-                float t_score = NU * (matched_count ) - LAMBDA * missed_count;
-                std::cout << "t-score: " << t_score << std::endl;
-
+                report_valouev_alignment(target_match_frags, query_match_frags, *pathiter, sp, matched_count, missed_count, pattern, direction, skip, rmap_name);
             }
         }
-
+    
     // [ 10:24.782 ]->[ 5:14.06, 6:20.276 ] s: 7.62454
     bool mybackwardSearch(const std::vector<usint>& pattern, const int &pat_cursor, const pair_type &range, const double &chi_squared_sum, const unsigned int &matched_count, const unsigned int &missed_count, std::map<usint, std::pair<float, float> > &occurrence_set, std::map<work_t, std::pair<float, float> >  &exhausted_nodes, unsigned long long branch_fact_sum[], unsigned long long branch_fact_count[], unsigned int depth,
                           std::vector<usint> &target_match_frags,
@@ -578,7 +598,7 @@ class BWASearch
                     if (handler.detailed) {
                         if (is_new_entry) {
                             //report_occurrence(*mi, rmap_name);
-                            report_valouev_alignment(target_match_frags, query_match_frags, target_match_ranges, sp, matched_count, missed_count, pattern, direction, skip, *mi, rmap_name);
+                            report_valouev_alignments(target_match_frags, query_match_frags, target_match_ranges, sp, matched_count, missed_count, pattern, direction, skip, rmap_name);
                             std::cout <<  "chisqcdf: " << chisqcdf  << std::endl << std::endl;
 
                         }
@@ -612,7 +632,7 @@ class BWASearch
             // }
             // if (matchedgoal >3) {std::cout << "matched goal!!!!!!!!!!!!!!!!!" << std::endl;}
             
-            int lookahead = MAX_LOOKAHEAD;
+            int lookahead = handler.query_order;
             if (pat_cursor - 1 - lookahead < 0) {
                 lookahead = pat_cursor - 1; //trim lookahead to max remaining, preventing pattern underrun
 

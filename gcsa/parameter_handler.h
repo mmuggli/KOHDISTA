@@ -23,7 +23,7 @@ class ParameterHandler
     bool  indels, locate, penalties, reverse_complement, verbose, write, binary_patterns, detailed, bounded_stddev;
     char* index_name;
     char* patterns_name;
-    usint k, skip, max_matches, begin = 0, end = 0, min_overlap = 10, trim=0;
+    usint k, skip, max_matches, begin = 0, end = 0, min_overlap = 10, trim=0, query_order=3;
     float chi2cdf_thresh = 0.1, min_t_score = 8.1, sigma_kbp = .58;
 };
 

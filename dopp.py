@@ -22,6 +22,7 @@ p.add_option("--min-t-score", action="store", dest="min_t_score", help="minimum 
 p.add_option("--sigma", action="store", dest="sigma_kbp", help="per Kbp standard deviation of fragment size estimation error (default=%default)", default=".58")
 p.add_option("--constant-sigma", action="store_true", dest="bounded_sigma", help="Assume all fragments have sigma as the upper bound of their stddev, instead of calculated from fragment length.")
 p.add_option("--trim-query-ends", action="store_true", dest="trim_query_ends", help="Remove one fragment off each end of query rmaps, for fragments that are only cleaved by an enzyme on one end")
+p.add_option("--query-order", action="store", dest="query_order", help="How many combinations of successive missed sites in target [0..n) to accomodate")
 p.set_defaults(chi2cdf_thresh=".1")
 p.set_defaults(detailed=False)
 p.set_defaults(bounded_sigma=False)
@@ -32,6 +33,7 @@ p.set_defaults(min_t_score="1")
 p.set_defaults(max_desorption_thresh="1000")
 p.set_defaults(min_desorption_thresh="500")
 p.set_defaults(min_overlap="10")
+p.set_defaults(query_order="3")
 
 opts,args = p.parse_args()
 #query = opts.query
@@ -115,6 +117,7 @@ if opts.bounded_sigma:
 if opts.trim_query_ends:
     cmd.append("-t")
     
+cmd.append("-Q" + opts.query_order)    
 cmd.append("-O" + opts.min_overlap)
 cmd.append("-C" + opts.chi2cdf_thresh)
 cmd.append("-T" + opts.min_t_score)
