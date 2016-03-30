@@ -47,8 +47,11 @@ GCSA::ParameterHandler::ParameterHandler(int argc, char** argv, bool _rlcsa, std
           this->bounded_stddev = true; break;
       case 'Q':
           this->query_order = atoi(argv[i] + 2);
-           break; 
-            
+           break;
+      case 'M':
+          this->orientations=1; break; // _M_onodirectional, really this is single ended. it finds both orientations since we index the target forward and backward.  rename orientations to something better FIXME
+      case '1':
+          this->two_sided_error = false; break;
       case 'S':
           this->begin = atoi(argv[i] + 2);
            break; 

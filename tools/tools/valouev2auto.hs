@@ -171,7 +171,7 @@ main = do
   case parseOM contents of
    Left x -> print $ show $ x
    Right x -> sequence_ [show_stats,  dump_file ]
-              where  show_stats = print $ "nodes: " ++ (show num_all_nodes) ++ " edges: " ++ (show (length edges)) ++ " skip edge bundles: " ++ (show (length skip_edge_list))
+              where  show_stats = print $ "quantization bin size:" ++ (show bin_size) ++  "nodes: " ++ (show num_all_nodes) ++ " edges: " ++ (show (length edges)) ++ " skip edge bundles: " ++ (show (length skip_edge_list))
                      dump_file = BL.hPut ohdl $ runPut $ dumpGraph all_skipnodes edges nodes
                      nodes = {-filter (\a -> a > 0.001) $-} fmap float_quantize $ intercalate frag_delim $ {- add_reversed $ -}  fmap extract_frags x
                      skipnode_list n = take ((length nodes) - (n - 1)) $ nth_skipnodes n nodes

@@ -12,6 +12,7 @@
 #include <set>
 #include <utility>
 #include <boost/math/distributions/chi_squared.hpp>
+#include <boost/math/distributions/binomial.hpp>
 #include <math.h>
 #include "parameter_handler.h"
 
@@ -289,43 +290,43 @@ class BWASearch
             }
         }
 
+        if (handler.orientations < 2) {
 
-
-        std::cout << "=== backward searching reverse orientation ===" << std::endl;
-        std::map<usint, std::pair<float, float> > revoccurrences;
-        for (unsigned int skip = 0; skip < 3; ++skip) {
-            std::cout << "skipping " << skip << " query symbols." << std::endl;
+            std::cout << "=== backward searching reverse orientation ===" << std::endl;
+            std::map<usint, std::pair<float, float> > revoccurrences;
+            for (unsigned int skip = 0; skip < 3; ++skip) {
+                std::cout << "skipping " << skip << " query symbols." << std::endl;
         
 
-            std::vector<usint> revpat;
-            for (long long int i = pattern.size()  - 1; i >= skip + handler.trim; --i) {
-                revpat.push_back(pattern[i]);
-            }
-            if (revpat.size() <  handler.min_overlap) continue;
+                std::vector<usint> revpat;
+                for (long long int i = pattern.size()  - 1; i >= skip + handler.trim; --i) {
+                    revpat.push_back(pattern[i]);
+                }
+                if (revpat.size() <  handler.min_overlap) continue;
 
-            //find_one_dir(revpat, revoccurrences, branch_fact_sum, branch_fact_count, sp);
-            std::map<work_t, std::pair<float, float> > exhausted_nodes;
-            this->mybackwardSearch(revpat, // pattern to search for
-                               revpat.size(), // index of next symbol to search for
-                               this->index.getSARange(), // SA interval
-                               0.0, // chi**2 sum
-                               0, // matched count
-                               skip, // missed count
-                               revoccurrences,
-                               exhausted_nodes, branch_fact_sum, branch_fact_count, 0/*depth*/,
-                               target_match_frags,
-                               query_match_frags,
-                                   target_match_ranges, sp, rmap_name, 1, skip);
+                //find_one_dir(revpat, revoccurrences, branch_fact_sum, branch_fact_count, sp);
+                std::map<work_t, std::pair<float, float> > exhausted_nodes;
+                this->mybackwardSearch(revpat, // pattern to search for
+                                       revpat.size(), // index of next symbol to search for
+                                       this->index.getSARange(), // SA interval
+                                       0.0, // chi**2 sum
+                                       0, // matched count
+                                       skip, // missed count
+                                       revoccurrences,
+                                       exhausted_nodes, branch_fact_sum, branch_fact_count, 0/*depth*/,
+                                       target_match_frags,
+                                       query_match_frags,
+                                       target_match_ranges, sp, rmap_name, 1, skip);
             
-        }
+            }
 
-        if (revoccurrences.size()) {
-            std::cout << "Found " << revoccurrences.size() << ":" << std::endl;
-            for(std::map<usint, std::pair<float, float> >::iterator oi = revoccurrences.begin(); oi != revoccurrences.end(); ++oi) {
-                report_occurrence(oi->first, oi->second.first, oi->second.second, rmap_name, already_reported);
+            if (revoccurrences.size()) {
+                std::cout << "Found " << revoccurrences.size() << ":" << std::endl;
+                for(std::map<usint, std::pair<float, float> >::iterator oi = revoccurrences.begin(); oi != revoccurrences.end(); ++oi) {
+                    report_occurrence(oi->first, oi->second.first, oi->second.second, rmap_name, already_reported);
+                }
             }
         }
-
         std::cout << "Branching factor stats:" << std::endl;
         for (int i = 0; i < MAX_DEPTH and branch_fact_count[i]; ++i) {
             std::cout << "depth: " << i << " mean |SA interval|: " << (float)branch_fact_sum[i] / (float)branch_fact_count[i] << " query count: " << branch_fact_count[i] << std::endl;
@@ -560,7 +561,10 @@ class BWASearch
                           std::vector<std::vector<usint> > &query_match_frags,
                           std::vector<pair_type> &target_match_ranges, scoring_params &sp, const std::string &rmap_name, const unsigned char direction, const int skip) const {
         // handle pat_cursor=0 to prevent underrun in the other branch
-        float t_score = NU * (matched_count) - LAMBDA * missed_count; // matched cutsites = matched frags + 1
+        boost::math::binomial bn(2 * (matched_count + 1) + (2 * missed_count), .15);
+        double binomcdf = boost::math::cdf(bn, missed_count);
+
+        float t_score = binomcdf; // NU * (matched_count) - LAMBDA * missed_count; // matched cutsites = matched frags + 1
         if (pat_cursor == 0   || matched_count >= handler.min_overlap)  { // && t_score >= handler.min_t_score) { // stop the recurrsion
         //if (matched_count >= MIN_MATCH_LEN) {
             if (t_score < handler.min_t_score || matched_count < handler.min_overlap) return false;
@@ -607,30 +611,6 @@ class BWASearch
             }
             delete occurrences;
         } else {
-
-            int goal[] = {3520,
-                          29830,
-                          15850,
-                          6830 + //13990
-                          950 + 
-                          6210,
-                          20530,
-                          22960 + 28380,
-                          21380,
-                          25250,
-            8160 + 5310 + 23110};
-
-            // int matchedgoal = -1;
-            // for (std::vector<usint>::iterator fi = target_match_frags.begin(); fi != target_match_frags.end(); ++fi) {
-            //     int fidepth = fi-target_match_frags.begin();
-            //     if (fidepth > 5) break;
-            //     int g = goal[fidepth];
-            //     if (g != *fi) {
-            //         matchedgoal = fidepth - 1;
-            //         break;
-            //     }
-            // }
-            // if (matchedgoal >3) {std::cout << "matched goal!!!!!!!!!!!!!!!!!" << std::endl;}
             
             int lookahead = handler.query_order;
             if (pat_cursor - 1 - lookahead < 0) {
@@ -650,7 +630,7 @@ class BWASearch
                 }
 
                 //wt stuff
-                unsigned int delta = STDDEV_MULT * get_stddev(c) *2;
+                unsigned int delta = STDDEV_MULT * get_stddev(c) * (handler.two_sided_error ? 2 : 1);
                 unsigned long long interval_size = range.second - range.first;
 
                 std::set<long unsigned int> hits2;
@@ -670,25 +650,14 @@ class BWASearch
                     branch_fact_count[depth] += 1;
                 }
 
-
-                
-                // if ( pat_cursor == pattern.size() ||  (target_match_frags.size() > 1 && target_match_frags[0] == 3520 && target_match_frags[1] == 29830)) {
-                //     for (int ijk=0; ijk < depth; ++ijk) std::cout << "    ";
-                //     std::cout << "depth: " << depth << " substitutes for " << c <<": ";
-                //     for(std::set<long unsigned int>::iterator hit_itr = hits2.begin(); hit_itr != hits2.end(); ++hit_itr) {
-                //         std::cout << *hit_itr << " ";
-                        
-                //     }
-                //     std::cout <<"t-score: " << t_score << std::endl;
-                // }
-                
                 for(std::set<long unsigned int>::iterator hit_itr = hits2.begin(); hit_itr != hits2.end(); ++hit_itr) {
                     // compute chi^2 score for putative substitute fragment in target
                     long unsigned int subst_frag = *hit_itr;
                     int deviation = abs(subst_frag - c);
-                    float chi_squared = std::pow((float)deviation / (float)get_stddev(c + subst_frag /*uint_max(c, subst_frag)*/), 2);
+                    float chi_squared = std::pow((float)deviation / (float)get_stddev(c + (handler.two_sided_error ? subst_frag : 0) /*uint_max(c, subst_frag)*/), 2);
                     boost::math::chi_squared cs(matched_count + 1);
                     double chisqcdf = boost::math::cdf(cs, chi_squared_sum + chi_squared);
+                    
                     if (chisqcdf <= handler.chi2cdf_thresh) {
 
                         pair_type new_range;
@@ -706,15 +675,21 @@ class BWASearch
                                 off_backbone_penalty = 1;
                             }
                         }
-                        float new_t_score = NU * (matched_count + 1)- LAMBDA * (missed_count + actv_la + off_backbone_penalty); // matched cutsites = matched frags + 1
+
+                        unsigned new_matched_count = matched_count + 1;
+                        unsigned new_missed_count = missed_count + actv_la + off_backbone_penalty;
+                        boost::math::binomial bn(2 * (new_matched_count + 1) + (2 * new_missed_count), .2);
+                        double binomcdf = boost::math::cdf(bn, new_missed_count);
+                        
+                        float new_t_score = binomcdf; // NU * (matched_count + 1)- LAMBDA * (missed_count + actv_la + off_backbone_penalty); // matched cutsites = matched frags + 1
                         const int bonus = 2; // bonus to experiment with allowing a match at position n to only need to exceed the table of thresholds at position n-1
-                        if ( matched_count - bonus  > expected_t_lut_size  || matched_count < bonus || new_t_score >= lenwise_t_cutoffs[matched_count - bonus ]) {
+                        if ( binomcdf < handler.min_t_score) { // matched_count - bonus  > expected_t_lut_size  || matched_count < bonus || new_t_score >= lenwise_t_cutoffs[matched_count - bonus ]) {
                                 std::map<work_t, std::pair<float, float> >::iterator prev_work = exhausted_nodes.find(work);
                                 if( prev_work == exhausted_nodes.end() || prev_work->second.first > chisqcdf || prev_work->second.second < new_t_score) {
                                     target_match_frags.push_back(subst_frag);
                                     target_match_ranges.push_back(new_range);
                                     query_match_frags.push_back(query_match_frag);
-                                    this->mybackwardSearch(pattern, next_pat_cursor, new_range, chi_squared_sum + chi_squared, matched_count + 1, missed_count + actv_la + off_backbone_penalty, occurrence_set, exhausted_nodes, branch_fact_sum, branch_fact_count, depth + 1, target_match_frags, query_match_frags, target_match_ranges, sp, rmap_name, direction, skip);
+                                    this->mybackwardSearch(pattern, next_pat_cursor, new_range, chi_squared_sum + chi_squared, new_matched_count, new_missed_count, occurrence_set, exhausted_nodes, branch_fact_sum, branch_fact_count, depth + 1, target_match_frags, query_match_frags, target_match_ranges, sp, rmap_name, direction, skip);
                                     target_match_frags.pop_back();
                                     query_match_frags.pop_back();
                                     target_match_ranges.pop_back();
