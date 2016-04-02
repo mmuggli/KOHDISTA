@@ -246,7 +246,7 @@ int main(int argc, char** argv)
             lab = mytolower((lab));
         }
 //        lab = remap(lab);
-        oftd << (*ni)->value << " " << lab << std::endl;
+        //oftd << (*ni)->value << " " << lab << std::endl;
         counts[lab] += 1;
         ofd.write((char*)&lab, 4);
         ofd.write((char*)&((*ni)->value), 4);
