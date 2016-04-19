@@ -8,7 +8,7 @@
 
 GCSA::ParameterHandler::ParameterHandler(int argc, char** argv, bool _rlcsa, std::string _usage) :
   ok(true), rlcsa(_rlcsa), usage(_usage),
-  indels(false), locate(false), penalties(false), reverse_complement(false), verbose(false), write(false), binary_patterns(false), detailed(false),
+  indels(false), locate(false), penalties(false), reverse_complement(false), verbose(false), write(false), binary_patterns(false), detailed(false), bounded_stddev(false),
   index_name(0), patterns_name(0),
   k(0), skip(0), max_matches(0)
 {
@@ -20,6 +20,9 @@ GCSA::ParameterHandler::ParameterHandler(int argc, char** argv, bool _rlcsa, std
       {
       case 'd':
           this->detailed = true; break;
+      case 't':
+          this->trim = 1; break;
+          
         case 'i':
           this->indels = true; break;
         case 'k':
@@ -40,6 +43,15 @@ GCSA::ParameterHandler::ParameterHandler(int argc, char** argv, bool _rlcsa, std
           this->binary_patterns = true; break;
         case 's':
             if(this->rlcsa) { this->skip = atoi(argv[i] + 2); break; } // Fall through.
+      case 'B':
+          this->bounded_stddev = true; break;
+      case 'Q':
+          this->query_order = atoi(argv[i] + 2);
+           break;
+      case 'M':
+          this->orientations=1; break; // _M_onodirectional, really this is single ended. it finds both orientations since we index the target forward and backward.  rename orientations to something better FIXME
+      case '1':
+          this->two_sided_error = false; break;
       case 'S':
           this->begin = atoi(argv[i] + 2);
            break; 

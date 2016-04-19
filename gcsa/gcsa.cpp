@@ -636,15 +636,15 @@ GCSA::Psi(usint index) const
 
   char iterbuf[this->outgoing->iterSize()];
   CSA::BitVector::Iterator* outgoing_iter = this->outgoing->newIterator(iterbuf);
-  index = outgoing_iter->select(index);
-  usint c = this->alphabet->charAt(index);
+  index = outgoing_iter->select(index); // node_index = Select(M, index)
+  usint c = this->alphabet->charAt(index);  // c = charAt(node_index)
 
   // Find the corresponding incoming edge using BWT.
   char iterbufc[this->array.iterSize(c)];
   char iter2bufc[sizeof(CSA::CharVector::Iterator)];
 
   CSA::CharVector::Iterator* array_iter = this->array.newIterator(c, iterbufc, iter2bufc);
-  index = array_iter->select(index - this->alphabet->cumulative(c));
+  index = array_iter->select(index - this->alphabet->cumulative(c)); // next_node_index = select(BWT, c, node_index - cumulative[c])
   outgoing_iter->~Iterator();
   array_iter->~Iterator();
   return index;

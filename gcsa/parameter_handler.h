@@ -20,10 +20,10 @@ class ParameterHandler
     bool ok, rlcsa;
     std::string usage;
 
-    bool  indels, locate, penalties, reverse_complement, verbose, write, binary_patterns, detailed;
+    bool  indels, locate, penalties, reverse_complement, verbose, write, binary_patterns, detailed, bounded_stddev, two_sided_error = true;
     char* index_name;
     char* patterns_name;
-    usint k, skip, max_matches, begin = 0, end = 0, min_overlap = 10;
+    usint k, skip, max_matches, begin = 0, end = 0, min_overlap = 10, trim=0, query_order=2, orientations=2;
     float chi2cdf_thresh = 0.1, min_t_score = 8.1, sigma_kbp = .58;
 };
 

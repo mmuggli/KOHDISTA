@@ -7,7 +7,7 @@ import qualified Data.ByteString.Lazy as BL
 import Data.Binary.Put
 --import Control.Applicative as A
 bin_size :: Int
-bin_size = 20
+bin_size = 100
 
 -- the order of the automaton.  This counts the backbone as a degenerate case of skip nodes, you might call it the 0th order skip nodes.  So an automaton with a backbone and skipnodes that sum two consecutive nodes in the backbone for each skipnode would have a value of 2.                    
 max_skipnode :: Int                                
@@ -171,7 +171,7 @@ main = do
   case parseOM contents of
    Left x -> print $ show $ x
    Right x -> sequence_ [show_stats,  dump_file ]
-              where  show_stats = print $ "nodes: " ++ (show num_all_nodes) ++ " edges: " ++ (show (length edges)) ++ " skip edge bundles: " ++ (show (length skip_edge_list))
+              where  show_stats = print $ "quantization bin size:" ++ (show bin_size) ++  "nodes: " ++ (show num_all_nodes) ++ " edges: " ++ (show (length edges)) ++ " skip edge bundles: " ++ (show (length skip_edge_list))
                      dump_file = BL.hPut ohdl $ runPut $ dumpGraph all_skipnodes edges nodes
                      nodes = {-filter (\a -> a > 0.001) $-} fmap float_quantize $ intercalate frag_delim $ {- add_reversed $ -}  fmap extract_frags x
                      skipnode_list n = take ((length nodes) - (n - 1)) $ nth_skipnodes n nodes

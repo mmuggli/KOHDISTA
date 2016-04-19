@@ -12,6 +12,7 @@
 #include <set>
 #include <utility>
 #include <boost/math/distributions/chi_squared.hpp>
+#include <boost/math/distributions/binomial.hpp>
 #include <math.h>
 #include "parameter_handler.h"
 
@@ -224,16 +225,20 @@ class BWASearch
 
 
     unsigned int get_stddev(const unsigned int frag_bp) const {
-        double sigma_kbp = handler.sigma_kbp; //.58;
-        double frag_kbp = (double)frag_bp / 1000.0;
-        double variance_kbp = powf(sigma_kbp, 2);
-        double expect_var_kbp = 2* variance_kbp * frag_kbp; // FIXME: do we need to double this? or does valouev .58 already account for noise in both frags
-        double expect_stddev_kbp = sqrt(expect_var_kbp);
-        double expect_stddev_bp = expect_stddev_kbp * 1000.0;
+        if (!handler.bounded_stddev) {
+            double sigma_kbp = handler.sigma_kbp; //.58;
+            double frag_kbp = (double)frag_bp / 1000.0;
+            double variance_kbp = powf(sigma_kbp, 2);
+            double expect_var_kbp = 2* variance_kbp * frag_kbp; // FIXME: do we need to double this? or does valouev .58 already account for noise in both frags
+            double expect_stddev_kbp = sqrt(expect_var_kbp);
+            double expect_stddev_bp = expect_stddev_kbp * 1000.0;
 //        return OM_STDDEV;
 //        return 100;
 //        std::cout << "(stddev " << expect_stddev_bp << ")" << std::endl;
-        return expect_stddev_bp;
+            return expect_stddev_bp;
+        } else {
+            return handler.sigma_kbp * 1000.0;
+        }
     }
 
 
@@ -255,22 +260,22 @@ class BWASearch
 
         std::cout << "=== backward searching matching orientation ===" << std::endl;
         std::map<usint, std::pair<float, float> > occurrences;
-        for (unsigned int skip = 0; skip < 3; ++skip) {
+        for (unsigned int skip = 0; skip <= handler.query_order; ++skip) {
             std::cout << "--- skipping " << skip << " query symbols. ---" << std::endl;
             
 
             std::vector<usint> pat;
-            for (usint i = 0; i < pattern.size() - skip; ++i) {
+            for (usint i = 0; i < pattern.size() - skip - handler.trim; ++i) {
                 pat.push_back(pattern[i]);
             }
-            assert(pat.size() > 0);
+            if (pat.size() <  handler.min_overlap) continue;
             std::map<work_t, std::pair<float, float> > exhausted_nodes;
             this->mybackwardSearch(pat, // pattern to search for
                                pat.size(), // index of next symbol to search for
                                this->index.getSARange(), // SA interval
                                0.0, // chi**2 sum
-                               0, // matched count
-                               0, // missed count
+                               0, // matched frag count
+                               skip, // missed site count
                                occurrences,
                                exhausted_nodes, branch_fact_sum, branch_fact_count, 0/*depth*/,
                                target_match_frags,
@@ -285,42 +290,43 @@ class BWASearch
             }
         }
 
+        if (handler.orientations < 2) {
 
-
-        std::cout << "=== backward searching reverse orientation ===" << std::endl;
-        std::map<usint, std::pair<float, float> > revoccurrences;
-        for (unsigned int skip = 0; skip < 3; ++skip) {
-            std::cout << "skipping " << skip << " query symbols." << std::endl;
+            std::cout << "=== backward searching reverse orientation ===" << std::endl;
+            std::map<usint, std::pair<float, float> > revoccurrences;
+            for (unsigned int skip = 0; handler.query_order < 3; ++skip) {
+                std::cout << "skipping " << skip << " query symbols." << std::endl;
         
 
-            std::vector<usint> revpat;
-            for (long long int i = pattern.size()  - 1; i >= skip ; --i) {
-                revpat.push_back(pattern[i]);
-            }
-            assert(revpat.size() > 0);
-            //find_one_dir(revpat, revoccurrences, branch_fact_sum, branch_fact_count, sp);
-            std::map<work_t, std::pair<float, float> > exhausted_nodes;
-            this->mybackwardSearch(revpat, // pattern to search for
-                               revpat.size(), // index of next symbol to search for
-                               this->index.getSARange(), // SA interval
-                               0.0, // chi**2 sum
-                               0, // matched count
-                               0, // missed count
-                               revoccurrences,
-                               exhausted_nodes, branch_fact_sum, branch_fact_count, 0/*depth*/,
-                               target_match_frags,
-                               query_match_frags,
-                                   target_match_ranges, sp, rmap_name, 1, skip);
+                std::vector<usint> revpat;
+                for (long long int i = pattern.size()  - 1; i >= skip + handler.trim; --i) {
+                    revpat.push_back(pattern[i]);
+                }
+                if (revpat.size() <  handler.min_overlap) continue;
+
+                //find_one_dir(revpat, revoccurrences, branch_fact_sum, branch_fact_count, sp);
+                std::map<work_t, std::pair<float, float> > exhausted_nodes;
+                this->mybackwardSearch(revpat, // pattern to search for
+                                       revpat.size(), // index of next symbol to search for
+                                       this->index.getSARange(), // SA interval
+                                       0.0, // chi**2 sum
+                                       0, // matched frag count
+                                       skip, // missed count
+                                       revoccurrences,
+                                       exhausted_nodes, branch_fact_sum, branch_fact_count, 0/*depth*/,
+                                       target_match_frags,
+                                       query_match_frags,
+                                       target_match_ranges, sp, rmap_name, 1, skip);
             
-        }
+            }
 
-        if (revoccurrences.size()) {
-            std::cout << "Found " << revoccurrences.size() << ":" << std::endl;
-            for(std::map<usint, std::pair<float, float> >::iterator oi = revoccurrences.begin(); oi != revoccurrences.end(); ++oi) {
-                report_occurrence(oi->first, oi->second.first, oi->second.second, rmap_name, already_reported);
+            if (revoccurrences.size()) {
+                std::cout << "Found " << revoccurrences.size() << ":" << std::endl;
+                for(std::map<usint, std::pair<float, float> >::iterator oi = revoccurrences.begin(); oi != revoccurrences.end(); ++oi) {
+                    report_occurrence(oi->first, oi->second.first, oi->second.second, rmap_name, already_reported);
+                }
             }
         }
-
         std::cout << "Branching factor stats:" << std::endl;
         for (int i = 0; i < MAX_DEPTH and branch_fact_count[i]; ++i) {
             std::cout << "depth: " << i << " mean |SA interval|: " << (float)branch_fact_sum[i] / (float)branch_fact_count[i] << " query count: " << branch_fact_count[i] << std::endl;
@@ -392,12 +398,19 @@ class BWASearch
         
         
     }
+
+    // This function takes a vector of fragment sizes and a vector of SA intervals and generates all the possible paths corresponding to the SA intervals
+    // we'll start with a hacky version that just takes every element individually in the initial match range and tries to backward search its way to the end of the target match.
+    // If it reaches the end, we include it in the set
+
     void report_valouev_alignment(std::vector<usint> &target_match_frags,
                           std::vector<std::vector<usint> > &query_match_frags,
-                                  std::vector<pair_type> &target_match_ranges, scoring_params &sp,const unsigned int &matched_count,const unsigned int &missed_count, const std::vector<usint>& pattern, const unsigned char direction, const int skip, usint suffix_array_index, const std::string &rmap_name) const
+                                  std::vector<pair_type> &target_match_ranges, scoring_params &sp,const unsigned int &matched_frag_count,const unsigned int &missed_count, const std::vector<usint>& pattern, const unsigned char direction, const int skip, const std::string &rmap_name) const
         {
+
+
             CSA::DeltaVector::Iterator rmap_iter(rmap_starts);
-            unsigned int rmap_num = rmap_iter.rank(suffix_array_index) - 1;
+            unsigned int rmap_num = rmap_iter.rank(target_match_ranges[target_match_ranges.size() - 1].first - 1);
             usint rmap_start = rmap_iter.select(rmap_num);
             std::cout << "rmap # " << rmap_num << " starts at GCSA index " << rmap_start << std::endl;
             std::string target_rmap_name = "unknown_rmap_name";
@@ -434,10 +447,13 @@ class BWASearch
 
                 // position
                 std::vector<usint>* mr_occurrences = this->index.locateRange(*ri); //match (sa) range
-                const int MAX_RANGES = 5;
+                const int MAX_RANGES = 1;
+                std::cout << "( SA[" << ri->first << ".." << ri->second << "] ) ";
                 if (mr_occurrences->size() <= MAX_RANGES) {
                     for (std::vector<usint>::iterator mi = mr_occurrences->begin(); mi != mr_occurrences->end(); ++mi) {
-                        std::cout << " " << *mi - rmap_start;
+                        signed long long temp_pos = *mi - rmap_start;
+                        std::cout << " " << temp_pos;
+                        
                     }
                 } else {
                     std::cout << " (|SA| = " << mr_occurrences->size() << " > " << MAX_RANGES << ") ";
@@ -478,22 +494,83 @@ class BWASearch
             // }
             // std::cout << std::endl;
             std::cout << "s-score:" << s_tot << std::endl;
-            float t_score = NU * (matched_count ) - LAMBDA * missed_count;
+            float t_score = NU * (matched_frag_count ) - LAMBDA * missed_count;
             std::cout << "t-score: " << t_score << std::endl;
 
-        }            
+        }
 
+    bool path_check(const std::vector<usint> &target_match_frags,
+                    const unsigned int &pat_cursor, // this marks the index in target_match_frags matching 'range'
+                    const pair_type &range,
+                    std::vector<pair_type> &path) const {
+
+        // recursion base case
+        if (pat_cursor == 0) return true;
+
+//        std::cout << "patch_check reached depth " << path.size() << std::endl;
+        pair_type new_range = this->index.LF(range, target_match_frags[pat_cursor - 1]);
+        if (new_range.first > new_range.second) {
+            return false;
+        } else {
+            path.push_back(new_range);
+
+            return path_check(target_match_frags, pat_cursor - 1, new_range, path);
+        }                   
+        
+        
+    }
+
+    
+    //fixme: change pair_type to usint in return values; the whole point is to only have one element in each SA interval after this
+    void populate_matched_paths(const std::vector<usint> &target_match_frags, const std::vector<pair_type> &target_match_ranges, std::vector<std::vector<pair_type> > &paths) const {
+      
+        auto first_range = target_match_ranges.begin();
+        for (usint i = first_range->first; i < first_range->second; ++i) {
+            pair_type start;
+            start.first = i;
+            start.second = i;
+            std::vector<pair_type> path;
+
+            if (path_check(target_match_frags, target_match_frags.size() - 2, start, path)) {
+                std::reverse(path.begin(), path.end()); //FIXME: is this right? do we need to handle differently like how we change direction in reporting?
+                paths.push_back(path);
+            }
+        }
+    }
+
+    
+
+    void report_valouev_alignments(std::vector<usint> &target_match_frags,
+                          std::vector<std::vector<usint> > &query_match_frags,
+                                  std::vector<pair_type> &target_match_ranges, scoring_params &sp,const unsigned int &matched_frag_count,const unsigned int &missed_count, const std::vector<usint>& pattern, const unsigned char direction, const int skip, const std::string &rmap_name) const
+        {
+            std::cout << "dumping full set of alignments (each position in the alignment denotes the full set of SA positions whose prefix match the query suffix): " << std::endl;
+            report_valouev_alignment(target_match_frags, query_match_frags, target_match_ranges, sp, matched_frag_count, missed_count, pattern, direction, skip, rmap_name);
+
+            std::cout << "dumping restricted alignments (each element in the initial range can be backward searched all the way to the start of the query): " << std::endl;
+            std::vector<std::vector<pair_type> > paths;
+            populate_matched_paths(target_match_frags, target_match_ranges, paths);
+            for (std::vector<std::vector<pair_type> >::iterator pathiter = paths.begin(); pathiter != paths.end(); ++pathiter) {
+                report_valouev_alignment(target_match_frags, query_match_frags, *pathiter, sp, matched_frag_count, missed_count, pattern, direction, skip, rmap_name);
+            }
+        }
+    
     // [ 10:24.782 ]->[ 5:14.06, 6:20.276 ] s: 7.62454
-    bool mybackwardSearch(const std::vector<usint>& pattern, const int &pat_cursor, const pair_type &range, const double &chi_squared_sum, const unsigned int &matched_count, const unsigned int &missed_count, std::map<usint, std::pair<float, float> > &occurrence_set, std::map<work_t, std::pair<float, float> >  &exhausted_nodes, unsigned long long branch_fact_sum[], unsigned long long branch_fact_count[], unsigned int depth,
+    const float BERNOULI_PROB = .2;
+    
+    bool mybackwardSearch(const std::vector<usint>& pattern, const int &pat_cursor, const pair_type &range, const double &chi_squared_sum, const unsigned int &matched_frag_count, const unsigned int &missed_count, std::map<usint, std::pair<float, float> > &occurrence_set, std::map<work_t, std::pair<float, float> >  &exhausted_nodes, unsigned long long branch_fact_sum[], unsigned long long branch_fact_count[], unsigned int depth,
                           std::vector<usint> &target_match_frags,
                           std::vector<std::vector<usint> > &query_match_frags,
                           std::vector<pair_type> &target_match_ranges, scoring_params &sp, const std::string &rmap_name, const unsigned char direction, const int skip) const {
-        // handle pat_cursor=0 to prevent underrun in the other branch
-        float t_score = NU * (matched_count) - LAMBDA * missed_count; // matched cutsites = matched frags + 1
-        if (pat_cursor == 0   || matched_count >= handler.min_overlap)  { // && t_score >= handler.min_t_score) { // stop the recurrsion
-        //if (matched_count >= MIN_MATCH_LEN) {
-            if (t_score < handler.min_t_score || matched_count < handler.min_overlap) return false;
-            boost::math::chi_squared cs(matched_count );
+
+        boost::math::binomial bn(2 * (matched_frag_count + 1) + (2 * missed_count), BERNOULI_PROB);
+        double binomcdf = boost::math::cdf(bn, missed_count);
+
+        float t_score = binomcdf; // NU * (matched_frag_count) - LAMBDA * missed_count; // matched cutsites = matched frags + 1
+        if (pat_cursor == 0   || matched_frag_count >= handler.min_overlap)  { // && t_score >= handler.min_t_score) { // stop the recurrsion
+
+            if ( matched_frag_count < handler.min_overlap) return false;
+            boost::math::chi_squared cs(matched_frag_count );
             double chisqcdf = boost::math::cdf(cs, chi_squared_sum);
 
             std::vector<usint>* occurrences = this->index.locateRange(range);
@@ -519,15 +596,10 @@ class BWASearch
                         }
                     }
                         
-
-
-                    
-
-
                     if (handler.detailed) {
                         if (is_new_entry) {
                             //report_occurrence(*mi, rmap_name);
-                            report_valouev_alignment(target_match_frags, query_match_frags, target_match_ranges, sp, matched_count, missed_count, pattern, direction, skip, *mi, rmap_name);
+                            report_valouev_alignments(target_match_frags, query_match_frags, target_match_ranges, sp, matched_frag_count, missed_count, pattern, direction, skip, rmap_name);
                             std::cout <<  "chisqcdf: " << chisqcdf  << std::endl << std::endl;
 
                         }
@@ -536,32 +608,8 @@ class BWASearch
             }
             delete occurrences;
         } else {
-
-            int goal[] = {3520,
-                          29830,
-                          15850,
-                          6830 + //13990
-                          950 + 
-                          6210,
-                          20530,
-                          22960 + 28380,
-                          21380,
-                          25250,
-            8160 + 5310 + 23110};
-
-            // int matchedgoal = -1;
-            // for (std::vector<usint>::iterator fi = target_match_frags.begin(); fi != target_match_frags.end(); ++fi) {
-            //     int fidepth = fi-target_match_frags.begin();
-            //     if (fidepth > 5) break;
-            //     int g = goal[fidepth];
-            //     if (g != *fi) {
-            //         matchedgoal = fidepth - 1;
-            //         break;
-            //     }
-            // }
-            // if (matchedgoal >3) {std::cout << "matched goal!!!!!!!!!!!!!!!!!" << std::endl;}
             
-            int lookahead = MAX_LOOKAHEAD;
+            int lookahead = handler.query_order;
             if (pat_cursor - 1 - lookahead < 0) {
                 lookahead = pat_cursor - 1; //trim lookahead to max remaining, preventing pattern underrun
 
@@ -579,7 +627,7 @@ class BWASearch
                 }
 
                 //wt stuff
-                unsigned int delta = STDDEV_MULT * get_stddev(c) ;
+                unsigned int delta = STDDEV_MULT * get_stddev(c) * (handler.two_sided_error ? 2 : 1);
                 unsigned long long interval_size = range.second - range.first;
 
                 std::set<long unsigned int> hits2;
@@ -599,25 +647,15 @@ class BWASearch
                     branch_fact_count[depth] += 1;
                 }
 
-
-                
-                // if ( pat_cursor == pattern.size() ||  (target_match_frags.size() > 1 && target_match_frags[0] == 3520 && target_match_frags[1] == 29830)) {
-                //     for (int ijk=0; ijk < depth; ++ijk) std::cout << "    ";
-                //     std::cout << "depth: " << depth << " substitutes for " << c <<": ";
-                //     for(std::set<long unsigned int>::iterator hit_itr = hits2.begin(); hit_itr != hits2.end(); ++hit_itr) {
-                //         std::cout << *hit_itr << " ";
-                        
-                //     }
-                //     std::cout <<"t-score: " << t_score << std::endl;
-                // }
-                
                 for(std::set<long unsigned int>::iterator hit_itr = hits2.begin(); hit_itr != hits2.end(); ++hit_itr) {
                     // compute chi^2 score for putative substitute fragment in target
                     long unsigned int subst_frag = *hit_itr;
-                    int deviation = abs(subst_frag - c);
-                    float chi_squared = std::pow((float)deviation / (float)get_stddev(uint_max(c, subst_frag)), 2);
-                    boost::math::chi_squared cs(matched_count + 1);
-                    double chisqcdf = boost::math::cdf(cs, chi_squared_sum + chi_squared);
+                    int deviation = abs((int)subst_frag - (int)c) / (handler.two_sided_error ? 2 : 1);
+                    float chi_squared = std::pow((float)deviation / (float)get_stddev( (handler.two_sided_error ? (subst_frag + c)/2 : c) /*uint_max(c, subst_frag)*/), 2);
+                    boost::math::chi_squared cs((matched_frag_count + 1) * (handler.two_sided_error ? 2 : 1));
+                    double chisqcdf = boost::math::cdf(cs, chi_squared_sum + chi_squared * (handler.two_sided_error ? 2 : 1));
+
+                    
                     if (chisqcdf <= handler.chi2cdf_thresh) {
 
                         pair_type new_range;
@@ -635,15 +673,21 @@ class BWASearch
                                 off_backbone_penalty = 1;
                             }
                         }
-                        float new_t_score = NU * (matched_count + 1)- LAMBDA * (missed_count + actv_la + off_backbone_penalty); // matched cutsites = matched frags + 1
-                        const int bonus = 1; // bonus to experiment with allowing a match at position n to only need to exceed the table of thresholds at position n-1
-                        if (1 || matched_count - bonus  > expected_t_lut_size  || matched_count < bonus || new_t_score >= lenwise_t_cutoffs[matched_count - bonus - 1]) {
+
+                        unsigned new_matched_frag_count = matched_frag_count + 1 /*tenative match of c with subst_frag*/;
+                        unsigned new_missed_count = missed_count + actv_la + off_backbone_penalty;
+                        boost::math::binomial bn(2 * (new_matched_frag_count + 1 /*initial match*/) + (2 * new_missed_count), BERNOULI_PROB);
+                        double binomcdf = boost::math::cdf(bn, new_missed_count);
+                        
+                        float new_t_score = binomcdf; // NU * (matched_frag_count + 1)- LAMBDA * (missed_count + actv_la + off_backbone_penalty); // matched cutsites = matched frags + 1
+                        const int bonus = 2; // bonus to experiment with allowing a match at position n to only need to exceed the table of thresholds at position n-1
+                        if (  binomcdf  <= handler.min_t_score /*<= handler.min_t_score*/ /* handler.min_t_score*/) { // matched_frag_count - bonus  > expected_t_lut_size  || matched_frag_count < bonus || new_t_score >= lenwise_t_cutoffs[matched_frag_count - bonus ]) {
                                 std::map<work_t, std::pair<float, float> >::iterator prev_work = exhausted_nodes.find(work);
-                                if( prev_work == exhausted_nodes.end() || prev_work->second.first > chisqcdf || prev_work->second.second < new_t_score) {
+                                if( prev_work == exhausted_nodes.end() || prev_work->second.first > chisqcdf || prev_work->second.second > binomcdf /*< new_t_score*/) {
                                     target_match_frags.push_back(subst_frag);
                                     target_match_ranges.push_back(new_range);
                                     query_match_frags.push_back(query_match_frag);
-                                    this->mybackwardSearch(pattern, next_pat_cursor, new_range, chi_squared_sum + chi_squared, matched_count + 1, missed_count + actv_la + off_backbone_penalty, occurrence_set, exhausted_nodes, branch_fact_sum, branch_fact_count, depth + 1, target_match_frags, query_match_frags, target_match_ranges, sp, rmap_name, direction, skip);
+                                    this->mybackwardSearch(pattern, next_pat_cursor, new_range, chi_squared_sum + chi_squared * (handler.two_sided_error ? 2 : 1), new_matched_frag_count, new_missed_count, occurrence_set, exhausted_nodes, branch_fact_sum, branch_fact_count, depth + 1, target_match_frags, query_match_frags, target_match_ranges, sp, rmap_name, direction, skip);
                                     target_match_frags.pop_back();
                                     query_match_frags.pop_back();
                                     target_match_ranges.pop_back();
@@ -663,6 +707,7 @@ class BWASearch
     }
 
 
+    
 
     /*
       Approximate search with at most k mismatches/errors for the pattern and its
