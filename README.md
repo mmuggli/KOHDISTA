@@ -4,13 +4,15 @@ You must first compile and install sdsl-lite to use this software.  Set the envi
 
 You can find pairwise alignments for the included simulated E. coli optical map reads (after decompressing them) with:
 
+```
 ./dopp.py --query ecoli_verif_100x_experimental.valouev --target ecoli_verif_100x_experimental.valouev
+```
 
 If you need details of the alignment (which fragment groups from the target align to which fragment groups in the target), add the --detailed option.  See --help for other options.
 
-Alternately, if your Valouev et al. formatted data reside in plum.maps, you can find pairwise alignments with these commands:
+*Alternately*, if your Valouev et al. formatted data reside in plum.maps, you can find pairwise alignments with these commands:
 ```
-python doppelganger/tools/valuev2bin.py plum.maps plum.bin plum_pat.bin 
+python doppelganger/tools/valouev2bin.py plum.maps plum.bin plum_pat.bin 
 doppelganger/tools/om2automaton plum.bin plum.automaton 100 0
 doppelganger/gcsa/determinize -b plum.automaton plum_base
 doppelganger/gcsa/build_index -b  plum_base
