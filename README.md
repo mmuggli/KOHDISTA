@@ -9,21 +9,31 @@ You can find pairwise alignments for the included simulated E. coli optical map 
 If you need details of the alignment (which fragment groups from the target align to which fragment groups in the target), add the --detailed option.  See --help for other options.
 
 Alternately, if your Valouev et al. formatted data reside in plum.maps, you can find pairwise alignments with these commands:
-
+```
 python doppelganger/tools/valuev2bin.py plum.maps plum.bin plum_pat.bin 
 doppelganger/tools/om2automaton plum.bin plum.automaton 100 0
 doppelganger/gcsa/determinize -b plum.automaton plum_base
 doppelganger/gcsa/build_index -b  plum_base
 cp plum.bin.frag2rmap plum_base.frag2rmap
 doppelganger/gcsa/gcsa_test plum_base plum_pat.bin  -b -l
-
-Experiments in the associated manuscript were run with this software as it existed Oct. 26, 2015.
-
+```
 
 
 
 
 
+
+# Relationship to GCSA and RLCSA
+
+Doppelganger builds upon GCSA.  As such, we have extended the GCSA codebase.  The original GCSA code base assumed its parent directory contained RLCSA.  The high level history of the Doppelganger consists of first extracting RLCSA, then extracting GCSA inside the RLCSA directory, and finally applying extensive changes to:
+
+1. accomodate a larger alphabet of restriction fragments (largely replacing char with int and dense C arrays with sparse std::map's)
+2. generate alternative automaton paths for speculatively missed restriction sites and fragments instead of from multiple sequence alignment (new C++ and Haskell programs)
+3. implement backtracking search for substitutions based on both sizing errors and missed site errors (found in bwasearch.h)
+
+# Original GCSA/RLCSA documentation
+
+For convenience, the original RLCSA documentation follows.  GCSA original docs can be found in gcsa/README.
 
 
 General Information
