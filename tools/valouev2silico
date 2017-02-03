@@ -1,0 +1,13 @@
+# convert a file in Valouev format to SOMA's in-silico digest format for use with OPTIMA
+import sys
+import numpy as np
+
+for lno,line in enumerate(open(sys.argv[1])):
+    if lno % 3 == 0:
+        label = line.strip()
+    if lno % 3 == 1:
+        parts = line.strip().split()
+        enz, enzabr = parts[:2]
+        frags = [int(1000.0*float(s)) for s in parts[2:]]
+        print(">" + label + "\t" + str(sum(frags)) + "\t" + str(len(frags)-1))
+        print("\t".join([str(i) for i in np.cumsum(frags[:-1])]))
