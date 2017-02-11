@@ -1,4 +1,4 @@
-DOPPELGANGER - Find restriction maps (Rmaps) that look alike (align)
+KOHDISTA - Find restriction maps (Rmaps) that look alike (align)
 
 You must first compile and install sdsl-lite to use this software.  Set the environment variable SDSL_PREFIX to the directory where you install it.
 
