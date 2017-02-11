@@ -5,7 +5,7 @@ You must first compile and install sdsl-lite to use this software.  Set the envi
 You can find pairwise alignments for the included simulated E. coli optical map reads (after decompressing them) with:
 
 ```
-./dopp.py --query ecoli_verif_100x_experimental.valouev --target ecoli_verif_100x_experimental.valouev
+./koh.py --query ecoli_verif_100x_experimental.valouev --target ecoli_verif_100x_experimental.valouev
 ```
 
 If you need details of the alignment (which fragment groups from the target align to which fragment groups in the target), add the --detailed option.  See --help for other options.
