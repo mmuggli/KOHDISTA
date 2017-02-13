@@ -8,7 +8,20 @@ You can find pairwise alignments for the included simulated E. coli optical map 
 ./koh.py --query ecoli_verif_100x_experimental.valouev --target ecoli_verif_100x_experimental.valouev
 ```
 
-If you need details of the alignment (which fragment groups from the target align to which fragment groups in the target), add the --detailed option.  See --help for other options.
+The default output reports alignments as follows.  The query rmap will be listed:
+```
+### Finding row 0(rmap_0): ###
+```
+Then later, a series of locations within the backbone are reported and which Rmap they report to.  Each of these exists as a pair of lines:
+```
+bbpos= 1170 == <(rmap #52)rmap_26>
+bbpos= 1171  chisqcdf= 0.280868 t_score= 0.360191
+```
+This indicates that the first Rmap (number 0, named rmap_0) aligns to the fifty third Rmap (number 52, named rmap_26).  rmap_26 begins at backbone position 1,170.  The final backward search suffix array interval included position 1,171 in the backbone when the minimum overlap was reached.
+
+If you need details of the alignment (which fragment groups from the target align to which fragment groups in the target), add the --detailed option.  This will report the details of the alignment (which groups of query fragments group to align to a group of target fragments).  The output approximately matches that of the software by Valouev et al., which is explained [here](https://github.com/mmuggli/valouev_optmap_alignment).
+
+Run --help for other options.
 
 *Alternately*, if your Valouev et al. formatted data reside in plum.maps, you can find pairwise alignments with these commands:
 ```
