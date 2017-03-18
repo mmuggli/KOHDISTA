@@ -25,15 +25,40 @@ Run --help for other options.
 
 *Alternately*, if your Valouev et al. formatted data reside in plum.maps, you can find pairwise alignments with these commands:
 ```
-python doppelganger/tools/valouev2bin.py plum.maps plum.bin plum_pat.bin 
-doppelganger/tools/om2automaton plum.bin plum.automaton 100 0
-doppelganger/gcsa/determinize -b plum.automaton plum_base
-doppelganger/gcsa/build_index -b  plum_base
-cp plum.bin.frag2rmap plum_base.frag2rmap
-doppelganger/gcsa/gcsa_test plum_base plum_pat.bin  -b -l
+bzip2 -dk ecoli_verif_100x_experimental.valouev.bz2 
+python tools/valouev2bin.py ecoli_verif_100x_experimental.valouev ecoli_verif_100x_experimental.bin ecoli_verif_100x_experimental_pat.bin 800
+
+tools/om2automaton  ecoli_verif_100x_experimental.bin   ecoli_verif_100x_experimental.automaton 100 0 1000
+
+gcsa/determinize -b ecoli_verif_100x_experimental.automaton ecoli_verif_100x_experimental_base
+
+gcsa/build_index -b ecoli_verif_100x_experimental_base
+cp ecoli_verif_100x_experimental.bin.frag2rmap ecoli_verif_100x_experimental_base.frag2rmap
+
+gcsa/gcsa_test ecoli_verif_100x_experimental_base ecoli_verif_100x_experimental_pat.bin -b -l
+
 ```
 
 
+```
+# ***   step 1.) convert target rmaps file to binary file with command:
+/usr/bin/python /s/chopin/l/grad/muggli/git/KOHDISTA/tools/valouev2bin.py ecoli_verif_100x_experimental.valouev /tmp/tmppRVST1/target.bin /tmp/tmppRVST1/target_pat.bin 0.5
+
+# ***   step 2.) build the automaton from the binary file with command:
+/s/chopin/l/grad/muggli/git/KOHDISTA/tools/om2automaton /tmp/tmppRVST1/target.bin /tmp/tmppRVST1/target.automaton 100 0 1000
+
+# *** Determinizing the automaton with command:
+/s/chopin/l/grad/muggli/git/KOHDISTA/gcsa/determinize -b /tmp/tmppRVST1/target.automaton /tmp/tmppRVST1/target_base
+
+# *** Building the GCSA data structure with command:
+/s/chopin/l/grad/muggli/git/KOHDISTA/gcsa/build_index -b /tmp/tmppRVST1/target_base
+
+# *** Moving rmap index file returned
+mv /tmp/tmppRVST1/target.bin.frag2rmap /tmp/tmppRVST1/target_base.frag2rmap
+
+# *** Performing alignment with command:
+/s/chopin/l/grad/muggli/git/KOHDISTA/gcsa/gcsa_test -b -l /tmp/tmppRVST1/target_base ecoli_verif_100x_experimental.valouev -Q2 -O10 -C.1 -T1 -Z.58
+```
 
 
 
