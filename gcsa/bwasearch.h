@@ -232,6 +232,8 @@ class BWASearch
             double expect_var_kbp = 2* variance_kbp * frag_kbp; // FIXME: do we need to double this? or does valouev .58 already account for noise in both frags
             double expect_stddev_kbp = sqrt(expect_var_kbp);
             double expect_stddev_bp = expect_stddev_kbp * 1000.0;
+
+
 //        return OM_STDDEV;
 //        return 100;
 //        std::cout << "(stddev " << expect_stddev_bp << ")" << std::endl;
@@ -241,8 +243,184 @@ class BWASearch
         }
     }
 
+    class Search {
+        static const unsigned int MAX_DEPTH = 100;        
+        unsigned long long branch_fact_sum[MAX_DEPTH];
+        unsigned long long branch_fact_count[MAX_DEPTH];
+        std::map<usint, std::pair<float, float> > &occurrence_set;
+        std::map<work_t, std::pair<float, float> > exhausted_nodes;
+        std::vector<std::vector<usint> > query_match_frags;
+        std::vector<usint> target_match_frags;
+        std::vector<pair_type> target_match_ranges;
+        scoring_params sp;
+        const float BERNOULI_PROB = .2;
+        const std::vector<usint> &pattern;
+        const std::string &rmap_name;
+        const unsigned char &direction;
+        const int &skip;
+    public:
+        Search(std::vector<usint> &_pat, const std::string &_rmap_name, const unsigned char &_direction, const int &_skip, std::map<usint, std::pair<float, float> > &_occurrences) : pattern(_pat), rmap_name(_rmap_name), direction(_direction), skip(_skip), occurrence_set(_occurrences), sp(scoring_params(.2,1.2,.9,3,17.43,0.58, 0.0015, 0.8, 1, 3))//fixme: instantiate just once
+            {
+                for (int i = 0; i < MAX_DEPTH; ++i) {
+                    branch_fact_sum[i] = 0;
+                    branch_fact_count[i] = 0;
+                }
 
-    const int MAX_DEPTH = 100;
+            }
+
+        ~Search(){}
+
+        bool backwardsearch(const int &pat_cursor, const pair_type &range, const double &chi_squared_sum, const unsigned int &matched_frag_count, const unsigned int &missed_count, unsigned int depth)  {
+
+            boost::math::binomial bn(2 * (matched_frag_count + 1) + (2 * missed_count), BERNOULI_PROB);
+            double binomcdf = boost::math::cdf(bn, missed_count);
+
+            float t_score = binomcdf; // NU * (matched_frag_count) - LAMBDA * missed_count; // matched cutsites = matched frags + 1
+            if (pat_cursor == 0   || matched_frag_count >= handler.min_overlap)  { // && t_score >= handler.min_t_score) { // stop the recurrsion
+
+                if ( matched_frag_count < handler.min_overlap) return false;
+                boost::math::chi_squared cs(matched_frag_count );
+                double chisqcdf = boost::math::cdf(cs, chi_squared_sum);
+
+                std::vector<usint>* occurrences = this->index.locateRange(range);
+                if (occurrences->size() > 0) {
+                    for (std::vector<usint>::iterator mi = occurrences->begin(); mi != occurrences->end(); ++mi) {
+                        // usint val = *mi;
+                        // CSA::DeltaVector::Iterator rmap_iter(rmap_starts);
+                        // unsigned int rmap_num = rmap_iter.rank(val) - 1;
+                        // unsigned int offset = val - rmap_iter.select(rmap_num );
+                        //std::cout << "<(rmap #" << rmap_num << ")" << frag2rmap[rmap_num].second << "+" <<offset << ">" << std::endl;;
+
+                        std::map<usint, std::pair<float, float> >::iterator map_entry = occurrence_set.find(*mi);
+                        std::pair<float, float> this_match(chisqcdf, t_score);
+                        bool is_new_entry = false;
+                        if (map_entry == occurrence_set.end()) {
+                            occurrence_set[*mi] = this_match;
+                            is_new_entry = true;
+                        } else {
+                            if (map_entry->second > this_match) {
+                                occurrence_set.erase(map_entry);
+                                occurrence_set[*mi] = this_match;
+                                is_new_entry = true;
+                            }
+                        }
+                        
+                        if (handler.detailed) {
+                            if (is_new_entry) {
+                                //report_occurrence(*mi, rmap_name);
+                                report_valouev_alignments(target_match_frags, query_match_frags, target_match_ranges, sp, matched_frag_count, missed_count, pattern, direction, skip, rmap_name);
+                                std::cout <<  "chisqcdf: " << chisqcdf  << std::endl << std::endl;
+
+                            }
+                        }
+                    }
+                }
+                delete occurrences;
+            } else {
+            
+                int lookahead = handler.query_order;
+                if (pat_cursor - 1 - lookahead < 0) {
+                    lookahead = pat_cursor - 1; //trim lookahead to max remaining, preventing pattern underrun
+
+                }
+
+                for (int actv_la = 0; actv_la <= lookahead; ++actv_la) {
+                    std::vector<usint> query_match_frag;
+                    // compute the sum of the next lookahead fragments
+                    unsigned int c = 0;
+                    for (int j = 0; j <= actv_la; ++j) {
+                        int index = pat_cursor - 1 - j;
+                        assert(index >= 0);
+                        c += pattern[index];
+                        query_match_frag.push_back(pattern[index]);
+                    }
+
+                    //wt stuff
+                    unsigned int delta = STDDEV_MULT * get_stddev(c) * (handler.two_sided_error ? 2 : 1);
+                    unsigned long long interval_size = range.second - range.first;
+
+                    std::set<long unsigned int> hits2;
+                    if (interval_size > WT_MIN) {
+                        std::vector<long unsigned int> hits = this->index.restricted_unique_range_values(range.first, range.second, 
+                                                                                                         c <= delta ? 1 : c - delta,  // if subtracting results in less than 1, use 1
+                                                                                                         c + delta);
+                        for(std::vector<long unsigned int>::iterator h2i = hits.begin(); h2i != hits.end(); ++h2i)
+                            hits2.insert(*h2i);
+                    } else {
+                        this->index.array_restricted_unique_range_values(range.first, range.second, 
+                                                                         c <= delta ? 1 : c - delta, // if subtracting results in less than 1, use 1
+                                                                         c + delta, hits2);
+                    }
+                    if (depth < MAX_DEPTH) {
+
+                        branch_fact_sum[depth] += hits2.size();
+                        branch_fact_count[depth] += 1;
+                    }
+
+                    for(std::set<long unsigned int>::iterator hit_itr = hits2.begin(); hit_itr != hits2.end(); ++hit_itr) {
+                        // compute chi^2 score for putative substitute fragment in target
+                        long unsigned int subst_frag = *hit_itr;
+                        int deviation = abs((int)subst_frag - (int)c) / (handler.two_sided_error ? 2 : 1);
+                        float chi_squared = std::pow((float)deviation / (float)get_stddev( (handler.two_sided_error ? (subst_frag + c)/2 : c) /*uint_max(c, subst_frag)*/), 2);
+                        boost::math::chi_squared cs((matched_frag_count + 1) * (handler.two_sided_error ? 2 : 1));
+                        double chisqcdf = boost::math::cdf(cs, chi_squared_sum + chi_squared * (handler.two_sided_error ? 2 : 1));
+
+                    
+                        if (chisqcdf <= handler.chi2cdf_thresh) {
+
+                            pair_type new_range;
+                            if (pat_cursor == pattern.size()) {
+                                new_range = this->index.getCharRange(subst_frag);
+                                new_range.second += 1; //fixme: what is this for?  is it in original algo?
+                            } else {
+                                new_range = this->index.LF(range, subst_frag);
+                            }
+                            int next_pat_cursor = pat_cursor - 1 - actv_la;
+                            work_t work(next_pat_cursor, new_range);
+                            int off_backbone_penalty = 0;
+                            if (new_range.first == new_range.second) {
+                                if (!this->index.getBackbone()->originalContains(new_range.first)) {
+                                    off_backbone_penalty = 1;
+                                }
+                            }
+
+                            unsigned new_matched_frag_count = matched_frag_count + 1 /*tenative match of c with subst_frag*/;
+                            unsigned new_missed_count = missed_count + actv_la + off_backbone_penalty;
+                            boost::math::binomial bn(2 * (new_matched_frag_count + 1 /*initial match*/) + (2 * new_missed_count), BERNOULI_PROB);
+                            double binomcdf = boost::math::cdf(bn, new_missed_count);
+                        
+                            float new_t_score = binomcdf; // NU * (matched_frag_count + 1)- LAMBDA * (missed_count + actv_la + off_backbone_penalty); // matched cutsites = matched frags + 1
+                            //const int bonus = 2; // bonus to experiment with allowing a match at position n to only need to exceed the table of thresholds at position n-1
+                            if (  binomcdf  <= handler.min_t_score /*<= handler.min_t_score*/ /* handler.min_t_score*/) { // matched_frag_count - bonus  > expected_t_lut_size  || matched_frag_count < bonus || new_t_score >= lenwise_t_cutoffs[matched_frag_count - bonus ]) {
+                                std::map<work_t, std::pair<float, float> >::iterator prev_work = exhausted_nodes.find(work);
+                                if( prev_work == exhausted_nodes.end() || prev_work->second.first > chisqcdf || prev_work->second.second > binomcdf /*< new_t_score*/) {
+                                    target_match_frags.push_back(subst_frag);
+                                    target_match_ranges.push_back(new_range);
+                                    query_match_frags.push_back(query_match_frag);
+                                    this->backwardsearch( next_pat_cursor, new_range, chi_squared_sum + chi_squared * (handler.two_sided_error ? 2 : 1), new_matched_frag_count, new_missed_count,  depth + 1);
+                                    target_match_frags.pop_back();
+                                    query_match_frags.pop_back();
+                                    target_match_ranges.pop_back();
+                                    std::pair<float, float> scores;
+                                    scores.first = chisqcdf;
+                                    scores.second = new_t_score;
+                                    exhausted_nodes[work] = scores;
+
+                                }
+                            }
+                        }
+
+                    }
+                }
+            }
+            return false;
+        }
+        
+    };
+
+    
+    // args not changed between calls: pattern, occurrence_set, exhausted_nodes, branch_fact_sum, branch_fact_count, target_match_frags, target_match_ranges, sp, rmap_name, direction, skip
+    const unsigned int MAX_DEPTH = 100;
     void find(const std::vector<usint>& pattern, const std::string &rmap_name) const {
 
         unsigned long long branch_fact_sum[MAX_DEPTH];
@@ -269,6 +447,10 @@ class BWASearch
                 pat.push_back(pattern[i]);
             }
             if (pat.size() <  handler.min_overlap) continue;
+            Search search(pat, rmap_name, 0, skip, occurrences);
+
+
+            
             std::map<work_t, std::pair<float, float> > exhausted_nodes;
             this->mybackwardSearch(pat, // pattern to search for
                                pat.size(), // index of next symbol to search for
@@ -280,7 +462,7 @@ class BWASearch
                                exhausted_nodes, branch_fact_sum, branch_fact_count, 0/*depth*/,
                                target_match_frags,
                                query_match_frags,
-                                   target_match_ranges, sp, rmap_name, 0, skip);
+                                   target_match_ranges, sp, rmap_name, 0/*direction*/, skip);
 
         }
         if (occurrences.size()) {
@@ -299,7 +481,8 @@ class BWASearch
         
 
                 std::vector<usint> revpat;
-                for (long long int i = pattern.size()  - 1; i >= skip + handler.trim; --i) {
+                // iterator var i must go negative in order to stop for loop, hence signed space
+                for (long long int i = pattern.size()  - 1; i >= (signed)skip + (signed)handler.trim; --i) {
                     revpat.push_back(pattern[i]);
                 }
                 if (revpat.size() <  handler.min_overlap) continue;
@@ -316,7 +499,7 @@ class BWASearch
                                        exhausted_nodes, branch_fact_sum, branch_fact_count, 0/*depth*/,
                                        target_match_frags,
                                        query_match_frags,
-                                       target_match_ranges, sp, rmap_name, 1, skip);
+                                       target_match_ranges, sp, rmap_name, 1/*direction*/, skip);
             
             }
 
@@ -347,7 +530,7 @@ class BWASearch
     const unsigned int MIN_MATCH_LEN = 10;
     const float LAMBDA = 1.2;
     const float NU = 0.9;
-    const int WT_MIN = 750;
+    const unsigned int WT_MIN = 750;
     //TODO: convert this to recursive call
     //TODO: use sigma*length as stddev
 
@@ -373,7 +556,7 @@ class BWASearch
         }
             
         if (is_new) {
-            unsigned int offset = val - rmap_iter.select(rmap_num );
+            //unsigned int offset = val - rmap_iter.select(rmap_num );
 
             std::string target_rmap_name = "unknown_rmap_name";
             if (rmap_num < frag2rmap.size()) {
@@ -680,7 +863,7 @@ class BWASearch
                         double binomcdf = boost::math::cdf(bn, new_missed_count);
                         
                         float new_t_score = binomcdf; // NU * (matched_frag_count + 1)- LAMBDA * (missed_count + actv_la + off_backbone_penalty); // matched cutsites = matched frags + 1
-                        const int bonus = 2; // bonus to experiment with allowing a match at position n to only need to exceed the table of thresholds at position n-1
+                        //const int bonus = 2; // bonus to experiment with allowing a match at position n to only need to exceed the table of thresholds at position n-1
                         if (  binomcdf  <= handler.min_t_score /*<= handler.min_t_score*/ /* handler.min_t_score*/) { // matched_frag_count - bonus  > expected_t_lut_size  || matched_frag_count < bonus || new_t_score >= lenwise_t_cutoffs[matched_frag_count - bonus ]) {
                                 std::map<work_t, std::pair<float, float> >::iterator prev_work = exhausted_nodes.find(work);
                                 if( prev_work == exhausted_nodes.end() || prev_work->second.first > chisqcdf || prev_work->second.second > binomcdf /*< new_t_score*/) {
@@ -924,11 +1107,12 @@ class BWASearch
 
 
     const std::vector<std::pair<unsigned int, std::string> > frag2rmap;
-    ParameterHandler &handler;
+
     const std::string ALPHABET;
     const std::string COMPLEMENT;
     static const usint ALPHABET_SIZE = 5;
-
+    ParameterHandler &handler;
+    
     char complement(char c) const
     {
       size_t temp = this->COMPLEMENT.find(c);
